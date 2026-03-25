@@ -35,6 +35,19 @@ Writes `stamps_llm/<class>/<oid>/montage.png` (Science | Template | Image panels
 | `data/` | Manifest and summary (tracked) |
 | `stamps/`, `stamps_llm/` | Large binaries — ignored by git; regenerate locally |
 
-## Remote
+## GitHub
 
-[https://github.com/Cruuusade/LLM_FOR_ASTRONOMY](https://github.com/Cruuusade/LLM_FOR_ASTRONOMY)
+Repository: [github.com/Cruuusade/LLM_FOR_ASTRONOMY](https://github.com/Cruuusade/LLM_FOR_ASTRONOMY)
+
+**First-time push** (after creating the empty repo on GitHub):
+
+```bash
+cd /path/to/ZTF_Adjusted_Dataset
+git remote add origin https://github.com/Cruuusade/LLM_FOR_ASTRONOMY.git   # skip if already added
+git branch -M main
+git push -u origin main
+```
+
+If `git push` asks for credentials, use a [Personal Access Token](https://github.com/settings/tokens) (classic: enable `repo` scope) as the password, or install [GitHub CLI](https://cli.github.com/) and run `gh auth login`.
+
+Large FITS/PNG trees under `stamps/` and `stamps_llm/` are **not** tracked; only scripts and `data/` manifests are in git. Regenerate data locally with the commands above.
