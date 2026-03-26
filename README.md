@@ -26,12 +26,32 @@ python build_stamps_llm_montages.py
 
 Writes `stamps_llm/<class>/<oid>/montage.png` (Science | Template | Image panels) from existing FITS. Original FITS are unchanged.
 
+## Zero-shot evaluation (Tinker API)
+
+Requires `TINKER_API_KEY` from the [Tinker console](https://tinker-console.thinkingmachines.ai/) and optional extra packages (`tinker`, `tinker-cookbook`, `transformers`, `torch`, `python-dotenv` — see `requirements.txt`). Put the key in **`.env`** as `TINKER_API_KEY=...` (file is gitignored); `api_tinker.py` loads it automatically.
+
+Pipeline matches AstroAlertBench-style **inputs → prompt → structured JSON (Parts A–C)**; prompts live in `prompts.py` and are used by `api_tinker.py`.
+
+```bash
+set TINKER_API_KEY=your_key
+python run_tinker_benchmark.py --limit 20 --out results/run1.jsonl
+python evaluate.py --predictions results/run1.jsonl --manifest data/manifest.csv
+```
+
+- **Images:** one **montage PNG** per object (Science \| Template \| Difference) is sent with the user text (three separate cutouts can be added later).
+- **Metadata:** CSV columns `magpsf` / `sgscore1` / `fid_band` are used when present; otherwise placeholders and extra manifest fields (`ndet`, coordinates, MJDs, probability) are included. **To pull missing fields from ALeRCE**, run `python enrich_manifest_alerce.py` (uses `query_detections` + `get_avro` per object; writes `data/manifest_enriched.csv`). Requires `fastavro`.
+
 ## Repository layout
 
 | Path | Description |
 |------|-------------|
 | `download_alerce_benchmark.py` | ALeRCE API download + replacement logic |
 | `build_stamps_llm_montages.py` | FITS → labeled PNG montages |
+| `prompts.py` | System + user prompts (Parts A–C, JSON schema) |
+| `api_tinker.py` | Tinker VLM sampling (Qwen3-VL + montage) |
+| `run_tinker_benchmark.py` | Batch JSONL runner |
+| `evaluate.py` | Parse JSON outputs; accuracy vs manifest |
+| `enrich_manifest_alerce.py` | Fetch `magpsf`, `sgscore*`, `fid_band`, etc. from ALeRCE AVRO/detections |
 | `data/` | Manifest and summary (tracked) |
 | `stamps/`, `stamps_llm/` | Large binaries — ignored by git; regenerate locally |
 

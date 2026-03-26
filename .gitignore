@@ -8,3 +8,15 @@ venv/
 *.fits
 stamps/
 stamps_llm/
+
+# LaTeX build artifacts (REPORT.tex)
+*.aux
+*.log
+*.out
+*.toc
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+
+# Model API outputs (regenerate with run_tinker_benchmark.py)
+results/

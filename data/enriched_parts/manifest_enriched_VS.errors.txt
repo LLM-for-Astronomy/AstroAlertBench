@@ -1,0 +1,11 @@
+ZTF18aaxfcmb: cannot read header - is it an avro file?
+ZTF17aadkozt: {'Error code': 403, 'Message': 'Unknown API error.', 'Data': 'Unknown API error.'}
+ZTF19aczbaca: cannot read header - is it an avro file?
+ZTF18aciaytk: cannot read header - is it an avro file?
+ZTF18abaetjx: cannot read header - is it an avro file?
+ZTF18aaheofw: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+ZTF18aajgmln: cannot read header - is it an avro file?
+ZTF25aaasvyu: ('Connection broken: IncompleteRead(32487 bytes read, 44978 more expected)', IncompleteRead(32487 bytes read, 44978 more expected))
+ZTF18aatvmbh: cannot read header - is it an avro file?
+ZTF18aacqzti: cannot read header - is it an avro file?
+ZTF18acmnaki: cannot read header - is it an avro file?

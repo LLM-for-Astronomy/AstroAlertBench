@@ -1,5 +1,13 @@
 alerce>=1.2.0
+fastavro>=1.9
+python-dotenv>=1.0
 pandas>=2.0
 astropy>=6.0
 requests>=2.28
 Pillow>=10.0
+
+# Zero-shot VLM evaluation via Tinker (optional; large deps)
+tinker>=0.10
+tinker-cookbook>=0.1
+transformers>=4.40
+torch

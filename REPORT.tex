@@ -1,0 +1,298 @@
+% LaTeX version of REPORT.md (generated from REPORT.backup.md content).
+% Compile: pdflatex REPORT.tex  (requires hyperref, booktabs)
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{tabularx}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  citecolor=blue,
+}
+
+\title{ZTF / ALeRCE Stamp Benchmark for LLM Astronomy\\(Early-Stage Report)}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{Status:} dataset construction and asset packaging are complete; \textbf{zero-shot prompts} (\S3) are fixed for initial runs; quantitative evaluation and metrics are still to be filled in. This document follows the \textit{shape} of technical reports such as \textit{Instructing LLMs to Negotiate using Reinforcement Learning with Verifiable Rewards} (problem $\rightarrow$ setup $\rightarrow$ metrics) and the \textit{AstroAlertBench} / \textit{LLM for Astronomy} framing (multimodal ZTF alert triage, ALeRCE stamp classifier, five-class taxonomy), while staying brief outside the dataset section.
+
+\medskip
+\noindent\textbf{Repository:} \url{https://github.com/Cruuusade/LLM_FOR_ASTRONOMY}
+
+\section*{Abstract}
+
+We are building a \textbf{balanced multimodal benchmark} for vision--language evaluation on \textbf{Zwicky Transient Facility (ZTF)} alert cutouts brokered by \textbf{ALeRCE}, using the operational \textbf{stamp classifier} taxonomy: supernova (SN), active galactic nucleus (AGN), variable star (VS), asteroid, and bogus. For each class we retain \textbf{500} objects selected by \textbf{descending ALeRCE stamp-classifier probability} (with a minimum probability floor and \textbf{replacement} from the ranked pool when stamp retrieval fails). Each example includes \textbf{tabular metadata} from the object query and \textbf{three FITS stamps} (science, template, difference), plus \textbf{PNG montages} for LLM/VLM consumption. This report records what has been implemented, the \textbf{standardized multimodal prompt} (Parts A--C + JSON) for zero-shot evaluation, and \textbf{reserved slots} for \textbf{metrics} aligned with multimodal astronomy benchmarks (e.g.\ AstroAlertBench-style grounding and classification).
+
+\section{Introduction and Problem Formulation}
+
+Operational ZTF pipelines issue large numbers of \textbf{first-detection} alerts that must be triaged into scientifically useful categories. ALeRCE's \textbf{stamp classifier} maps first-alert image triplets to five high-level classes, providing a \textbf{scalable weak label} suitable for benchmarking general models against a broker that astronomers already use (\href{https://science.alerce.online/}{ALeRCE}). Our goal is not to reproduce the neural stamp network, but to \textbf{standardize inputs} (images + metadata) and \textbf{labels} (stamp-classifier class + probability statistics) so that \textbf{LLMs / VLMs} can be compared on the same evidence used in broker-style triage---consistent with the problem setup described in \textit{AstroAlertBench: Evaluating Vision Language Models for Multimodal Astronomical Alert Triage} (ZTF cutouts, ALeRCE taxonomy, metadata serialization).
+
+At this \textbf{early stage} we prioritize: (i)~\textbf{reproducible data collection}, (ii)~\textbf{class balance} (500 per class), (iii)~\textbf{high-confidence sampling} with documented floors and \textbf{replacement} when APIs return errors instead of FITS.
+
+\section{Dataset Construction (Primary Section)}
+
+\subsection{Source and Labels}
+
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+\textbf{Item} & \textbf{Description} \\
+\midrule
+\textbf{Survey} & ZTF (via ALeRCE API) \\
+\textbf{Classifier} & ALeRCE \texttt{stamp\_classifier} (broker real-time stamp classifier setting) \\
+\textbf{Classes} & \texttt{SN}, \texttt{AGN}, \texttt{VS}, \texttt{asteroid}, \texttt{bogus} (five-way classification) \\
+\textbf{Selection} & Per class: query objects with \texttt{order\_by=probability}, \texttt{order\_mode=DESC}, minimum probability $\geq 0.8$ (Explorer-equivalent filter). Take the top candidates until \textbf{500 successful stamp downloads} per class; if an object's stamps cannot be retrieved (e.g.\ HTTP returns JSON instead of FITS), \textbf{skip} and use the \textbf{next} object in the ranked list. \textbf{Object IDs are unique} across the whole benchmark (no duplicate \texttt{oid} across classes). \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Modalities per Example}
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Metadata (tabular):} Fields returned by ALeRCE \texttt{query\_objects} for each \texttt{oid} (e.g.\ coordinates, detection counts, times, \texttt{probability}, \texttt{classifier}, etc.), consolidated in \texttt{data/manifest.csv}.
+  \item \textbf{Images (FITS):} For each accepted detection, three cutouts under \texttt{stamps/<class>/<oid>/}: \texttt{science.fits}, \texttt{template.fits}, \texttt{difference.fits} (63$\times$63 ZTF-style stamps).
+  \item \textbf{Images (LLM-facing PNG):} One \textbf{montage} per object under \texttt{stamps\_llm/<class>/<oid>/montage.png}: three panels labeled \textbf{Science}, \textbf{Template}, \textbf{Image} (the third panel is the \textbf{difference} cutout; label text follows the montage script). Stretched to 8-bit with a percentile-based normalization for display.
+\end{enumerate}
+
+\subsection{Summary Statistics (Current \texttt{data/summary.json})}
+
+Selection used \textbf{500} objects per class. Reported \textbf{min / max} stamp-classifier \textbf{probability} among the \textbf{selected} set (per class):
+
+\begin{center}
+\begin{tabular}{l r r r}
+\toprule
+\textbf{Class} & \textbf{Count} & \textbf{Min prob.} & \textbf{Max prob.} \\
+ & & \textbf{(selected)} & \textbf{(selected)} \\
+\midrule
+SN & 500 & 0.896107 & 0.953128 \\
+AGN & 500 & 0.856078 & 0.898750 \\
+VS & 500 & 0.942687 & 0.968923 \\
+asteroid & 500 & 1.000000 & 1.000000 \\
+bogus & 500 & 0.951082 & 0.977276 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent\textbf{Note:} The minimum probability \textbf{within each class's 500} is the \textbf{lowest} score among that high-confidence slice (useful for reporting dataset difficulty). The global selection floor remains \textbf{0.8} (\texttt{min\_probability\_floor}).
+
+\subsection{Artifacts and Reproducibility}
+
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+\textbf{Path} & \textbf{Role} \\
+\midrule
+\texttt{download\_alerce\_benchmark.py} & Fetch ranked pools; fill 500/class with replacement; write \texttt{data/manifest.csv}, \texttt{data/summary.json}, \texttt{data/replacement\_skips.log} \\
+\texttt{build\_stamps\_llm\_montages.py} & FITS $\rightarrow$ PNG montages in \texttt{stamps\_llm/} \\
+\texttt{data/manifest.csv} & One row per benchmark example (oid, class, probabilities, candid, paths, \ldots) \\
+\texttt{stamps/}, \texttt{stamps\_llm/} & Large binaries; \textbf{not} tracked in git; regenerate locally \\
+\bottomrule
+\end{tabularx}
+
+\subsection{What We Still Need (Dataset)}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Prompt-facing metadata subset:} Full broker metadata exists in principle; we still need a \textbf{fixed, documented} text serialization (which columns go into the model prompt vs.\ held out for scoring only)---as in AstroAlertBench's distinction between \textit{stored} vs \textit{prompt-facing} metadata.
+  \item \textbf{Optional upgrade:} Align even more tightly with AstroAlertBench by attaching \textbf{AVRO-level} candidate fields for each chosen \texttt{candid} if we want parity with ``first-detection packet'' wording (current pipeline centers on object query + stamps + chosen candid).
+  \item \textbf{Hosting:} Large FITS/PNG trees require \textbf{separate release} (e.g.\ Zenodo, Hugging Face datasets, or Git LFS) if public redistribution is desired; the GitHub repo is \textbf{code + manifests} only.
+\end{itemize}
+
+\section{Prompt Design (Zero-Shot)}
+
+\noindent\textbf{Goal.} We construct a standardized multimodal prompt that combines image triplets (Science, Template, Difference) with selected metadata fields, and requires the model to produce a \textbf{structured, machine-parseable response} divided into \textbf{Part A (metadata grounding)}, \textbf{Part B (scientific interpretation)}, and \textbf{Part C (staged classification)}. This follows the evaluation protocol used in multimodal astronomy benchmarks such as AstroAlertBench.
+
+\subsection{Prompt Structure}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Image inputs:} Science, Template, and Difference cutouts
+  \item \textbf{Metadata:} Selected prompt-facing fields (e.g.\ band, magnitude, sgscore)
+  \item \textbf{Instructions:} Task definition, class definitions, and output schema
+\end{itemize}
+
+\subsection{System Prompt}
+
+\begin{quote}\small
+You are an experienced astrophysicist. Your task is to classify astronomical transient candidates using three image cutouts (Science, Template, Difference) and associated metadata.
+
+You must analyze the images and metadata carefully and produce a structured response divided into three parts:
+
+\textbf{Part A: Metadata Grounding} \\
+Extract and restate the key metadata fields and relevant observable properties.
+
+\textbf{Part B: Scientific Interpretation} \\
+Provide a concise scientific interpretation of the candidate based on the images and metadata.
+
+\textbf{Part C: Staged Classification} \\
+Make a step-by-step classification decision:
+\begin{itemize}[leftmargin=*]
+  \item Stage 1: Determine whether the detection is a real astrophysical object or bogus
+  \item Stage 2: Determine whether it is astrophysical or non-astrophysical
+  \item Stage 3: Assign one of the five classes: SN, AGN, VS, asteroid, or bogus
+\end{itemize}
+
+Your final answer must follow the required JSON format exactly.
+\end{quote}
+
+\subsection{User Prompt Template}
+
+\noindent Fill placeholders \texttt{\{oid\}}, \texttt{\{fid / band\}}, \texttt{\{magpsf\}}, \texttt{\{sgscore1\}} (and any additional fields) from the manifest / AVRO for each alert.
+
+\begin{quote}\small
+\textbf{Alert ID:} \texttt{\{oid\}}
+
+\textbf{Images:}
+\begin{itemize}[leftmargin=*]
+  \item Science image: recent observation
+  \item Template image: reference observation
+  \item Difference image: Science $-$ Template
+\end{itemize}
+
+\textbf{Metadata:}
+\begin{itemize}[leftmargin=*]
+  \item Band: \texttt{\{fid / band\}}
+  \item Magnitude (magpsf): \texttt{\{magpsf\}}
+  \item sgscore1: \texttt{\{sgscore1\}}
+  \item Detection statistics and additional fields as provided
+\end{itemize}
+
+\textbf{Task:} Analyze the image triplet and metadata, then complete Parts A--C.
+
+\textbf{Class Definitions:}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{SN (Supernova):} Transient event not present in template, often point-like and located near a host galaxy
+  \item \textbf{AGN:} Persistent or variably bright source associated with a galaxy nucleus
+  \item \textbf{VS (Variable Star):} Stellar variability, typically present in both Science and Template images
+  \item \textbf{Asteroid:} Moving object, may show positional shift or streak-like morphology
+  \item \textbf{Bogus:} Artifacts such as noise, cosmic rays, subtraction errors, or misalignment
+\end{itemize}
+
+\textbf{Instructions:}
+\begin{enumerate}[leftmargin=*]
+  \item Focus on the central object in the images
+  \item Compare Science, Template, and Difference images
+  \item Use metadata to support your reasoning
+  \item Follow the staged classification process
+\end{enumerate}
+
+\textbf{Output Format (strict JSON):}
+\end{quote}
+
+\begin{verbatim}
+{
+  "Part A": {
+    "band": "...",
+    "magnitude": "...",
+    "sgscore": "...",
+    "key_features": "..."
+  },
+  "Part B": {
+    "interpretation": "..."
+  },
+  "Part C": {
+    "stage1": "real_object | bogus",
+    "stage2": "astrophysical | non_astrophysical",
+    "stage3": "SN | AGN | VS | asteroid | bogus",
+    "confidence": 0.0
+  }
+}
+\end{verbatim}
+
+\subsection{Design Rationale}
+
+This structured prompt design enables:
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Grounding evaluation:} Part A measures whether the model correctly uses metadata
+  \item \textbf{Interpretability:} Part B separates reasoning from final prediction
+  \item \textbf{Fine-grained evaluation:} Part C enables staged error analysis
+  \item \textbf{Robust parsing:} JSON output ensures machine-readable results
+\end{itemize}
+
+\subsection{Future Extensions}
+
+We plan to explore:
+\begin{itemize}[leftmargin=*]
+  \item Few-shot prompting with representative examples
+  \item Ablations with and without metadata
+  \item Alternative reasoning formats (e.g.\ chain-of-thought vs concise rationale)
+\end{itemize}
+
+\noindent Zero-shot and follow-up experiments will be run via the \textbf{Tinker} API.
+
+\subsection{Reference: MeerLICHT Real/Bogus (Prior Work --- Binary Task)}
+
+The following is \textbf{not} our ZTF five-class prompt; it is a reference template from the MeerLICHT / \href{https://github.com/turanbulmus/spacehack}{SpaceHack} line (binary Real vs Bogus). Our benchmark uses ZTF/ALeRCE naming and five classes. See SpaceHack materials for full persona and instructions.
+
+\section{Evaluation Metrics \textit{(Reserved --- to be finalized)}}
+
+Following the \textit{separation of concerns} in the negotiation RL paper (clear \textbf{metric definitions} before results) and AstroAlertBench's \textbf{Part A / B / C} style, we reserve the following \textbf{slots}. Actual numbers will be filled after running models.
+
+\subsection{Classification Quality}
+
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+\textbf{Metric} & \textbf{Definition / notes} \\
+\midrule
+\textbf{Accuracy} & Fraction of correct top-1 class predictions vs.\ ALeRCE stamp label \\
+\textbf{Macro-F1} & Unweighted mean of per-class F1 (important for balanced 500/ class) \\
+\textbf{Per-class precision/recall} & Confusion matrix SN, AGN, VS, asteroid, bogus \\
+\textbf{Calibration} & Reliability vs.\ model-reported confidence (if JSON includes probabilities) \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Format \& Grounding \textit{(optional, AstroAlertBench-inspired)}}
+
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+\textbf{Metric} & \textbf{Definition / notes} \\
+\midrule
+\textbf{JSON validity rate} & Parsable structured output rate (cf.\ ``Valid Rate'' in negotiation benchmarks) \\
+\textbf{Metadata grounding} & When metadata is provided, score whether rationale cites correct fields \\
+\textbf{Human / judge model review} & Subset scored for scientific plausibility of rationale \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Efficiency \& Cost}
+
+\begin{tabularx}{\textwidth}{@{}l X@{}}
+\toprule
+\textbf{Metric} & \textbf{Definition / notes} \\
+\midrule
+\textbf{Tokens / USD per example} & For API-hosted VLMs \\
+\textbf{Latency} & Wall time per batch \\
+\bottomrule
+\end{tabularx}
+
+\section{Current Limitations}
+
+\begin{itemize}[leftmargin=*]
+  \item Labels are \textbf{broker stamp-classifier} outputs, not independent human truth; errors in ALeRCE propagate as label noise.
+  \item \textbf{Asteroid} class in the current summary shows \textbf{probability 1.0} across the selected range---reporting and modeling should treat that \textbf{ceiling effect} explicitly.
+  \item PNG montages use a \textbf{display stretch}; models should be evaluated with a \textbf{fixed preprocessing} policy declared in the final benchmark card.
+\end{itemize}
+
+\section{References \textit{(selected)}}
+
+\begin{itemize}[leftmargin=*,label={}]
+  \item ALeRCE: \url{https://science.alerce.online/}
+  \item ZTF public data releases: \url{https://www.ztf.caltech.edu/ztf-public-releases.html}
+  \item Carrasco-Davis et al.; ALeRCE stamp classifier (see ALeRCE publications).
+  \item \textit{AstroAlertBench} manuscript (Claire Chen, Caltech) --- multimodal ZTF/ALeRCE alert triage benchmark framing.
+  \item \textit{Instructing LLMs to Negotiate using Reinforcement Learning with Verifiable Rewards} (Claire Chen) --- example of abstract + numbered sections + explicit metric tables.
+  \item MeerLICHT / SpaceHack prompting lineage: \url{https://github.com/turanbulmus/spacehack}
+\end{itemize}
+
+\medskip
+\noindent\textit{Document version: early stage --- dataset and zero-shot prompt (\S3) are authoritative; quantitative metrics (\S4) are placeholders until experiments complete.}
+
+\end{document}
