@@ -93,16 +93,18 @@ def get_renderer(model_name: str, tokenizer: Any, image_processor: Any) -> Any:
     return Qwen3VLInstructRenderer(tokenizer, image_processor)
 
 
-def sample_vlm(
-    messages: list[dict[str, Any]],
-    model_name: str = DEFAULT_MODEL,
-    max_tokens: int = 2048,
-    temperature: float = 0.2,
-) -> str:
-    """
-    Run one VLM completion via Tinker sampling client + model-appropriate cookbook renderer.
-    Returns assistant text (raw).
-    """
+import threading
+
+_vlm_cache: dict[str, tuple[Any, Any, Any, Any]] = {}
+_vlm_cache_lock = threading.Lock()
+
+
+def _get_vlm_objects(model_name: str) -> tuple[Any, Any, Any, Any]:
+    """Return (tokenizer, renderer, service, sampling_client), cached per model."""
+    with _vlm_cache_lock:
+        if model_name in _vlm_cache:
+            return _vlm_cache[model_name]
+
     try:
         from tinker_cookbook import tokenizer_utils
         from tinker_cookbook.image_processing_utils import get_image_processor
@@ -114,9 +116,25 @@ def sample_vlm(
     tokenizer = tokenizer_utils.get_tokenizer(model_name)
     image_processor = get_image_processor(model_name)
     renderer = get_renderer(model_name, tokenizer, image_processor)
-
     service = tinker.ServiceClient()
     sampling_client = service.create_sampling_client(base_model=model_name)
+
+    with _vlm_cache_lock:
+        _vlm_cache[model_name] = (tokenizer, renderer, service, sampling_client)
+    return tokenizer, renderer, service, sampling_client
+
+
+def sample_vlm(
+    messages: list[dict[str, Any]],
+    model_name: str = DEFAULT_MODEL,
+    max_tokens: int = 2048,
+    temperature: float = 0.2,
+) -> str:
+    """
+    Run one VLM completion via Tinker sampling client + model-appropriate cookbook renderer.
+    Returns assistant text (raw).
+    """
+    tokenizer, renderer, _, sampling_client = _get_vlm_objects(model_name)
 
     prompt = renderer.build_generation_prompt(messages)
     stop = renderer.get_stop_sequences()

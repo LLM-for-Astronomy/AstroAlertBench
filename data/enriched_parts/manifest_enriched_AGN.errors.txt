@@ -1,8 +1,0 @@
-ZTF18abtjbfi: {'Error code': 403, 'Message': 'Unknown API error.', 'Data': 'Unknown API error.'}
-ZTF19abmpmcd: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
-ZTF19abffold: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
-ZTF20acqjwbs: cannot read header - is it an avro file?
-ZTF20acbnqdb: cannot read header - is it an avro file?
-ZTF18acxanwu: cannot read header - is it an avro file?
-ZTF19abiziqm: {'Error code': 403, 'Message': 'Unknown API error.', 'Data': 'Unknown API error.'}
-ZTF20aclxalh: cannot read header - is it an avro file?

@@ -18,5 +18,11 @@ stamps_llm/
 *.fls
 *.synctex.gz
 
+# Intermediate enrichment shards (regenerate with run_enrich_parallel.py)
+data/enriched_parts*/
+
+# Backup manifests
+data/*_backup_*.csv
+
 # Model API outputs (regenerate with run_tinker_benchmark.py)
 results/

@@ -1,11 +1,15 @@
 """
-AstroAlertBench-style prompts: Parts A–C + strict JSON (zero-shot).
-Used by api_tinker.py and run_tinker_benchmark.py.
+Ablation baseline prompt: original 11-field metadata (no PS1 mags, chi, sharpness,
+deltajd, nmtchps).  Drop-in replacement for prompts.py — exports the same three
+names: SYSTEM_PROMPT, build_user_prompt, manifest_row_to_metadata.
+
+Usage:
+  python run_tinker_benchmark.py --manifest data/manifest_fewshot.csv \
+      --out results/fewshot_kimi_ablation.jsonl --prompts prompt_ablation --concurrency 64
 """
 
 from __future__ import annotations
 
-import json
 from typing import Any
 
 import pandas as pd
@@ -67,25 +71,11 @@ Important metadata interpretation guide:
 - Nearest-source Star/Galaxy Score: score for the nearest reference source;
   values near 1 are more star-like and values near 0 are more galaxy-like.
 - Distance to Nearest Reference Source: angular distance to the nearest
-  reference source (arcsec).
+  reference source.
 - Star-classifier Score: source morphology score; values near 1 are more
   star-like.
-- Reference-source Chi: chi parameter of the nearest reference source from
-  PSF-fit; values near 1 indicate a well-fit point source.
-- Reference-source Sharpness: sharpness of the nearest reference source;
-  values near 0 indicate a point source, large positive values suggest
-  extended or blended objects.
 - Historical Detections: number of prior detections associated with this source.
 - Historical Coverages: number of prior images covering this sky position.
-- Detection Time Span: elapsed time (days) between first and last detection
-  of this source; 0 means only one detection exists.
-- PS1 g/r/i/z-band Magnitudes: Pan-STARRS1 catalog magnitudes of the nearest
-  cross-matched source. These provide the host or counterpart broadband color.
-  Color differences (e.g. g-r, r-i) help distinguish stellar populations:
-  AGN hosts tend to be redder and more galaxy-like, while variable stars
-  tend to show bluer or more stellar colors. "N/A" means no PS1 match.
-- PS1 Match Count: number of Pan-STARRS1 catalog sources within the matching
-  radius; 0 or N/A means no cataloged counterpart at this position.
 
 General reasoning instructions:
 - First, read and interpret the metadata carefully.
@@ -201,19 +191,16 @@ def _cell(row: Any, key: str) -> Any:
     return None
 
 
-_SENTINEL = -999
-
-
 def _fmt(val: Any, fallback: str = "N/A") -> str:
-    """Format a value for prompt display: None / NaN / -999 sentinel → fallback."""
+    """Format a value for prompt display: None / NaN → fallback."""
     if val is None:
         return fallback
-    if isinstance(val, (int, float)):
-        if pd.isna(val) or val == _SENTINEL:
+    if isinstance(val, float):
+        if pd.isna(val):
             return fallback
         return f"{val:.6g}"
-    s = str(val).strip()
-    if s.lower() in ("nan", "", "-999", "-999.0"):
+    s = str(val)
+    if s.lower() in ("nan", ""):
         return fallback
     return s
 
@@ -223,7 +210,7 @@ def _fmt_int(val: Any, fallback: str = "N/A") -> str:
         return fallback
     try:
         v = float(val)
-        if pd.isna(v) or v == _SENTINEL:
+        if pd.isna(v):
             return fallback
         return str(int(v))
     except (ValueError, TypeError):
@@ -231,7 +218,7 @@ def _fmt_int(val: Any, fallback: str = "N/A") -> str:
 
 
 def manifest_row_to_metadata(row: Any) -> dict[str, Any]:
-    """Extract all prompt-facing metadata from a manifest_enriched.csv row."""
+    """Extract the original 11 prompt-facing metadata fields (no PS1 mags)."""
     isdiffpos_raw = _cell(row, "isdiffpos")
     if isdiffpos_raw is not None:
         isdiffpos = "positive" if str(isdiffpos_raw).lower() in ("t", "1", "true") else "negative"
@@ -257,14 +244,6 @@ def manifest_row_to_metadata(row: Any) -> dict[str, Any]:
         "ndethist": ndethist,
         "ncovhist": ncovhist,
         "firstmjd": _cell(row, "firstmjd"),
-        "chinr": _cell(row, "chinr"),
-        "sharpnr": _cell(row, "sharpnr"),
-        "sgmag1": _cell(row, "sgmag1"),
-        "srmag1": _cell(row, "srmag1"),
-        "simag1": _cell(row, "simag1"),
-        "szmag1": _cell(row, "szmag1"),
-        "nmtchps": _cell(row, "nmtchps"),
-        "deltajd": _cell(row, "deltajd"),
     }
 
 
@@ -290,17 +269,7 @@ def build_user_prompt(
 - Nearest-source Star/Galaxy Score: {_fmt(metadata.get("sgscore1"))}
 - Distance to Nearest Reference Source: {_fmt(metadata.get("distpsnr1"))}
 - Star-classifier Score: {_fmt(metadata.get("classtar"))}
-- Reference-source Chi: {_fmt(metadata.get("chinr"))}
-- Reference-source Sharpness: {_fmt(metadata.get("sharpnr"))}
 - Historical Detections: {_fmt_int(metadata.get("ndethist"))}
 - Historical Coverages: {_fmt_int(metadata.get("ncovhist"))}
-- Detection Time Span (days): {_fmt(metadata.get("deltajd"))}
-- PS1 g-band Magnitude: {_fmt(metadata.get("sgmag1"))}
-- PS1 r-band Magnitude: {_fmt(metadata.get("srmag1"))}
-- PS1 i-band Magnitude: {_fmt(metadata.get("simag1"))}
-- PS1 z-band Magnitude: {_fmt(metadata.get("szmag1"))}
-- PS1 Match Count: {_fmt_int(metadata.get("nmtchps"))}
 
 Analyze this alert and return the JSON response."""
-
-

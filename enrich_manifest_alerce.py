@@ -8,6 +8,7 @@ Uses:
 Writes new columns suitable for prompts.py: fid_band, magpsf, sigmapsf, sgscore1, ...
 Object-level ndethist/ncovhist in the CSV are left unchanged; candidate-level values are
 stored as alert_ndethist / alert_ncovhist to avoid clobbering.
+Also extracts PS1 cross-match fields: objectidps1, sgmag1, srmag1, simag1, szmag1, nmtchps.
 
 Requires: pip install fastavro
 
@@ -124,6 +125,12 @@ def enrich_row(alerce: Alerce, row: pd.Series) -> dict[str, object]:
         "alert_ncovhist": cand.get("ncovhist"),
         "chinr": cand.get("chinr"),
         "sharpnr": cand.get("sharpnr"),
+        "objectidps1": cand.get("objectidps1"),
+        "sgmag1": cand.get("sgmag1"),
+        "srmag1": cand.get("srmag1"),
+        "simag1": cand.get("simag1"),
+        "szmag1": cand.get("szmag1"),
+        "nmtchps": cand.get("nmtchps"),
     }
 
 

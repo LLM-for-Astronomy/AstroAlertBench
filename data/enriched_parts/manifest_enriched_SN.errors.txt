@@ -1,3 +1,0 @@
-ZTF24aaioqpt: {'Error code': 403, 'Message': 'Unknown API error.', 'Data': 'Unknown API error.'}
-ZTF26aaazjgm: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
-ZTF22abosath: ('Connection broken: IncompleteRead(32487 bytes read, 37744 more expected)', IncompleteRead(32487 bytes read, 37744 more expected))
