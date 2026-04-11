@@ -69,7 +69,7 @@ Important image interpretation guide:
   diffraction spikes).
 - Science image (left): the current observation.
 - Reference image (middle): a historical baseline image of the same sky location.
-- Image image (right): the change between the current and reference images.
+- Difference image (right): the change between the current and reference images.
 - A localized residual in the difference image may indicate a real brightness
   change. Real sources typically appear as circular objects with only positive (white) 
   or only negative (black) flux.
