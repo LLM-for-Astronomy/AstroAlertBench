@@ -20,13 +20,13 @@ ZTF candidate field reference (schema: {ZTF_SCHEMA_URL}):
 - fid: filter ID (integer). 1 = g, 2 = r, 3 = i.
 - isdiffpos: string flag. t or 1 => positive subtraction (science minus reference), i.e. brighter in science than reference.
   f or 0 => negative subtraction (reference minus science), i.e. fainter in science than reference.
-- firstmjd: first detection time as modified Julian date from the survey object record (object-level; not the Avro field jd).
-- magpsf: PSF-fit magnitude [mag]; lower = brighter.
-- sigmapsf: 1-sigma uncertainty on magpsf [mag].
+- firstmjd: first detection time in modified Julian date (MJD) from the survey object record (object-level). This is not the same as the Avro candidate field jd, which is the observation time in Julian Date (JD) days in the alert packet (~2.45e6 scale).
+- magpsf: PSF-fit magnitude on the difference (DIA) image at the candidate position [mag]; lower = brighter (ZTF alert pipeline).
+- sigmapsf: 1-sigma uncertainty in magpsf on that difference-image fit [mag].
 - fwhm: FWHM assuming Gaussian core from SExtractor [pixels].
 
 Two different star/galaxy indicators (do not merge them):
-- classtar: Star/galaxy classification score from SExtractor for this ZTF subtraction candidate (pipeline morphometry on the survey images). It is not derived from the Pan-STARRS1 catalog.
+- classtar: Star/galaxy classification score from SExtractor for this candidate. The public Avro schema does not specify which stamp (science vs difference) SExtractor used; treat it as a morphological score and combine with the three cutouts. It is not derived from the Pan-STARRS1 catalog.
 - sgscore1 and distpsnr1 (PS1 neighbor): sgscore1 is the star/galaxy score of the closest Pan-STARRS1 (PS1) catalog source within 30 arcsec; 0 <= sgscore1 <= 1, with values closer to 1 implying higher likelihood of being a star (ZTF schema wording). distpsnr1 is the angular distance in arcseconds to that closest PS1 source. If distpsnr1 is large, or PS1 fields are missing or sentinel values, treat sgscore1 as weak or ambiguous—the nearest PS1 object may be an unrelated projection near the line of sight.
 
 - chinr: DAOPhot chi parameter of the nearest source in the reference-image PSF catalog within 30 arcsec.
@@ -37,11 +37,11 @@ Two different star/galaxy indicators (do not merge them):
 
 Soft ZTF-specific context (heuristics, not rules): low ndethist can occur for some solar-system detections but is not definitive—cadence, linking, and the definition above matter. Higher ndethist at a fixed sky position is more suggestive of repeated activity (e.g. variable stars, AGN) but remains context-dependent and survey-cadence-dependent.
 
-- sgmag1, srmag1, simag1, szmag1: PS1 PSF magnitudes of the closest PS1 source within 30 arcsec in g, r, i, z [mag].
+- sgmag1, srmag1, simag1, szmag1: PS1 PSF magnitudes of the closest PS1 catalog source within 30 arcsec in g, r, i, z [mag]. Derived colors (e.g. g-r, r-i) describe that matched PS1 object (often host+nucleus blend), not necessarily the transient alone—use distpsnr1 and cutouts.
 - nmtchps: number of PS1 catalog sources within 30 arcsec.
 - deltajd: time span in days between first and last detection for this object (object-level).
 
-Sentinel values: numeric -999 (and similar schema null sentinels) means no valid measurement. Do not interpret -999 as a physical magnitude, distance, or flux; do not use it as numeric evidence in Part B or Part C. For Part A, report physically meaningful floats for magpsf/sigmapsf when the input is a real measurement; if the only values provided are sentinels, use your best consistent interpretation of the JSON schema constraints.
+Sentinel values: numeric -999 (and similar schema null sentinels) means no valid measurement. Do not interpret -999 as a physical magnitude, distance, or flux; do not use it as numeric evidence in Part B or Part C. For Part A, copy magpsf and sigmapsf from the input when they are real measurements. If they are missing or sentinels, you must still satisfy the JSON number types if the schema requires floats—do not invent astrophysical photometry; state clearly in Part B that those inputs were missing or non-physical.
 """
 
 SYSTEM_PROMPT = f"""You are an experienced astrophysicist. Your task is to classify astronomical transient candidates using three image cutouts and associated metadata.
@@ -53,8 +53,9 @@ Your task is to analyze a single first-detection astronomical alert using:
 (2) alert-level metadata as raw ZTF-style candidate fields (see reference below).
 
 You must classify the alert using only the provided evidence.
-Do not assume any additional light-curve history, spectroscopy, catalog lookup,
-or outside information beyond the input shown here.
+Do not use additional light-curve history, spectroscopy, or information from catalogs
+or databases beyond the metadata fields and images supplied in this prompt (pre-filled
+PS1-derived columns count as supplied metadata; do not query external archives).
 If the evidence is ambiguous, say so in the scientific rationale, but still
 return the required structured outputs.
 
@@ -66,6 +67,8 @@ five classes:
 - AGN
 - Asteroid
 - Bogus
+
+In this benchmark, "Variable Star" means Galactic (stellar) variable candidates as a class label; "AGN" means active galactic nucleus variability—both can vary in nature, but the two labels are distinct here.
 
 Important image interpretation guide:
 - The input image consists of three 63 x 63 pixel cutouts tiled horizontally:
@@ -80,8 +83,9 @@ Important image interpretation guide:
 - Template / reference (middle): historical coadded baseline at the same sky location.
 - Image / difference (right): science minus reference (subtraction image).
 - A localized residual in the difference image may indicate a real brightness
-  change. Real sources typically appear as circular objects with only positive (white) 
-  or only negative (black) flux.
+  change. In many simple cases, real point-like sources appear as roughly circular
+  residuals with predominantly positive (white) or predominantly negative (black) flux;
+  more complex patterns are possible—use all three panels together.
 - Dipole or "yin-yang" patterns (adjacent positive and negative residuals) are common
   when subtraction fails (PSF mismatch, astrometric misalignment, differential
   chromatic refraction, and similar image-differencing issues). The same morphology can

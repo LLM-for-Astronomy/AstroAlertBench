@@ -24,6 +24,8 @@ Part B requirement (before you finalize Part C):
 - In key_evidence and/or leading_interpretation_and_support, briefly cite relevant items when they are available and not sentinels: (i) cutout morphology (e.g. clear galaxy host or nuclear source vs isolated stellar profile), (ii) sgscore1 and distpsnr1 for the closest Pan-STARRS1 match, (iii) PS1 optical colors derived from sgmag1, srmag1, simag1 when those magnitudes are valid, (iv) ndethist, ncovhist, and deltajd only as weak, survey-definition-dependent context—never as a sole decisive rule.
 - Part C stage3 must be consistent with the reasoning you wrote in Part B.
 
+Colors from sgmag1/srmag1/simag1 are properties of the matched PS1 catalog source (see main field reference), not necessarily the transient alone.
+
 PS1 colors (AB magnitudes as in the alert; compute only when values are real, not -999 or N/A):
 - g_minus_r = sgmag1 - srmag1
 - r_minus_i = srmag1 - simag1
