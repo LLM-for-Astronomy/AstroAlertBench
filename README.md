@@ -30,7 +30,7 @@ Writes `stamps_llm/<class>/<oid>/montage.png` (Science | Template | Image panels
 
 Requires `TINKER_API_KEY` from the [Tinker console](https://tinker-console.thinkingmachines.ai/) and optional extra packages (`tinker`, `tinker-cookbook`, `transformers`, `torch`, `python-dotenv` — see `requirements.txt`). Put the key in **`.env`** as `TINKER_API_KEY=...` (file is gitignored); `api_tinker.py` loads it automatically.
 
-Pipeline matches AstroAlertBench-style **inputs → prompt → structured JSON (Parts A–C)**; prompts live in `prompts.py` and are used by `api_tinker.py`.
+Pipeline matches AstroAlertBench-style **inputs → prompt → structured JSON (Parts A–C)**; prompts live in `prompts.py` and are used by `api_tinker.py`. Alternate modules: `prompt_ablation` (fewer metadata fields), `prompt_agn_instruction` (same full metadata as `prompts.py` plus extra system text on using PS1 colors and `sgscore1`/`distpsnr1` for **AGN vs variable_star** in Part B/C).
 
 ```bash
 set TINKER_API_KEY=your_key
@@ -48,6 +48,7 @@ python evaluate.py --predictions results/run1.jsonl --manifest data/manifest_enr
 | `download_alerce_benchmark.py` | ALeRCE API download + replacement logic |
 | `build_stamps_llm_montages.py` | FITS → labeled PNG montages |
 | `prompts.py` | System + user prompts (Parts A–C, JSON schema) |
+| `prompt_agn_instruction.py` | Same as `prompts.py` user metadata + extended system guidance for AGN vs variable star |
 | `api_tinker.py` | Tinker VLM sampling (Qwen3-VL + montage) |
 | `run_tinker_benchmark.py` | Batch JSONL runner |
 | `evaluate.py` | Parse JSON outputs; accuracy vs manifest |
