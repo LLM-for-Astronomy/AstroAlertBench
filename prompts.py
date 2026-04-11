@@ -24,21 +24,29 @@ ZTF candidate field reference (schema: {ZTF_SCHEMA_URL}):
 - magpsf: PSF-fit magnitude [mag]; lower = brighter.
 - sigmapsf: 1-sigma uncertainty on magpsf [mag].
 - fwhm: FWHM assuming Gaussian core from SExtractor [pixels].
-- classtar: SExtractor star/galaxy classification score (~1 star-like).
-- sgscore1: PS1 nearest neighbor star/galaxy score (0–1, ~1 star-like).
-- distpsnr1: distance to nearest PS1 source [arcsec].
-- chinr: DAOPhot chi of nearest source in reference image PSF catalog.
-- sharpnr: DAOPhot sharpness of nearest reference source (~0 point-like).
-- ndethist: number of spatially coincident detections (ZTF candidate definition; values here match alert-level history for this candidate).
-- ncovhist: number of times the position was covered on any field/channel (ZTF candidate definition).
-- sgmag1, srmag1, simag1, szmag1: PS1 PSF magnitudes of nearest match in g,r,i,z [mag].
-- nmtchps: number of PS1 matches within 30 arcsec.
+
+Two different star/galaxy indicators (do not merge them):
+- classtar: Star/galaxy classification score from SExtractor for this ZTF subtraction candidate (pipeline morphometry on the survey images). It is not derived from the Pan-STARRS1 catalog.
+- sgscore1 and distpsnr1 (PS1 neighbor): sgscore1 is the star/galaxy score of the closest Pan-STARRS1 (PS1) catalog source within 30 arcsec; 0 <= sgscore1 <= 1, with values closer to 1 implying higher likelihood of being a star (ZTF schema wording). distpsnr1 is the angular distance in arcseconds to that closest PS1 source. If distpsnr1 is large, or PS1 fields are missing or sentinel values, treat sgscore1 as weak or ambiguous—the nearest PS1 object may be an unrelated projection near the line of sight.
+
+- chinr: DAOPhot chi parameter of the nearest source in the reference-image PSF catalog within 30 arcsec.
+- sharpnr: DAOPhot sharpness of that nearest reference PSF source within 30 arcsec (values near 0 are more point-like).
+
+- ndethist: Number of spatially coincident detections within 1.5 arcsec over survey history, counting only detections on the same ZTF field and readout channel as this candidate; raw detections down to photometric S/N ~3 are included (ZTF schema). Values shown match alert-level history for this candidate. This is not the same as a plain-language "object visit count."
+- ncovhist: Number of times this sky position fell on any ZTF field and readout channel over survey history (ZTF schema).
+
+Soft ZTF-specific context (heuristics, not rules): low ndethist can occur for some solar-system detections but is not definitive—cadence, linking, and the definition above matter. Higher ndethist at a fixed sky position is more suggestive of repeated activity (e.g. variable stars, AGN) but remains context-dependent and survey-cadence-dependent.
+
+- sgmag1, srmag1, simag1, szmag1: PS1 PSF magnitudes of the closest PS1 source within 30 arcsec in g, r, i, z [mag].
+- nmtchps: number of PS1 catalog sources within 30 arcsec.
 - deltajd: time span in days between first and last detection for this object (object-level).
 
 Sentinel values: numeric -999 (and similar schema null sentinels) means no valid measurement. Do not interpret -999 as a physical magnitude, distance, or flux; do not use it as numeric evidence in Part B or Part C. For Part A, report physically meaningful floats for magpsf/sigmapsf when the input is a real measurement; if the only values provided are sentinels, use your best consistent interpretation of the JSON schema constraints.
 """
 
-SYSTEM_PROMPT = f"""You are an experienced astrophysicist. Your task is to classify astronomical transient candidates using three image cutouts (Science, Template, Image) and associated metadata.
+SYSTEM_PROMPT = f"""You are an experienced astrophysicist. Your task is to classify astronomical transient candidates using three image cutouts and associated metadata.
+
+The montage is labeled left-to-right on the PNG as Science, Template, and Image. Template is the coadded reference (baseline) image; Image is the difference image (science minus reference). In the guide below, "reference" means the Template panel and "difference" means the Image panel.
 
 Your task is to analyze a single first-detection astronomical alert using:
 (1) a single tiled image containing three cutouts, and
@@ -60,24 +68,30 @@ five classes:
 - Bogus
 
 Important image interpretation guide:
-- The input image consists of three 63 x 63 pixel cutouts tiled horizontally 
-  in the following order: Science (left), Reference (middle), and Difference (right). 
-  Each panel has a text label in the top margin.
+- The input image consists of three 63 x 63 pixel cutouts tiled horizontally:
+  Science (left), Template (middle; reference baseline), Image (right; difference).
+  Top labels on the montage read Science, Template, Image.
 - Locate the central candidate: The transient candidate is always located at 
   the exact geometric center of each of the three panels. Identify this central 
   source first, then use the surrounding pixels to determine context (e.g., 
   host galaxies) or rule out distractors (e.g., off-center bright stars causing 
   diffraction spikes).
-- Science image (left): the current observation.
-- Reference image (middle): a historical baseline image of the same sky location.
-- Difference image (right): the change between the current and reference images.
+- Science (left): the current observation.
+- Template / reference (middle): historical coadded baseline at the same sky location.
+- Image / difference (right): science minus reference (subtraction image).
 - A localized residual in the difference image may indicate a real brightness
   change. Real sources typically appear as circular objects with only positive (white) 
   or only negative (black) flux.
-- Be cautious about obvious artifacts: bad subtractions often show a dipole 
-  "yin-yang" pattern (adjacent white and black pixels). Edge effects, striping, 
-  streaks, crosses, or diffuse irregular residuals are typically bogus.
-- Compare the science and reference images to judge whether a source is new,
+- Dipole or "yin-yang" patterns (adjacent positive and negative residuals) are common
+  when subtraction fails (PSF mismatch, astrometric misalignment, differential
+  chromatic refraction, and similar image-differencing issues). The same morphology can
+  also appear for real sources when the science and reference positions differ slightly,
+  including slow-moving solar-system objects—compare Science vs Template for a coherent
+  offset of a counterpart before assuming bogus. Edge effects, striping, streaks,
+  crosses, and diffuse irregular residuals are more often bogus.
+- Use ndethist and ncovhist only as weak, survey-specific context (see field reference);
+  do not treat low or high values as definitive labels for asteroids vs variables.
+- Compare the science and template/reference images to judge whether a source is new,
   variable, persistent, offset, extended, or absent.
 - Use the images together with the metadata. Do not rely on images alone when
   metadata provide important context.
