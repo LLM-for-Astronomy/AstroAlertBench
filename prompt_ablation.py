@@ -1,11 +1,10 @@
 """
-Ablation baseline prompt: original 11-field metadata (no PS1 mags, chi, sharpness,
-deltajd, nmtchps).  Drop-in replacement for prompts.py — exports the same three
-names: SYSTEM_PROMPT, build_user_prompt, manifest_row_to_metadata.
+Ablation baseline: smaller raw ZTF field set (no PS1 mags, chi, sharpness,
+deltajd, nmtchps). Drop-in replacement for prompts.py — same exports.
 
 Usage:
-  python run_tinker_benchmark.py --manifest data/manifest_fewshot.csv \
-      --out results/fewshot_kimi_ablation.jsonl --prompts prompt_ablation --concurrency 64
+  python run_tinker_benchmark.py --manifest data/manifest_fewshot.csv \\
+      --out results/fewshot_ablation.jsonl --prompts prompt_ablation --concurrency 64
 """
 
 from __future__ import annotations
@@ -14,11 +13,35 @@ from typing import Any
 
 import pandas as pd
 
-SYSTEM_PROMPT = """You are an experienced astrophysicist. Your task is to classify astronomical transient candidates using three image cutouts (Science, Template, Image) and associated metadata.
+from prompts import (
+    ZTF_SCHEMA_URL,
+    _fmt_int_raw,
+    _fmt_raw,
+    _require_enriched_metadata,
+)
+
+ZTF_FIELD_REFERENCE_ABLATION = f"""
+ZTF candidate field reference (schema: {ZTF_SCHEMA_URL}; subset used in this ablation):
+- fid: filter ID (integer). 1 = g, 2 = r, 3 = i.
+- isdiffpos: string flag. t or 1 => positive subtraction (science minus reference). f or 0 => negative subtraction.
+- firstmjd: first detection time as modified Julian date (object-level).
+- magpsf: PSF-fit magnitude [mag]; lower = brighter.
+- sigmapsf: 1-sigma uncertainty on magpsf [mag].
+- fwhm: FWHM assuming Gaussian core from SExtractor [pixels].
+- classtar: SExtractor star/galaxy classification score (~1 star-like).
+- sgscore1: PS1 nearest neighbor star/galaxy score (0–1).
+- distpsnr1: distance to nearest PS1 source [arcsec].
+- ndethist: spatially coincident detection count (ZTF candidate definition).
+- ncovhist: coverage count (ZTF candidate definition).
+
+Sentinel values: numeric -999 means no valid measurement; do not treat as physical quantities in reasoning. For Part A, use real measurements when present.
+"""
+
+SYSTEM_PROMPT = f"""You are an experienced astrophysicist. Your task is to classify astronomical transient candidates using three image cutouts (Science, Template, Image) and associated metadata.
 
 Your task is to analyze a single first-detection astronomical alert using:
 (1) a single tiled image containing three cutouts, and
-(2) alert-level metadata.
+(2) alert-level metadata as raw ZTF-style candidate fields (see reference below).
 
 You must classify the alert using only the provided evidence.
 Do not assume any additional light-curve history, spectroscopy, catalog lookup,
@@ -58,27 +81,13 @@ Important image interpretation guide:
 - Use the images together with the metadata. Do not rely on images alone when
   metadata provide important context.
 
-Important metadata interpretation guide:
-- Observation Time (Julian Date): time of the detection.
-- Filter Band: observing band (g, r, or i).
-- PSF Magnitude: brightness estimate from PSF-fit photometry; lower values
-  mean brighter objects.
-- Magnitude Uncertainty: 1-sigma uncertainty on the PSF magnitude.
-- Flux Change Direction:
-  - positive subtraction = brighter in science than reference
-  - negative subtraction = fainter in science than reference
-- FWHM: approximate image width / seeing-related measure of the detected source.
-- Nearest-source Star/Galaxy Score: score for the nearest reference source;
-  values near 1 are more star-like and values near 0 are more galaxy-like.
-- Distance to Nearest Reference Source: angular distance to the nearest
-  reference source.
-- Star-classifier Score: source morphology score; values near 1 are more
-  star-like.
-- Historical Detections: number of prior detections associated with this source.
-- Historical Coverages: number of prior images covering this sky position.
+Important metadata instructions:
+- The user message lists [ZTF CANDIDATE FIELDS] as field names and values (not pre-decoded band names or subtraction words).
+- Use the following reference to interpret those fields. Part A: filter_band from fid (g/r/i); subtraction_sign from isdiffpos (positive/negative per reference).
+{ZTF_FIELD_REFERENCE_ABLATION}
 
 General reasoning instructions:
-- First, read and interpret the metadata carefully.
+- First, read and interpret the metadata using the field reference.
 - Then, analyze the science, reference, and difference cutouts jointly.
 - Base your explanation on concrete evidence from the provided input.
 - Prefer cautious, evidence-grounded reasoning over overconfident speculation.
@@ -131,29 +140,29 @@ Self-scoring instructions:
 You must return your answer as a single JSON object with three top-level keys
 ("Part A", "Part B", "Part C") matching this structure:
 
-{
-  "Part A": {
+{{
+  "Part A": {{
     "filter_band": "<g | r | i>",
     "subtraction_sign": "<positive | negative>",
     "magpsf": <float>,
     "sigmapsf": <float>,
     "ndethist": <int>,
     "ncovhist": <int>
-  },
-  "Part B": {
+  }},
+  "Part B": {{
     "key_evidence": "<string>",
     "leading_interpretation_and_support": "<string>",
     "alternative_analysis": "<string>",
     "self_score_key_evidence": <int 0-5>,
     "self_score_leading_interpretation_and_support": <int 0-5>,
     "self_score_alternative_analysis": <int 0-5>
-  },
-  "Part C": {
+  }},
+  "Part C": {{
     "stage1": "<artifact | real_object>",
     "stage2": "<solar_system | astrophysical | N/A>",
     "stage3": "<supernova | variable_star | AGN | N/A>"
-  }
-}
+  }}
+}}
 
 Output constraints:
 - For Part A:
@@ -191,40 +200,8 @@ def _cell(row: Any, key: str) -> Any:
     return None
 
 
-def _fmt(val: Any, fallback: str = "N/A") -> str:
-    """Format a value for prompt display: None / NaN → fallback."""
-    if val is None:
-        return fallback
-    if isinstance(val, float):
-        if pd.isna(val):
-            return fallback
-        return f"{val:.6g}"
-    s = str(val)
-    if s.lower() in ("nan", ""):
-        return fallback
-    return s
-
-
-def _fmt_int(val: Any, fallback: str = "N/A") -> str:
-    if val is None:
-        return fallback
-    try:
-        v = float(val)
-        if pd.isna(v):
-            return fallback
-        return str(int(v))
-    except (ValueError, TypeError):
-        return fallback
-
-
 def manifest_row_to_metadata(row: Any) -> dict[str, Any]:
-    """Extract the original 11 prompt-facing metadata fields (no PS1 mags)."""
-    isdiffpos_raw = _cell(row, "isdiffpos")
-    if isdiffpos_raw is not None:
-        isdiffpos = "positive" if str(isdiffpos_raw).lower() in ("t", "1", "true") else "negative"
-    else:
-        isdiffpos = None
-
+    """Subset of candidate fields for ablation (no PS1, chi, sharp, deltajd, nmtchps)."""
     ndethist = _cell(row, "alert_ndethist")
     if ndethist is None:
         ndethist = _cell(row, "ndethist")
@@ -233,14 +210,14 @@ def manifest_row_to_metadata(row: Any) -> dict[str, Any]:
         ncovhist = _cell(row, "ncovhist")
 
     return {
-        "band": _cell(row, "fid_band"),
+        "fid": _cell(row, "fid"),
+        "isdiffpos_raw": _cell(row, "isdiffpos"),
         "magpsf": _cell(row, "magpsf"),
         "sigmapsf": _cell(row, "sigmapsf"),
         "sgscore1": _cell(row, "sgscore1"),
         "distpsnr1": _cell(row, "distpsnr1"),
         "classtar": _cell(row, "classtar"),
         "fwhm": _cell(row, "fwhm"),
-        "isdiffpos": isdiffpos,
         "ndethist": ndethist,
         "ncovhist": ncovhist,
         "firstmjd": _cell(row, "firstmjd"),
@@ -251,25 +228,31 @@ def build_user_prompt(
     oid: str,
     metadata: dict[str, Any],
 ) -> str:
-    """
-    Per-alert user message: identifiers + metadata values + task instruction.
-    Field labels match the metadata interpretation guide in SYSTEM_PROMPT.
-    """
-    return f"""\
-[ALERT IDENTIFIERS]
-- Object ID: {oid}
+    _require_enriched_metadata(oid, metadata)
+    m = metadata
+    lines = [
+        "[ALERT IDENTIFIERS]",
+        f"- Object ID: {oid}",
+        "",
+        "[ZTF CANDIDATE FIELDS]",
+        f"- fid: {_fmt_int_raw(m.get('fid'))}",
+        f"- isdiffpos: {_fmt_raw(m.get('isdiffpos_raw'))}",
+        f"- firstmjd: {_fmt_raw(m.get('firstmjd'))}",
+        f"- magpsf: {_fmt_raw(m.get('magpsf'))}",
+        f"- sigmapsf: {_fmt_raw(m.get('sigmapsf'))}",
+        f"- fwhm: {_fmt_raw(m.get('fwhm'))}",
+        f"- classtar: {_fmt_raw(m.get('classtar'))}",
+        f"- sgscore1: {_fmt_raw(m.get('sgscore1'))}",
+        f"- distpsnr1: {_fmt_raw(m.get('distpsnr1'))}",
+        f"- ndethist: {_fmt_int_raw(m.get('ndethist'))}",
+        f"- ncovhist: {_fmt_int_raw(m.get('ncovhist'))}",
+        "",
+        "Field definitions and sentinel rules are in the system message.",
+        "",
+        "Analyze this alert and return the JSON response.",
+    ]
+    return "\n".join(lines)
 
-[ALERT METADATA]
-- Observation Time (MJD): {_fmt(metadata.get("firstmjd"))}
-- Filter Band: {_fmt(metadata.get("band"))}
-- PSF Magnitude: {_fmt(metadata.get("magpsf"))}
-- Magnitude Uncertainty: {_fmt(metadata.get("sigmapsf"))}
-- Flux Change Direction: {_fmt(metadata.get("isdiffpos"))}
-- FWHM: {_fmt(metadata.get("fwhm"))}
-- Nearest-source Star/Galaxy Score: {_fmt(metadata.get("sgscore1"))}
-- Distance to Nearest Reference Source: {_fmt(metadata.get("distpsnr1"))}
-- Star-classifier Score: {_fmt(metadata.get("classtar"))}
-- Historical Detections: {_fmt_int(metadata.get("ndethist"))}
-- Historical Coverages: {_fmt_int(metadata.get("ncovhist"))}
 
-Analyze this alert and return the JSON response."""
+def required_manifest_columns() -> frozenset[str]:
+    return frozenset({"fid", "isdiffpos", "oid"})

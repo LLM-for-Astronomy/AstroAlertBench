@@ -1,7 +1,7 @@
 """
 Run zero-shot VLM evaluation on the manifest using Tinker (api_tinker.py).
 
-Example (use manifest_enriched.csv after enrich_manifest_alerce.py for magpsf / sgscore1 / fid_band):
+Example (use manifest_enriched.csv after enrich_manifest_alerce.py — required for fid / isdiffpos and other candidate fields):
   set TINKER_API_KEY=...
   python run_tinker_benchmark.py --manifest data/manifest_enriched.csv --model moonshotai/Kimi-K2.5 --limit 10 --out results/kimi_zs.jsonl
   python evaluate.py --predictions results/kimi_zs.jsonl --manifest data/manifest_enriched.csv
@@ -9,8 +9,8 @@ Example (use manifest_enriched.csv after enrich_manifest_alerce.py for magpsf / 
 Parallel execution (default concurrency=1 for backward compat):
   python run_tinker_benchmark.py --manifest data/manifest_fewshot.csv --out results/fewshot.jsonl --concurrency 64
 
-Ablation (old 11-field prompt on new dataset):
-  python run_tinker_benchmark.py --manifest data/manifest_fewshot.csv --out results/fewshot_ablation.jsonl --prompts prompt_ablation --concurrency 64
+Ablation (fewer raw ZTF fields, same JSON schema):
+  python run_tinker_benchmark.py --manifest data/manifest_enriched.csv --out results/fewshot_ablation.jsonl --prompts prompt_ablation --concurrency 64
 """
 from __future__ import annotations
 
@@ -51,12 +51,12 @@ def main() -> None:
     )
     ap.add_argument(
         "--prompts", type=str, default="prompts",
-        help="Prompt module name (default: prompts). Use 'prompt_ablation' for old 11-field baseline.",
+        help="Prompt module name (default: prompts). Use 'prompt_ablation' for reduced raw-field set.",
     )
     args = ap.parse_args()
 
+    prompt_mod = importlib.import_module(args.prompts)
     if args.prompts != "prompts":
-        prompt_mod = importlib.import_module(args.prompts)
         api_tinker.SYSTEM_PROMPT = prompt_mod.SYSTEM_PROMPT
         api_tinker.build_user_prompt = prompt_mod.build_user_prompt
         api_tinker.manifest_row_to_metadata = prompt_mod.manifest_row_to_metadata
@@ -67,6 +67,16 @@ def main() -> None:
         sys.exit(1)
 
     df = pd.read_csv(args.manifest)
+    req_cols = getattr(prompt_mod, "required_manifest_columns", None)
+    if callable(req_cols):
+        missing = req_cols() - frozenset(df.columns)
+        if missing:
+            print(
+                f"Manifest missing required columns for --prompts {args.prompts!r}: "
+                f"{sorted(missing)}. Use manifest_enriched.csv or run enrich_manifest_alerce.py.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
     if args.start:
         df = df.iloc[args.start :]
     if args.limit is not None:
