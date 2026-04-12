@@ -1,24 +1,61 @@
 """
 AstroAlertBench-style prompts: Parts A–C + strict JSON (zero-shot).
 Used by api_tinker.py and run_tinker_benchmark.py.
+
+User messages show raw ZTF-style candidate field names (e.g. fid, isdiffpos) plus
+definitions in SYSTEM_PROMPT. Requires enriched manifest columns fid and isdiffpos.
 """
 
 from __future__ import annotations
 
-import json
 from typing import Any
 
 import pandas as pd
 
-SYSTEM_PROMPT = """You are an experienced astrophysicist. Your task is to classify astronomical transient candidates using three image cutouts (Science, Template, Image) and associated metadata.
+ZTF_SCHEMA_URL = "https://zwickytransientfacility.github.io/ztf-avro-alert/schema.html"
+
+# Field definitions for ztf.alert.candidate-aligned names (subset used in the user prompt).
+ZTF_FIELD_REFERENCE = f"""
+ZTF candidate field reference (schema: {ZTF_SCHEMA_URL}):
+- fid: filter ID (integer). 1 = g, 2 = r, 3 = i.
+- isdiffpos: string flag. t or 1 => positive subtraction (science minus reference), i.e. brighter in science than reference.
+  f or 0 => negative subtraction (reference minus science), i.e. fainter in science than reference.
+- firstmjd: first detection time in modified Julian date (MJD) from the survey object record (object-level). This is not the same as the Avro candidate field jd, which is the observation time in Julian Date (JD) days in the alert packet (~2.45e6 scale).
+- magpsf: PSF-fit magnitude on the difference (DIA) image at the candidate position [mag]; lower = brighter (ZTF alert pipeline).
+- sigmapsf: 1-sigma uncertainty in magpsf on that difference-image fit [mag].
+- fwhm: FWHM assuming Gaussian core from SExtractor [pixels].
+
+Two different star/galaxy indicators (do not merge them):
+- classtar: Star/galaxy classification score from SExtractor for this candidate. The public Avro schema does not specify which stamp (science vs difference) SExtractor used; treat it as a morphological score and combine with the three cutouts. It is not derived from the Pan-STARRS1 catalog.
+- sgscore1 and distpsnr1 (PS1 neighbor): sgscore1 is the star/galaxy score of the closest Pan-STARRS1 (PS1) catalog source within 30 arcsec; 0 <= sgscore1 <= 1, with values closer to 1 implying higher likelihood of being a star (ZTF schema wording). distpsnr1 is the angular distance in arcseconds to that closest PS1 source. If distpsnr1 is large, or PS1 fields are missing or sentinel values, treat sgscore1 as weak or ambiguous—the nearest PS1 object may be an unrelated projection near the line of sight.
+
+- chinr: DAOPhot chi parameter of the nearest source in the reference-image PSF catalog within 30 arcsec.
+- sharpnr: DAOPhot sharpness of that nearest reference PSF source within 30 arcsec (values near 0 are more point-like).
+
+- ndethist: Number of spatially coincident detections within 1.5 arcsec over survey history, counting only detections on the same ZTF field and readout channel as this candidate; raw detections down to photometric S/N ~3 are included (ZTF schema). Values shown match alert-level history for this candidate. This is not the same as a plain-language "object visit count."
+- ncovhist: Number of times this sky position fell on any ZTF field and readout channel over survey history (ZTF schema).
+
+Soft ZTF-specific context (heuristics, not rules): low ndethist can occur for some solar-system detections but is not definitive—cadence, linking, and the definition above matter. Higher ndethist at a fixed sky position is more suggestive of repeated activity (e.g. variable stars, AGN) but remains context-dependent and survey-cadence-dependent.
+
+- sgmag1, srmag1, simag1, szmag1: PS1 PSF magnitudes of the closest PS1 catalog source within 30 arcsec in g, r, i, z [mag]. Derived colors (e.g. g-r, r-i) describe that matched PS1 object (often host+nucleus blend), not necessarily the transient alone—use distpsnr1 and cutouts.
+- nmtchps: number of PS1 catalog sources within 30 arcsec.
+- deltajd: time span in days between first and last detection for this object (object-level).
+
+Sentinel values: numeric -999 (and similar schema null sentinels) means no valid measurement. Do not interpret -999 as a physical magnitude, distance, or flux; do not use it as numeric evidence in Part B or Part C. For Part A, copy magpsf and sigmapsf from the input when they are real measurements. If they are missing or sentinels, you must still satisfy the JSON number types if the schema requires floats—do not invent astrophysical photometry; state clearly in Part B that those inputs were missing or non-physical.
+"""
+
+SYSTEM_PROMPT = f"""You are an experienced astrophysicist. Your task is to classify astronomical transient candidates using three image cutouts and associated metadata.
+
+The montage is labeled left-to-right on the PNG as Science, Template, and Image. Template is the coadded reference (baseline) image; Image is the difference image (science minus reference). In the guide below, "reference" means the Template panel and "difference" means the Image panel.
 
 Your task is to analyze a single first-detection astronomical alert using:
 (1) a single tiled image containing three cutouts, and
-(2) alert-level metadata.
+(2) alert-level metadata as raw ZTF-style candidate fields (see reference below).
 
 You must classify the alert using only the provided evidence.
-Do not assume any additional light-curve history, spectroscopy, catalog lookup,
-or outside information beyond the input shown here.
+Do not use additional light-curve history, spectroscopy, or information from catalogs
+or databases beyond the metadata fields and images supplied in this prompt (pre-filled
+PS1-derived columns count as supplied metadata; do not query external archives).
 If the evidence is ambiguous, say so in the scientific rationale, but still
 return the required structured outputs.
 
@@ -31,64 +68,45 @@ five classes:
 - Asteroid
 - Bogus
 
+In this benchmark, "Variable Star" means Galactic (stellar) variable candidates as a class label; "AGN" means active galactic nucleus variability—both can vary in nature, but the two labels are distinct here.
+
 Important image interpretation guide:
-- The input image consists of three 63 x 63 pixel cutouts tiled horizontally 
-  in the following order: Science (left), Reference (middle), and Difference (right). 
-  Each panel has a text label in the top margin.
+- The input image consists of three 63 x 63 pixel cutouts tiled horizontally:
+  Science (left), Template (middle; reference baseline), Image (right; difference).
+  Top labels on the montage read Science, Template, Image.
 - Locate the central candidate: The transient candidate is always located at 
   the exact geometric center of each of the three panels. Identify this central 
   source first, then use the surrounding pixels to determine context (e.g., 
   host galaxies) or rule out distractors (e.g., off-center bright stars causing 
   diffraction spikes).
-- Science image (left): the current observation.
-- Reference image (middle): a historical baseline image of the same sky location.
-- Image image (right): the change between the current and reference images.
+- Science (left): the current observation.
+- Template / reference (middle): historical coadded baseline at the same sky location.
+- Image / difference (right): science minus reference (subtraction image).
 - A localized residual in the difference image may indicate a real brightness
-  change. Real sources typically appear as circular objects with only positive (white) 
-  or only negative (black) flux.
-- Be cautious about obvious artifacts: bad subtractions often show a dipole 
-  "yin-yang" pattern (adjacent white and black pixels). Edge effects, striping, 
-  streaks, crosses, or diffuse irregular residuals are typically bogus.
-- Compare the science and reference images to judge whether a source is new,
+  change. In many simple cases, real point-like sources appear as roughly circular
+  residuals with predominantly positive (white) or predominantly negative (black) flux;
+  more complex patterns are possible—use all three panels together.
+- Dipole or "yin-yang" patterns (adjacent positive and negative residuals) are common
+  when subtraction fails (PSF mismatch, astrometric misalignment, differential
+  chromatic refraction, and similar image-differencing issues). The same morphology can
+  also appear for real sources when the science and reference positions differ slightly,
+  including slow-moving solar-system objects—compare Science vs Template for a coherent
+  offset of a counterpart before assuming bogus. Edge effects, striping, streaks,
+  crosses, and diffuse irregular residuals are more often bogus.
+- Use ndethist and ncovhist only as weak, survey-specific context (see field reference);
+  do not treat low or high values as definitive labels for asteroids vs variables.
+- Compare the science and template/reference images to judge whether a source is new,
   variable, persistent, offset, extended, or absent.
 - Use the images together with the metadata. Do not rely on images alone when
   metadata provide important context.
 
-Important metadata interpretation guide:
-- Observation Time (Julian Date): time of the detection.
-- Filter Band: observing band (g, r, or i).
-- PSF Magnitude: brightness estimate from PSF-fit photometry; lower values
-  mean brighter objects.
-- Magnitude Uncertainty: 1-sigma uncertainty on the PSF magnitude.
-- Flux Change Direction:
-  - positive subtraction = brighter in science than reference
-  - negative subtraction = fainter in science than reference
-- FWHM: approximate image width / seeing-related measure of the detected source.
-- Nearest-source Star/Galaxy Score: score for the nearest reference source;
-  values near 1 are more star-like and values near 0 are more galaxy-like.
-- Distance to Nearest Reference Source: angular distance to the nearest
-  reference source (arcsec).
-- Star-classifier Score: source morphology score; values near 1 are more
-  star-like.
-- Reference-source Chi: chi parameter of the nearest reference source from
-  PSF-fit; values near 1 indicate a well-fit point source.
-- Reference-source Sharpness: sharpness of the nearest reference source;
-  values near 0 indicate a point source, large positive values suggest
-  extended or blended objects.
-- Historical Detections: number of prior detections associated with this source.
-- Historical Coverages: number of prior images covering this sky position.
-- Detection Time Span: elapsed time (days) between first and last detection
-  of this source; 0 means only one detection exists.
-- PS1 g/r/i/z-band Magnitudes: Pan-STARRS1 catalog magnitudes of the nearest
-  cross-matched source. These provide the host or counterpart broadband color.
-  Color differences (e.g. g-r, r-i) help distinguish stellar populations:
-  AGN hosts tend to be redder and more galaxy-like, while variable stars
-  tend to show bluer or more stellar colors. "N/A" means no PS1 match.
-- PS1 Match Count: number of Pan-STARRS1 catalog sources within the matching
-  radius; 0 or N/A means no cataloged counterpart at this position.
+Important metadata instructions:
+- The user message lists [ZTF CANDIDATE FIELDS] as field names and values exactly as in the benchmark extract (not pre-decoded band names or subtraction words).
+- Use the following reference to interpret those fields. Part A asks for decoded quantities: filter_band must be g, r, or i (derive from fid), and subtraction_sign must be positive or negative (derive from isdiffpos using the reference).
+{ZTF_FIELD_REFERENCE}
 
 General reasoning instructions:
-- First, read and interpret the metadata carefully.
+- First, read and interpret the metadata using the field reference.
 - Then, analyze the science, reference, and difference cutouts jointly.
 - Base your explanation on concrete evidence from the provided input.
 - Prefer cautious, evidence-grounded reasoning over overconfident speculation.
@@ -141,29 +159,29 @@ Self-scoring instructions:
 You must return your answer as a single JSON object with three top-level keys
 ("Part A", "Part B", "Part C") matching this structure:
 
-{
-  "Part A": {
+{{
+  "Part A": {{
     "filter_band": "<g | r | i>",
     "subtraction_sign": "<positive | negative>",
     "magpsf": <float>,
     "sigmapsf": <float>,
     "ndethist": <int>,
     "ncovhist": <int>
-  },
-  "Part B": {
+  }},
+  "Part B": {{
     "key_evidence": "<string>",
     "leading_interpretation_and_support": "<string>",
     "alternative_analysis": "<string>",
     "self_score_key_evidence": <int 0-5>,
     "self_score_leading_interpretation_and_support": <int 0-5>,
     "self_score_alternative_analysis": <int 0-5>
-  },
-  "Part C": {
+  }},
+  "Part C": {{
     "stage1": "<artifact | real_object>",
     "stage2": "<solar_system | astrophysical | N/A>",
     "stage3": "<supernova | variable_star | AGN | N/A>"
-  }
-}
+  }}
+}}
 
 Output constraints:
 - For Part A:
@@ -230,14 +248,53 @@ def _fmt_int(val: Any, fallback: str = "N/A") -> str:
         return fallback
 
 
-def manifest_row_to_metadata(row: Any) -> dict[str, Any]:
-    """Extract all prompt-facing metadata from a manifest_enriched.csv row."""
-    isdiffpos_raw = _cell(row, "isdiffpos")
-    if isdiffpos_raw is not None:
-        isdiffpos = "positive" if str(isdiffpos_raw).lower() in ("t", "1", "true") else "negative"
-    else:
-        isdiffpos = None
+def _fmt_raw(val: Any, fallback: str = "N/A") -> str:
+    """Like _fmt but preserves literal -999; only None/NaN/empty → N/A."""
+    if val is None:
+        return fallback
+    if isinstance(val, float) and pd.isna(val):
+        return fallback
+    if isinstance(val, (int, float)):
+        return f"{val:.6g}"
+    s = str(val).strip()
+    if s.lower() in ("nan", ""):
+        return fallback
+    return s
 
+
+def _fmt_int_raw(val: Any, fallback: str = "N/A") -> str:
+    """Integer-ish display; preserves -999; None/NaN → N/A."""
+    if val is None:
+        return fallback
+    try:
+        v = float(val)
+        if pd.isna(v):
+            return fallback
+        if v == int(v):
+            return str(int(v))
+        return f"{v:.6g}"
+    except (ValueError, TypeError):
+        s = str(val).strip()
+        return s if s and s.lower() != "nan" else fallback
+
+
+def _require_enriched_metadata(oid: str, metadata: dict[str, Any]) -> None:
+    """Enriched manifest must supply fid and raw isdiffpos for Part A grounding."""
+    if metadata.get("fid") is None:
+        raise ValueError(
+            f"Missing fid for object {oid!r}. Re-run enrich_manifest_alerce.py "
+            "and use manifest_enriched.csv (or ensure the manifest has a fid column)."
+        )
+    raw = metadata.get("isdiffpos_raw")
+    if raw is None or (isinstance(raw, str) and not raw.strip()):
+        raise ValueError(
+            f"Missing isdiffpos for object {oid!r}. Re-run enrich_manifest_alerce.py "
+            "and use manifest_enriched.csv (or ensure the manifest has isdiffpos)."
+        )
+
+
+def manifest_row_to_metadata(row: Any) -> dict[str, Any]:
+    """Extract prompt-facing metadata from a manifest_enriched.csv row."""
     ndethist = _cell(row, "alert_ndethist")
     if ndethist is None:
         ndethist = _cell(row, "ndethist")
@@ -246,14 +303,14 @@ def manifest_row_to_metadata(row: Any) -> dict[str, Any]:
         ncovhist = _cell(row, "ncovhist")
 
     return {
-        "band": _cell(row, "fid_band"),
+        "fid": _cell(row, "fid"),
+        "isdiffpos_raw": _cell(row, "isdiffpos"),
         "magpsf": _cell(row, "magpsf"),
         "sigmapsf": _cell(row, "sigmapsf"),
         "sgscore1": _cell(row, "sgscore1"),
         "distpsnr1": _cell(row, "distpsnr1"),
         "classtar": _cell(row, "classtar"),
         "fwhm": _cell(row, "fwhm"),
-        "isdiffpos": isdiffpos,
         "ndethist": ndethist,
         "ncovhist": ncovhist,
         "firstmjd": _cell(row, "firstmjd"),
@@ -273,34 +330,49 @@ def build_user_prompt(
     metadata: dict[str, Any],
 ) -> str:
     """
-    Per-alert user message: identifiers + metadata values + task instruction.
-    Field labels match the metadata interpretation guide in SYSTEM_PROMPT.
+    Per-alert user message: identifiers + raw ZTF-style fields + task instruction.
+    Definitions and sentinel rules are in SYSTEM_PROMPT.
     """
-    return f"""\
-[ALERT IDENTIFIERS]
-- Object ID: {oid}
+    _require_enriched_metadata(oid, metadata)
+    m = metadata
+    lines = [
+        "[ALERT IDENTIFIERS]",
+        f"- Object ID: {oid}",
+        "",
+        "[ZTF CANDIDATE FIELDS]",
+        f"- fid: {_fmt_int_raw(m.get('fid'))}",
+        f"- isdiffpos: {_fmt_raw(m.get('isdiffpos_raw'))}",
+        f"- firstmjd: {_fmt_raw(m.get('firstmjd'))}",
+        f"- magpsf: {_fmt_raw(m.get('magpsf'))}",
+        f"- sigmapsf: {_fmt_raw(m.get('sigmapsf'))}",
+        f"- fwhm: {_fmt_raw(m.get('fwhm'))}",
+        f"- classtar: {_fmt_raw(m.get('classtar'))}",
+        f"- sgscore1: {_fmt_raw(m.get('sgscore1'))}",
+        f"- distpsnr1: {_fmt_raw(m.get('distpsnr1'))}",
+        f"- chinr: {_fmt_raw(m.get('chinr'))}",
+        f"- sharpnr: {_fmt_raw(m.get('sharpnr'))}",
+        f"- ndethist: {_fmt_int_raw(m.get('ndethist'))}",
+        f"- ncovhist: {_fmt_int_raw(m.get('ncovhist'))}",
+        f"- sgmag1: {_fmt_raw(m.get('sgmag1'))}",
+        f"- srmag1: {_fmt_raw(m.get('srmag1'))}",
+        f"- simag1: {_fmt_raw(m.get('simag1'))}",
+        f"- szmag1: {_fmt_raw(m.get('szmag1'))}",
+        f"- nmtchps: {_fmt_int_raw(m.get('nmtchps'))}",
+        f"- deltajd: {_fmt_raw(m.get('deltajd'))}",
+        "",
+        "Field definitions and sentinel rules are in the system message.",
+        "",
+        "Analyze this alert and return the JSON response.",
+    ]
+    return "\n".join(lines)
 
-[ALERT METADATA]
-- Observation Time (MJD): {_fmt(metadata.get("firstmjd"))}
-- Filter Band: {_fmt(metadata.get("band"))}
-- PSF Magnitude: {_fmt(metadata.get("magpsf"))}
-- Magnitude Uncertainty: {_fmt(metadata.get("sigmapsf"))}
-- Flux Change Direction: {_fmt(metadata.get("isdiffpos"))}
-- FWHM: {_fmt(metadata.get("fwhm"))}
-- Nearest-source Star/Galaxy Score: {_fmt(metadata.get("sgscore1"))}
-- Distance to Nearest Reference Source: {_fmt(metadata.get("distpsnr1"))}
-- Star-classifier Score: {_fmt(metadata.get("classtar"))}
-- Reference-source Chi: {_fmt(metadata.get("chinr"))}
-- Reference-source Sharpness: {_fmt(metadata.get("sharpnr"))}
-- Historical Detections: {_fmt_int(metadata.get("ndethist"))}
-- Historical Coverages: {_fmt_int(metadata.get("ncovhist"))}
-- Detection Time Span (days): {_fmt(metadata.get("deltajd"))}
-- PS1 g-band Magnitude: {_fmt(metadata.get("sgmag1"))}
-- PS1 r-band Magnitude: {_fmt(metadata.get("srmag1"))}
-- PS1 i-band Magnitude: {_fmt(metadata.get("simag1"))}
-- PS1 z-band Magnitude: {_fmt(metadata.get("szmag1"))}
-- PS1 Match Count: {_fmt_int(metadata.get("nmtchps"))}
 
-Analyze this alert and return the JSON response."""
-
-
+def required_manifest_columns() -> frozenset[str]:
+    """Columns that must exist on the manifest for prompt construction."""
+    return frozenset(
+        {
+            "fid",
+            "isdiffpos",
+            "oid",
+        }
+    )

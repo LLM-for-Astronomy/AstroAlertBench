@@ -30,16 +30,16 @@ Writes `stamps_llm/<class>/<oid>/montage.png` (Science | Template | Image panels
 
 Requires `TINKER_API_KEY` from the [Tinker console](https://tinker-console.thinkingmachines.ai/) and optional extra packages (`tinker`, `tinker-cookbook`, `transformers`, `torch`, `python-dotenv` — see `requirements.txt`). Put the key in **`.env`** as `TINKER_API_KEY=...` (file is gitignored); `api_tinker.py` loads it automatically.
 
-Pipeline matches AstroAlertBench-style **inputs → prompt → structured JSON (Parts A–C)**; prompts live in `prompts.py` and are used by `api_tinker.py`.
+Pipeline matches AstroAlertBench-style **inputs → prompt → structured JSON (Parts A–C)**; prompts live in `prompts.py` and are used by `api_tinker.py`. Alternate modules: `prompt_ablation` (fewer metadata fields), `prompt_agn_instruction` (same full metadata as `prompts.py` plus extra system text on using PS1 colors and `sgscore1`/`distpsnr1` for **AGN vs variable_star** in Part B/C).
 
 ```bash
 set TINKER_API_KEY=your_key
-python run_tinker_benchmark.py --limit 20 --out results/run1.jsonl
-python evaluate.py --predictions results/run1.jsonl --manifest data/manifest.csv
+python run_tinker_benchmark.py --manifest data/manifest_enriched.csv --limit 20 --out results/run1.jsonl
+python evaluate.py --predictions results/run1.jsonl --manifest data/manifest_enriched.csv
 ```
 
-- **Images:** one **montage PNG** per object (Science \| Template \| Difference) is sent with the user text (three separate cutouts can be added later).
-- **Metadata:** CSV columns `magpsf` / `sgscore1` / `fid_band` are used when present; otherwise placeholders and extra manifest fields (`ndet`, coordinates, MJDs, probability) are included. **To pull missing fields from ALeRCE**, run `python enrich_manifest_alerce.py` (uses `query_detections` + `get_avro` per object; writes `data/manifest_enriched.csv`). Requires `fastavro`.
+- **Images:** one **montage PNG** per object is sent with the user text. On the PNG the panels are labeled **Science \| Template \| Image**; **Image** is the difference (DIA) panel, not a second science frame.
+- **Metadata:** prompts use **raw ZTF-style candidate fields** (e.g. `fid`, `isdiffpos`) plus a short field reference in the system message (see [ZTF Avro schema](https://zwickytransientfacility.github.io/ztf-avro-alert/schema.html)). Part A still asks for decoded `filter_band` (g/r/i) and `subtraction_sign` (positive/negative); evaluation gold uses `fid_band` and `isdiffpos` from the CSV. **Required columns:** `fid` and `isdiffpos` must be present — use **`manifest_enriched.csv`** after `python enrich_manifest_alerce.py` (`query_detections` + `get_avro` per object; requires `fastavro`). If they are missing, `run_tinker_benchmark.py` exits with an error at startup.
 
 ## Repository layout
 
@@ -48,6 +48,7 @@ python evaluate.py --predictions results/run1.jsonl --manifest data/manifest.csv
 | `download_alerce_benchmark.py` | ALeRCE API download + replacement logic |
 | `build_stamps_llm_montages.py` | FITS → labeled PNG montages |
 | `prompts.py` | System + user prompts (Parts A–C, JSON schema) |
+| `prompt_agn_instruction.py` | Same as `prompts.py` user metadata + extended system guidance for AGN vs variable star |
 | `api_tinker.py` | Tinker VLM sampling (Qwen3-VL + montage) |
 | `run_tinker_benchmark.py` | Batch JSONL runner |
 | `evaluate.py` | Parse JSON outputs; accuracy vs manifest |
