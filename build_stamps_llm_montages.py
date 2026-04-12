@@ -1,7 +1,6 @@
 """
-Build one PNG montage per object: Science | Template | third panel (labels on top).
-Third cutout is read from difference.fits (DIA difference image); label text is "Image" as requested.
-Reads existing FITS under stamps/; writes stamps_llm/<class>/<oid>/montage.png
+Build one PNG montage per object: Science | Reference | Difference (labels on top).
+Reads existing FITS under stamps/; writes to --out dir (default: stamps_llm).
 Does not modify stamps/.
 """
 from __future__ import annotations
@@ -18,7 +17,7 @@ ROOT = Path(__file__).resolve().parent
 STAMPS = ROOT / "stamps"
 OUT = ROOT / "stamps_llm"
 
-LABELS = ("Science", "Template", "Image")
+LABELS = ("Science", "Reference", "Difference")
 FITS_NAMES = ("science.fits", "template.fits", "difference.fits")
 
 # Layout
@@ -106,15 +105,18 @@ def build_montage(paths: list[Path], font: ImageFont.FreeTypeFont | ImageFont.Im
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="FITS stamps -> labeled PNG montages in stamps_llm/")
+    ap = argparse.ArgumentParser(description="FITS stamps -> labeled PNG montages")
     ap.add_argument("--force", action="store_true", help="Overwrite existing montage.png")
+    ap.add_argument("--out", type=str, default=None, help="Output directory (default: stamps_llm)")
     args = ap.parse_args()
+
+    out_dir = Path(args.out) if args.out else OUT
 
     if not STAMPS.is_dir():
         print(f"Missing stamps dir: {STAMPS}", file=sys.stderr)
         sys.exit(1)
 
-    OUT.mkdir(parents=True, exist_ok=True)
+    out_dir.mkdir(parents=True, exist_ok=True)
     font = _font()
 
     n_ok = 0
@@ -135,7 +137,7 @@ def main() -> None:
                 print(f"skip incomplete FITS {cname}/{oid}", file=sys.stderr)
                 continue
 
-            dest_dir = OUT / cname / oid
+            dest_dir = out_dir / cname / oid
             dest = dest_dir / "montage.png"
             if dest.is_file() and not args.force:
                 n_skip += 1
@@ -151,7 +153,7 @@ def main() -> None:
                 print(f"FAIL {cname}/{oid}: {e}", file=sys.stderr)
 
     print(f"montage.png written: {n_ok}, skipped (exists): {n_skip}, failed/incomplete: {n_fail}")
-    print(f"Output root: {OUT}")
+    print(f"Output root: {out_dir}")
 
 
 if __name__ == "__main__":

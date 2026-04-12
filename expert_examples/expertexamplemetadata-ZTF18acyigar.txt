@@ -1,0 +1,41 @@
+Metadata:
+1. Observation Time (MJD) (firstmjd): 61049.5789
+2. Filter Band (fid_band): g
+3. PSF Magnitude (magpsf): 15.5097
+4. Magnitude Uncertainty (sigmapsf): 0.0426
+5. Flux Change Direction (isdiffpos): positive
+6. FWHM (fwhm): 2.3400
+7. Nearest-source Star/Galaxy Score (sgscore1): 1.0000
+8. Distance to Nearest Reference Source (distpsnr1): 1.3285
+9. Star-classifier Score (classtar): 0.9820
+10. Reference-source Chi (chinr): 0.5620
+11. Reference-source Sharpness (sharpnr): -0.0330
+12. Historical Detections (ndethist): 33
+13. Historical Coverages (ncovhist): 3864
+14. Detection Time Span in days (deltajd): 0.0000
+15. PS1 g-band Magnitude (sgmag1): 13.4020
+16. PS1 r-band Magnitude (srmag1): 12.6800
+17. PS1 i-band Magnitude (simag1): 12.3660
+18. PS1 z-band Magnitude (szmag1): 12.1890
+19. PS1 Match Count (nmtchps): 10
+
+Metadata Information:
+1. Observation Time (MJD) (firstmjd): Modified Julian Date of the first detection
+2. Filter Band (fid_band): Observing filter (g, r, or i)
+3. PSF Magnitude (magpsf): Brightness from PSF-fit photometry; lower = brighter
+4. Magnitude Uncertainty (sigmapsf): 1-sigma uncertainty on the PSF magnitude
+5. Flux Change Direction (isdiffpos): Whether the source is brighter (positive) or fainter (negative) than reference
+6. FWHM (fwhm): Full width at half maximum of the detected source (seeing proxy)
+7. Nearest-source Star/Galaxy Score (sgscore1): Star/galaxy score for nearest PS1 source; ~1 = star-like, ~0 = galaxy-like
+8. Distance to Nearest Reference Source (distpsnr1): Angular distance (arcsec) to the nearest reference catalog source
+9. Star-classifier Score (classtar): SExtractor morphology classifier; ~1 = point source, ~0 = extended
+10. Reference-source Chi (chinr): Chi-squared of PSF fit to the nearest reference source; ~1 = well-fit point source
+11. Reference-source Sharpness (sharpnr): Sharpness of nearest reference source; ~0 = point source, large positive = extended/blended
+12. Historical Detections (ndethist): Number of prior detections associated with this source
+13. Historical Coverages (ncovhist): Number of prior images covering this sky position
+14. Detection Time Span in days (deltajd): Elapsed days between first and last detection; 0 = single detection
+15. PS1 g-band Magnitude (sgmag1): Pan-STARRS1 g-band magnitude of nearest cross-matched source
+16. PS1 r-band Magnitude (srmag1): Pan-STARRS1 r-band magnitude of nearest cross-matched source
+17. PS1 i-band Magnitude (simag1): Pan-STARRS1 i-band magnitude of nearest cross-matched source
+18. PS1 z-band Magnitude (szmag1): Pan-STARRS1 z-band magnitude of nearest cross-matched source
+19. PS1 Match Count (nmtchps): Number of PS1 catalog sources within matching radius; 0/N/A = no counterpart
