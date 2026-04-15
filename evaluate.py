@@ -322,6 +322,10 @@ def evaluate_jsonl(
     # Part B accumulators
     b_self_scores: list[list[int]] = []
 
+    # Part B-C linkage: per-example confidence vs correctness
+    bc_confidence: list[float] = []
+    bc_correct: list[int] = []
+
     # Part C accumulators
     stage1_preds: list[str] = []
     stage1_golds: list[str] = []
@@ -377,10 +381,12 @@ def evaluate_jsonl(
 
         # ---- Part B (self-scores) ----
         part_b = parsed.get("Part B") or parsed.get("part_b")
+        example_self_mean: float | None = None
         if isinstance(part_b, dict):
             scores = extract_self_scores(part_b)
             if all(s is not None for s in scores):
                 b_self_scores.append(scores)  # type: ignore[arg-type]
+                example_self_mean = float(np.mean(scores))
 
         # ---- Part C ----
         part_c = parsed.get("Part C") or parsed.get("part_c")
@@ -430,9 +436,13 @@ def evaluate_jsonl(
         if pred_final is not None:
             final_total += 1
             per_class_total[str(tc)] += 1
-            if pred_final == str(tc):
+            is_correct = pred_final == str(tc)
+            if is_correct:
                 final_correct += 1
                 per_class_correct[str(tc)] += 1
+            if example_self_mean is not None:
+                bc_confidence.append(example_self_mean)
+                bc_correct.append(int(is_correct))
 
     # -----------------------------------------------------------------------
     # Assemble metrics
@@ -470,6 +480,42 @@ def evaluate_jsonl(
             "alternative_analysis": round(float(per_dim_mean[2]), 4),
         }
         metrics["part_b_self_pass_rate"] = round(float((row_means >= 4).mean()), 4)
+
+    # Part B-C confidence-accuracy correlation
+    if len(bc_confidence) >= 5:
+        conf_arr = np.array(bc_confidence)
+        corr_arr = np.array(bc_correct, dtype=float)
+        correct_mask = corr_arr == 1
+        incorrect_mask = corr_arr == 0
+        mean_conf_correct = float(conf_arr[correct_mask].mean()) if correct_mask.sum() > 0 else None
+        mean_conf_incorrect = float(conf_arr[incorrect_mask].mean()) if incorrect_mask.sum() > 0 else None
+
+        bc_metrics: dict[str, Any] = {
+            "n_linked": len(bc_confidence),
+            "mean_confidence_correct": round(mean_conf_correct, 4) if mean_conf_correct is not None else None,
+            "mean_confidence_incorrect": round(mean_conf_incorrect, 4) if mean_conf_incorrect is not None else None,
+        }
+        if mean_conf_correct is not None and mean_conf_incorrect is not None:
+            bc_metrics["calibration_gap"] = round(mean_conf_correct - mean_conf_incorrect, 4)
+
+        # Point-biserial (Pearson) correlation: confidence vs binary correctness
+        if conf_arr.std() > 1e-9:
+            pearson_r = float(np.corrcoef(conf_arr, corr_arr)[0, 1])
+            bc_metrics["pearson_r"] = round(pearson_r, 4)
+        else:
+            bc_metrics["pearson_r"] = None
+
+        # Accuracy at high confidence (MSRS >= 4) vs low confidence (MSRS < 4)
+        high_mask = conf_arr >= 4.0
+        low_mask = conf_arr < 4.0
+        if high_mask.sum() > 0:
+            bc_metrics["accuracy_high_confidence"] = round(float(corr_arr[high_mask].mean()), 4)
+            bc_metrics["n_high_confidence"] = int(high_mask.sum())
+        if low_mask.sum() > 0:
+            bc_metrics["accuracy_low_confidence"] = round(float(corr_arr[low_mask].mean()), 4)
+            bc_metrics["n_low_confidence"] = int(low_mask.sum())
+
+        metrics["part_bc_confidence_accuracy"] = bc_metrics
 
     # Part C metrics
     nn = len(stage1_preds)

@@ -46,7 +46,7 @@ Sentinel values: numeric -999 (and similar schema null sentinels) means no valid
 
 SYSTEM_PROMPT = f"""You are an experienced astrophysicist. Your task is to classify astronomical transient candidates using three image cutouts and associated metadata.
 
-The montage is labeled left-to-right on the PNG as Science, Template, and Image. Template is the coadded reference (baseline) image; Image is the difference image (science minus reference). In the guide below, "reference" means the Template panel and "difference" means the Image panel.
+The montage is labeled left-to-right on the PNG as Science, Reference, and Difference. Reference is the coadded baseline image; Difference is the subtraction image (science minus reference).
 
 Your task is to analyze a single first-detection astronomical alert using:
 (1) a single tiled image containing three cutouts, and
@@ -72,16 +72,16 @@ In this benchmark, "Variable Star" means Galactic (stellar) variable candidates 
 
 Important image interpretation guide:
 - The input image consists of three 63 x 63 pixel cutouts tiled horizontally:
-  Science (left), Template (middle; reference baseline), Image (right; difference).
-  Top labels on the montage read Science, Template, Image.
+  Science (left), Reference (middle; coadded baseline), Difference (right; subtraction).
+  Top labels on the montage read Science, Reference, Difference.
 - Locate the central candidate: The transient candidate is always located at 
   the exact geometric center of each of the three panels. Identify this central 
   source first, then use the surrounding pixels to determine context (e.g., 
   host galaxies) or rule out distractors (e.g., off-center bright stars causing 
   diffraction spikes).
 - Science (left): the current observation.
-- Template / reference (middle): historical coadded baseline at the same sky location.
-- Image / difference (right): science minus reference (subtraction image).
+- Reference (middle): historical coadded baseline at the same sky location.
+- Difference (right): science minus reference (subtraction image).
 - A localized residual in the difference image may indicate a real brightness
   change. In many simple cases, real point-like sources appear as roughly circular
   residuals with predominantly positive (white) or predominantly negative (black) flux;
@@ -95,7 +95,7 @@ Important image interpretation guide:
   crosses, and diffuse irregular residuals are more often bogus.
 - Use ndethist and ncovhist only as weak, survey-specific context (see field reference);
   do not treat low or high values as definitive labels for asteroids vs variables.
-- Compare the science and template/reference images to judge whether a source is new,
+- Compare the science and reference images to judge whether a source is new,
   variable, persistent, offset, extended, or absent.
 - Use the images together with the metadata. Do not rely on images alone when
   metadata provide important context.
