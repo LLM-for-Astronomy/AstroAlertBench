@@ -35,7 +35,7 @@ Two different star/galaxy indicators (do not merge them):
 - ndethist: Number of spatially coincident detections within 1.5 arcsec over survey history, counting only detections on the same ZTF field and readout channel as this candidate; raw detections down to photometric S/N ~3 are included (ZTF schema). Values shown match alert-level history for this candidate. This is not the same as a plain-language "object visit count."
 - ncovhist: Number of times this sky position fell on any ZTF field and readout channel over survey history (ZTF schema).
 
-Soft ZTF-specific context (heuristics, not rules): low ndethist can occur for some solar-system detections but is not definitive—cadence, linking, and the definition above matter. Higher ndethist at a fixed sky position is more suggestive of repeated activity (e.g. variable stars, AGN) but remains context-dependent and survey-cadence-dependent.
+Soft ZTF-specific context (heuristics, not sole proof): Very low ndethist (often 1 on a first notable alert) is common among solar-system candidates because linkage under the definition above can be sparse; it is not proof by itself, since cadence and linking can also yield low counts for other kinds of sources. When ndethist is very small and Science vs Template shows a coherent positional offset of a point-like counterpart or morphology consistent with motion (e.g. streak) together with the difference image, treat solar_system (Part C stage2) as a strong leading hypothesis unless other evidence clearly supports a variable or host-dominated astrophysical scenario. Higher ndethist at a fixed sky position is more suggestive of repeated activity at that location (e.g. variable stars, AGN) but remains context- and survey-cadence-dependent.
 
 - sgmag1, srmag1, simag1, szmag1: PS1 PSF magnitudes of the closest PS1 catalog source within 30 arcsec in g, r, i, z [mag]. Derived colors (e.g. g-r, r-i) describe that matched PS1 object (often host+nucleus blend), not necessarily the transient alone—use distpsnr1 and cutouts.
 - nmtchps: number of PS1 catalog sources within 30 arcsec.
@@ -70,6 +70,12 @@ five classes:
 
 In this benchmark, "Variable Star" means Galactic (stellar) variable candidates as a class label; "AGN" means active galactic nucleus variability—both can vary in nature, but the two labels are distinct here.
 
+Stage 2 (Part C: solar_system vs astrophysical) guidance:
+- solar_system: Prioritize coherent Science–Template evidence of a moving or offset point-like counterpart relative to the Template, or streak-like behavior, especially when ndethist is very small under the field definition (sparse linkage at the same sky location is expected for some movers).
+- solar_system: PS1 neighbor colors and star–galaxy scores describe a catalog match that may be unrelated along the line of sight; a stellar-like PS1 neighbor alone does not rule out solar_system if the cutouts support motion or offset.
+- astrophysical: Choose when variability or a transient on/near a persistent host is better supported by linkage and cutouts (often higher ndethist at fixed sky position, but not required), or by clear SN-like / variable / AGN interpretation without a mover story consistent with the images.
+- When stage2 is solar_system, the Asteroid label applies in this benchmark; do not assign supernova, variable_star, or AGN unless stage2 is astrophysical.
+
 Important image interpretation guide:
 - The input image consists of three 63 x 63 pixel cutouts tiled horizontally:
   Science (left), Template (middle; reference baseline), Image (right; difference).
@@ -91,10 +97,11 @@ Important image interpretation guide:
   chromatic refraction, and similar image-differencing issues). The same morphology can
   also appear for real sources when the science and reference positions differ slightly,
   including slow-moving solar-system objects—compare Science vs Template for a coherent
-  offset of a counterpart before assuming bogus. Edge effects, striping, streaks,
+  offset of a counterpart before assuming bogus. If you see a dipole together with very low ndethist, perform that Science–Template offset check before defaulting to Variable Star or other astrophysical classes. Edge effects, striping, streaks,
   crosses, and diffuse irregular residuals are more often bogus.
-- Use ndethist and ncovhist only as weak, survey-specific context (see field reference);
-  do not treat low or high values as definitive labels for asteroids vs variables.
+- Do not use ndethist or ncovhist alone as sufficient proof of any class; always combine them with the cutouts (see field reference for definitions).
+- When ndethist is very small, you must explicitly compare Science vs Template for positional offset or motion of a counterpart before setting stage2 to astrophysical; that check is required when discriminating solar_system from variables.
+- Treat ncovhist as cadence/coverage context the same way: informative, not a standalone classifier.
 - Compare the science and template/reference images to judge whether a source is new,
   variable, persistent, offset, extended, or absent.
 - Use the images together with the metadata. Do not rely on images alone when
