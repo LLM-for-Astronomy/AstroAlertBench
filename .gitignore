@@ -27,5 +27,17 @@ data/*_backup_*.csv
 # Model API outputs (regenerate with run_tinker_benchmark.py)
 results/
 
+# Report
+report/
+
 # Local proposal PDF (not tracked)
 LLM_for_Astronomy Proposal.pdf
+
+# Files from other projects for reference
+eval.py
+
+# Setup files
+run_tinker_benchmark.py
+run_enrich_parallel.py
+download_alerce_benchmark.py
+build_stamps_llm_montages.py

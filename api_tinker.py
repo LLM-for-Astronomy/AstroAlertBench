@@ -124,32 +124,80 @@ def _get_vlm_objects(model_name: str) -> tuple[Any, Any, Any, Any]:
     return tokenizer, renderer, service, sampling_client
 
 
+def _extract_text_content(msg: dict[str, Any]) -> str | None:
+    """Extract non-thinking text from a parsed renderer message.
+
+    Reasoning/hybrid models (e.g. Qwen3.5) return content as a list of typed
+    parts: [{"type": "thinking", ...}, {"type": "text", "text": "..."}].
+    This helper concatenates only the "text" parts, discarding "thinking".
+    For plain-string content (non-reasoning models), returns as-is.
+    """
+    content = msg.get("content")
+    if content is None:
+        return None
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        text_parts = []
+        for part in content:
+            if isinstance(part, dict):
+                if part.get("type") == "text":
+                    text_parts.append(part.get("text", ""))
+                elif part.get("type") == "thinking":
+                    continue
+                elif "text" in part:
+                    text_parts.append(part["text"])
+        return "\n".join(text_parts).strip() if text_parts else None
+    return str(content)
+
+
+_REASONING_RENDERERS = ("Qwen3_5Renderer", "KimiK25Renderer")
+
+
+def _is_reasoning_renderer(renderer: Any) -> bool:
+    return type(renderer).__name__ in _REASONING_RENDERERS
+
+
 def sample_vlm(
     messages: list[dict[str, Any]],
     model_name: str = DEFAULT_MODEL,
     max_tokens: int = 2048,
     temperature: float = 0.2,
-) -> str:
+) -> dict[str, str]:
     """
     Run one VLM completion via Tinker sampling client + model-appropriate cookbook renderer.
-    Returns assistant text (raw).
+    Returns a dict with:
+      - "raw_text": full model output (including thinking, for archival)
+      - "answer_text": non-thinking text only (for parsing into JSON)
     """
     tokenizer, renderer, _, sampling_client = _get_vlm_objects(model_name)
+
+    effective_max = max_tokens
+    if _is_reasoning_renderer(renderer) and max_tokens <= 4096:
+        effective_max = 16384
 
     prompt = renderer.build_generation_prompt(messages)
     stop = renderer.get_stop_sequences()
     params = SamplingParams(
-        max_tokens=max_tokens,
+        max_tokens=effective_max,
         temperature=temperature,
         stop=stop,
     )
     fut = sampling_client.sample(prompt=prompt, sampling_params=params, num_samples=1)
     result = fut.result()
     tokens = result.sequences[0].tokens
+
+    full_text = tokenizer.decode(tokens)
+
     msg, ok = renderer.parse_response(tokens)
-    if ok and isinstance(msg, dict) and msg.get("content"):
-        return str(msg["content"])
-    return tokenizer.decode(tokens)
+    answer = None
+    if ok and isinstance(msg, dict):
+        answer = _extract_text_content(msg)
+
+    return {
+        "raw_text": full_text,
+        "answer_text": answer if answer else full_text,
+    }
 
 
 def run_one(
@@ -159,17 +207,18 @@ def run_one(
     stamps_root: Path | None = None,
     model_name: str = DEFAULT_MODEL,
 ) -> dict[str, Any]:
-    """Build metadata from manifest row, load montage, call VLM. Returns dict with raw_text."""
+    """Build metadata from manifest row, load montage, call VLM. Returns dict with raw_text and answer_text."""
     meta = manifest_row_to_metadata(row)
     img = montage_path(target_class, oid, stamps_root)
     if not img.is_file():
         raise FileNotFoundError(f"Missing montage: {img}")
     messages = build_messages(oid, target_class, meta, img)
-    raw = sample_vlm(messages, model_name=model_name)
+    vlm_out = sample_vlm(messages, model_name=model_name)
     return {
         "oid": oid,
         "target_class": target_class,
         "montage_path": str(img),
-        "raw_text": raw,
+        "raw_text": vlm_out["raw_text"],
+        "answer_text": vlm_out["answer_text"],
         "model": model_name,
     }

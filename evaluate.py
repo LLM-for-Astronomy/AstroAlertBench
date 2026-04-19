@@ -306,8 +306,12 @@ def evaluate_jsonl(
     with open(predictions_path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
-            if line:
+            if not line:
+                continue
+            try:
                 rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
 
     n = len(rows)
     n_errors = sum(1 for r in rows if r.get("error"))

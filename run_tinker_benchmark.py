@@ -37,7 +37,7 @@ def _process_row(
     oid: str, tc: str, row: "pd.Series", model: str
 ) -> dict:
     rec = run_one(oid, tc, row, model_name=model)
-    rec["parsed"] = extract_json_object(rec["raw_text"])
+    rec["parsed"] = extract_json_object(rec.get("answer_text") or rec["raw_text"])
     return rec
 
 

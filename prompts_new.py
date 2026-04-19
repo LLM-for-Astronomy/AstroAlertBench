@@ -56,8 +56,7 @@ You must classify the alert using only the provided evidence.
 Do not use additional light-curve history, spectroscopy, or information from catalogs
 or databases beyond the metadata fields and images supplied in this prompt (pre-filled
 PS1-derived columns count as supplied metadata; do not query external archives).
-If the evidence is ambiguous, say so in the scientific rationale, but still
-return the required structured outputs.
+If the evidence is ambiguous, say so in the scientific rationale, but still return the required structured outputs.
 
 Goal:
 Determine whether the alert is most consistent with one of the following
@@ -78,32 +77,18 @@ Stage 2 (Part C: solar_system vs astrophysical) guidance:
 
 Important image interpretation guide:
 - The input image consists of three 63 x 63 pixel cutouts tiled horizontally:
-  Science (left), Template (middle; reference baseline), Image (right; difference).
-  Top labels on the montage read Science, Template, Image.
-- Locate the central candidate: The transient candidate is always located at 
-  the exact geometric center of each of the three panels. Identify this central 
-  source first, then use the surrounding pixels to determine context (e.g., 
-  host galaxies) or rule out distractors (e.g., off-center bright stars causing 
-  diffraction spikes).
+  Science (left), Reference (middle; reference baseline), Difference (right; difference).
+  Top labels on the montage read Science, Reference, Difference.
+- Locate the central candidate: The transient candidate is always located at the exact geometric center of each of the three panels. Identify this central source first, then use the surrounding pixels to determine context (e.g., host galaxies) or rule out distractors (e.g., off-center bright stars causing diffraction spikes).
 - Science (left): the current observation.
-- Template / reference (middle): historical coadded baseline at the same sky location.
-- Image / difference (right): science minus reference (subtraction image).
-- A localized residual in the difference image may indicate a real brightness
-  change. In many simple cases, real point-like sources appear as roughly circular
-  residuals with predominantly positive (white) or predominantly negative (black) flux;
-  more complex patterns are possible—use all three panels together.
-- Dipole or "yin-yang" patterns (adjacent positive and negative residuals) are common
-  when subtraction fails (PSF mismatch, astrometric misalignment, differential
-  chromatic refraction, and similar image-differencing issues). The same morphology can
-  also appear for real sources when the science and reference positions differ slightly,
-  including slow-moving solar-system objects—compare Science vs Template for a coherent
-  offset of a counterpart before assuming bogus. If you see a dipole together with very low ndethist, perform that Science–Template offset check before defaulting to Variable Star or other astrophysical classes. Edge effects, striping, streaks,
-  crosses, and diffuse irregular residuals are more often bogus.
+- Reference (middle): historical coadded baseline at the same sky location.
+- Difference (right): science minus reference (subtraction image).
+- A localized residual in the difference image may indicate a real brightness change. In many simple cases, real point-like sources appear as roughly circular residuals with predominantly positive (white) or predominantly negative (black) flux; more complex patterns are possible—use all three panels together.
+- Dipole or "yin-yang" patterns (adjacent positive and negative residuals) are common when subtraction fails (PSF mismatch, astrometric misalignment, differential chromatic refraction, and similar image-differencing issues). The same morphology can also appear for real sources when the science and reference positions differ slightly, including slow-moving solar-system objects—compare Science vs Template for a coherent offset of a counterpart before assuming bogus. If you see a dipole together with very low ndethist, perform that Science–Template offset check before defaulting to Variable Star or other astrophysical classes. Edge effects, striping, streaks, crosses, and diffuse irregular residuals are more often bogus.
 - Do not use ndethist or ncovhist alone as sufficient proof of any class; always combine them with the cutouts (see field reference for definitions).
 - When ndethist is very small, you must explicitly compare Science vs Template for positional offset or motion of a counterpart before setting stage2 to astrophysical; that check is required when discriminating solar_system from variables.
 - Treat ncovhist as cadence/coverage context the same way: informative, not a standalone classifier.
-- Compare the science and template/reference images to judge whether a source is new,
-  variable, persistent, offset, extended, or absent.
+- Compare the science and template/reference images to judge whether a source is new, variable, persistent, offset, extended, or absent.
 - Use the images together with the metadata. Do not rely on images alone when
   metadata provide important context.
 
@@ -117,10 +102,8 @@ General reasoning instructions:
 - Then, analyze the science, reference, and difference cutouts jointly.
 - Base your explanation on concrete evidence from the provided input.
 - Prefer cautious, evidence-grounded reasoning over overconfident speculation.
-- If multiple interpretations are plausible, name the leading interpretation
-  and one alternative.
-- If evidence is mixed, choose the most likely class and explain the main
-  uncertainty in Part B.
+- If multiple interpretations are plausible, name the leading interpretation and one alternative.
+- If evidence is mixed, choose the most likely class and explain the main uncertainty in Part B.
 
 Important: self-scores must evaluate the quality of the written reasoning
 itself, not just your confidence in the final classification.
@@ -160,8 +143,7 @@ Self-scoring instructions:
 - Score each of the three Part B fields separately.
 - Use only integers from 0 to 5.
 - Be strict and evidence-based.
-- Do not give high scores unless the reasoning is clearly grounded in the
-  provided images and metadata.
+- Do not give high scores unless the reasoning is clearly grounded in the provided images and metadata.
 
 You must return your answer as a single JSON object with three top-level keys
 ("Part A", "Part B", "Part C") matching this structure:
@@ -212,8 +194,8 @@ Logical consistency rules:
 - If stage1 = real_object and stage2 = astrophysical, then stage3 must be one
   of: supernova, variable_star, AGN.
 
-Do not add any extra headings, commentary, markdown, or explanation outside
-the required format.
+Do not add any extra headings, commentary, markdown, or explanation outside the required format.
+Please limit your total output length (including thoughts, if any) to under 8192 tokens. 
 """
 
 
