@@ -163,18 +163,22 @@ def sample_vlm(
     model_name: str = DEFAULT_MODEL,
     max_tokens: int = 2048,
     temperature: float = 0.2,
-) -> dict[str, str]:
+) -> dict[str, Any]:
     """
     Run one VLM completion via Tinker sampling client + model-appropriate cookbook renderer.
     Returns a dict with:
       - "raw_text": full model output (including thinking, for archival)
       - "answer_text": non-thinking text only (for parsing into JSON)
+      - "n_output_tokens": total tokens generated (incl. thinking)
+      - "n_answer_tokens": estimated tokens for answer_text only (full - thinking)
+      - "max_tokens": effective sampling limit (so we can detect truncation)
+      - "truncated": True if generation hit the max_tokens cap
     """
     tokenizer, renderer, _, sampling_client = _get_vlm_objects(model_name)
 
     effective_max = max_tokens
     if _is_reasoning_renderer(renderer) and max_tokens <= 4096:
-        effective_max = 16384
+        effective_max = 20000
 
     prompt = renderer.build_generation_prompt(messages)
     stop = renderer.get_stop_sequences()
@@ -186,6 +190,7 @@ def sample_vlm(
     fut = sampling_client.sample(prompt=prompt, sampling_params=params, num_samples=1)
     result = fut.result()
     tokens = result.sequences[0].tokens
+    n_output_tokens = len(tokens)
 
     full_text = tokenizer.decode(tokens)
 
@@ -194,9 +199,19 @@ def sample_vlm(
     if ok and isinstance(msg, dict):
         answer = _extract_text_content(msg)
 
+    answer_text = answer if answer else full_text
+    try:
+        n_answer_tokens = len(tokenizer.encode(answer_text, add_special_tokens=False))
+    except Exception:
+        n_answer_tokens = max(1, len(answer_text) // 4)
+
     return {
         "raw_text": full_text,
-        "answer_text": answer if answer else full_text,
+        "answer_text": answer_text,
+        "n_output_tokens": n_output_tokens,
+        "n_answer_tokens": n_answer_tokens,
+        "max_tokens": effective_max,
+        "truncated": n_output_tokens >= effective_max,
     }
 
 
@@ -220,5 +235,9 @@ def run_one(
         "montage_path": str(img),
         "raw_text": vlm_out["raw_text"],
         "answer_text": vlm_out["answer_text"],
+        "n_output_tokens": vlm_out["n_output_tokens"],
+        "n_answer_tokens": vlm_out["n_answer_tokens"],
+        "max_tokens": vlm_out["max_tokens"],
+        "truncated": vlm_out["truncated"],
         "model": model_name,
     }

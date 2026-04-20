@@ -4,7 +4,7 @@ for Part C stage3: AGN vs variable_star when stage2 = astrophysical.
 
 Usage:
   python run_tinker_benchmark.py --manifest data/manifest_enriched.csv \\
-      --out results/run_agn_prompt.jsonl --prompts prompt_agn_instruction
+      --out results/run_agn_prompt.jsonl --prompts prompts_agn_instruction
 """
 
 from __future__ import annotations

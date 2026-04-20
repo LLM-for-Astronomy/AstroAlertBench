@@ -458,6 +458,34 @@ def evaluate_jsonl(
         "json_valid_rate": round(json_ok / n, 4) if n else 0.0,
     }
 
+    # Output token statistics (recorded per row by api_tinker.sample_vlm).
+    # n_output_tokens covers the FULL generation (incl. reasoning); n_answer_tokens
+    # covers only the post-thinking text. Tracking both lets us see how much
+    # budget is being burned on internal reasoning vs the JSON answer.
+    out_tok = [r["n_output_tokens"] for r in rows if isinstance(r.get("n_output_tokens"), int)]
+    ans_tok = [r["n_answer_tokens"] for r in rows if isinstance(r.get("n_answer_tokens"), int)]
+    if out_tok:
+        out_arr = np.array(out_tok, dtype=int)
+        metrics["output_tokens"] = {
+            "mean": round(float(out_arr.mean()), 1),
+            "median": int(np.median(out_arr)),
+            "min": int(out_arr.min()),
+            "max": int(out_arr.max()),
+            "p95": int(np.percentile(out_arr, 95)),
+        }
+    if ans_tok:
+        ans_arr = np.array(ans_tok, dtype=int)
+        metrics["answer_tokens"] = {
+            "mean": round(float(ans_arr.mean()), 1),
+            "median": int(np.median(ans_arr)),
+            "min": int(ans_arr.min()),
+            "max": int(ans_arr.max()),
+        }
+    n_truncated = sum(1 for r in rows if r.get("truncated"))
+    if any("truncated" in r for r in rows):
+        metrics["n_truncated"] = n_truncated
+        metrics["truncated_rate"] = round(n_truncated / n, 4) if n else 0.0
+
     # Part A metrics
     per_q_acc = {}
     for q in PART_A_QUESTIONS:

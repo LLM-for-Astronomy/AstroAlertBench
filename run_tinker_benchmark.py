@@ -13,7 +13,7 @@ Ablation (fewer raw ZTF fields, same JSON schema):
   python run_tinker_benchmark.py --manifest data/manifest_enriched.csv --out results/fewshot_ablation.jsonl --prompts prompt_ablation --concurrency 64
 
 Full metadata + extra Part B/C guidance for AGN vs variable_star:
-  python run_tinker_benchmark.py --manifest data/manifest_enriched.csv --out results/run_agn_prompt.jsonl --prompts prompt_agn_instruction
+  python run_tinker_benchmark.py --manifest data/manifest_enriched.csv --out results/run_agn_prompt.jsonl --prompts prompts_agn_instruction
 """
 from __future__ import annotations
 
@@ -54,7 +54,7 @@ def main() -> None:
     )
     ap.add_argument(
         "--prompts", type=str, default="prompts",
-        help="Prompt module name (default: prompts). Use 'prompt_ablation' for reduced raw-field set; 'prompt_agn_instruction' for full fields + AGN vs VS guidance.",
+        help="Prompt module name (default: prompts). Use 'prompts_agn_instruction' for full fields + AGN vs VS guidance.",
     )
     args = ap.parse_args()
 
