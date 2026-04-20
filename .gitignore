@@ -35,4 +35,5 @@ report/
 LLM_for_Astronomy Proposal.pdf
 
 # Files from other projects for reference
-eval.py
+eval_test_iteration_000040.html
+logtree_html_tutorial.md
