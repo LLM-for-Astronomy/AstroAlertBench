@@ -1,16 +1,22 @@
 """
-Run zero-shot VLM evaluation on the manifest using Tinker (api_tinker.py).
+Run VLM evaluation on the manifest. Supports two backends:
+  --backend tinker  (default)  -> api_tinker.py (open-source via Tinker SDK)
+  --backend openai             -> api_openai.py (closed-source via OpenAI Responses API)
 
-Example (use manifest_enriched.csv after enrich_manifest_alerce.py — required for fid / isdiffpos and other candidate fields):
+Example (Tinker, manifest_enriched.csv with full fields):
   set TINKER_API_KEY=...
   python run_tinker_benchmark.py --manifest data/manifest_enriched.csv --model moonshotai/Kimi-K2.5 --limit 10 --out results/kimi_zs.jsonl
   python evaluate.py --predictions results/kimi_zs.jsonl --manifest data/manifest_enriched.csv
 
+Example (OpenAI, GPT-5.4 with thinking high):
+  set OPENAI_API_KEY=...
+  python run_tinker_benchmark.py --backend openai --manifest data/manifest_fewshot.csv --model gpt-5.4 --reasoning-effort high --out results/fewshot_gpt54_high.jsonl --concurrency 8
+
+Example (OpenAI, GPT-5.4 with thinking disabled):
+  python run_tinker_benchmark.py --backend openai --manifest data/manifest_fewshot.csv --model gpt-5.4 --reasoning-effort none --out results/fewshot_gpt54_none.jsonl --concurrency 8
+
 Parallel execution (default concurrency=1 for backward compat):
   python run_tinker_benchmark.py --manifest data/manifest_fewshot.csv --out results/fewshot.jsonl --concurrency 64
-
-Ablation (fewer raw ZTF fields, same JSON schema):
-  python run_tinker_benchmark.py --manifest data/manifest_enriched.csv --out results/fewshot_ablation.jsonl --prompts prompt_ablation --concurrency 64
 
 Full metadata + extra Part B/C guidance for AGN vs variable_star:
   python run_tinker_benchmark.py --manifest data/manifest_enriched.csv --out results/run_agn_prompt.jsonl --prompts prompts_agn_instruction
@@ -29,14 +35,19 @@ from pathlib import Path
 import pandas as pd
 
 import api_tinker
-from api_tinker import ROOT, DEFAULT_MODEL, run_one
+from api_tinker import ROOT
 from evaluate import extract_json_object
 
 
 def _process_row(
-    oid: str, tc: str, row: "pd.Series", model: str
+    oid: str,
+    tc: str,
+    row: "pd.Series",
+    model: str,
+    backend_module,
+    extra_kwargs: dict,
 ) -> dict:
-    rec = run_one(oid, tc, row, model_name=model)
+    rec = backend_module.run_one(oid, tc, row, model_name=model, **extra_kwargs)
     rec["parsed"] = extract_json_object(rec.get("answer_text") or rec["raw_text"])
     return rec
 
@@ -56,13 +67,30 @@ def main() -> None:
         "--prompts", type=str, default="prompts",
         help="Prompt module name (default: prompts). Use 'prompts_agn_instruction' for full fields + AGN vs VS guidance.",
     )
+    ap.add_argument(
+        "--backend", type=str, default="tinker", choices=["tinker", "openai"],
+        help="API backend (default: tinker). 'openai' calls OpenAI Responses API via api_openai.py.",
+    )
+    ap.add_argument(
+        "--reasoning-effort", type=str, default=None,
+        choices=["none", "low", "medium", "high", "xhigh"],
+        help="OpenAI backend only. Controls GPT-5.x reasoning_effort. 'none' disables thinking.",
+    )
     args = ap.parse_args()
+
+    if args.backend == "openai":
+        import api_openai
+        backend_module = api_openai
+        default_model = api_openai.DEFAULT_MODEL
+    else:
+        backend_module = api_tinker
+        default_model = api_tinker.DEFAULT_MODEL
 
     prompt_mod = importlib.import_module(args.prompts)
     if args.prompts != "prompts":
-        api_tinker.SYSTEM_PROMPT = prompt_mod.SYSTEM_PROMPT
-        api_tinker.build_user_prompt = prompt_mod.build_user_prompt
-        api_tinker.manifest_row_to_metadata = prompt_mod.manifest_row_to_metadata
+        backend_module.SYSTEM_PROMPT = prompt_mod.SYSTEM_PROMPT
+        backend_module.build_user_prompt = prompt_mod.build_user_prompt
+        backend_module.manifest_row_to_metadata = prompt_mod.manifest_row_to_metadata
         print(f"Using prompt module: {args.prompts}")
 
     if not args.manifest.is_file():
@@ -86,8 +114,17 @@ def main() -> None:
         df = df.head(args.limit)
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    model = args.model or DEFAULT_MODEL
+    model = args.model or default_model
     total = len(df)
+
+    extra_kwargs: dict = {}
+    if args.backend == "openai" and args.reasoning_effort is not None:
+        extra_kwargs["reasoning_effort"] = args.reasoning_effort
+    if args.reasoning_effort is not None and args.backend != "openai":
+        print(
+            f"Warning: --reasoning-effort is only used with --backend openai; ignoring.",
+            file=sys.stderr,
+        )
 
     n_ok = 0
     n_err = 0
@@ -100,7 +137,7 @@ def main() -> None:
                 oid = str(row["oid"])
                 tc = str(row["target_class"])
                 try:
-                    rec = _process_row(oid, tc, row, model)
+                    rec = _process_row(oid, tc, row, model, backend_module, extra_kwargs)
                     fout.write(json.dumps(rec, ensure_ascii=False) + "\n")
                     fout.flush()
                     n_ok += 1
@@ -117,7 +154,9 @@ def main() -> None:
                 for _, row in df.iterrows():
                     oid = str(row["oid"])
                     tc = str(row["target_class"])
-                    fut = pool.submit(_process_row, oid, tc, row, model)
+                    fut = pool.submit(
+                        _process_row, oid, tc, row, model, backend_module, extra_kwargs
+                    )
                     futures[fut] = (oid, tc)
 
                 for done_idx, fut in enumerate(as_completed(futures), 1):

@@ -11,3 +11,6 @@ tinker>=0.10
 tinker-cookbook>=0.1
 transformers>=4.40
 torch
+
+# Closed-source VLM backend via OpenAI Responses API (api_openai.py)
+openai>=2.0
