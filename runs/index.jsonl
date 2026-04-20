@@ -1,0 +1,7 @@
+{"folder": "20260419-2047-qwen35-35b-a3b-baseline", "n_examples": 100, "json_valid_rate": 0.72, "final_5class_accuracy": 0.338, "part_b_msrs": 4.7135, "truncated_rate": 0.25}
+{"folder": "20260419-2047-qwen35-35b-a3b-tokenlimit", "n_examples": 100, "json_valid_rate": 0.66, "final_5class_accuracy": 0.3538, "part_b_msrs": 4.7049, "truncated_rate": 0.32}
+{"folder": "20260419-2230-gpt-5.4-high", "n_examples": 20, "json_valid_rate": 1.0, "final_5class_accuracy": 0.4, "part_b_msrs": 4.25, "truncated_rate": 0.0}
+{"folder": "20260419-2230-gpt-5.4-none", "n_examples": 20, "json_valid_rate": 1.0, "final_5class_accuracy": 0.5, "part_b_msrs": 4.25, "truncated_rate": 0.0}
+{"folder": "20260419-2230-kimi-k25-think", "n_examples": 100, "json_valid_rate": 1.0, "final_5class_accuracy": 0.49, "part_b_msrs": 4.54, "truncated_rate": 0.0}
+{"folder": "20260419-2230-qwen35-397b-a17b", "n_examples": 100, "json_valid_rate": 0.99, "final_5class_accuracy": 0.4848, "part_b_msrs": 4.7388, "truncated_rate": 0.0}
+{"folder": "20260419-2230-qwen35-4b", "n_examples": 100, "json_valid_rate": 0.22, "final_5class_accuracy": 0.2381, "part_b_msrs": 4.8333, "truncated_rate": 0.77}

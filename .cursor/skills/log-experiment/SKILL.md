@@ -1,112 +1,172 @@
 ---
 name: log-experiment
-description: Generate a structured experiment-log markdown report for VLM benchmark runs in this ZTF project, capturing prompts, model config, hyperparameters, git commit, data inputs, runtime, and evaluation metrics. Use when the user starts, plans, finishes, or wants to document a benchmark run (e.g. "log this experiment", "write up the run", "create an experiment readme", "record this run"). Also use proactively right after launching `run_tinker_benchmark.py` or completing an `evaluate.py` invocation.
+description: Build a complete per-run folder under `runs/<timestamp>-<slug>/` for a VLM benchmark run in this ZTF project — runs evaluate.py if needed, copies the JSONL into the run folder, generates one logtree HTML per datapoint (top-10 per class by ALERCE probability), generates matplotlib plots, writes an enriched markdown report with every metric from evaluate.py, and updates runs/index.md. Use when the user starts, finishes, or wants to document a benchmark run (e.g. "log this experiment", "write up the run", "log the run we just did"). Use proactively right after `run_tinker_benchmark.py` finishes.
 ---
 
 # Log Experiment
 
-Produces a self-contained markdown report under `experiments/` for every VLM benchmark run, so future runs can be compared by config and results without re-reading scattered logs.
+Produces a self-contained `runs/<timestamp>-<slug>/` folder for every VLM benchmark run, containing:
+
+```
+runs/20260420-1855-<slug>/
+  run.jsonl            # copy of predictions (annotated with error_category + value_errors by evaluate.py)
+  metrics.json         # full metrics dict from evaluate.py
+  report.md            # enriched markdown report, every metric listed
+  viz/                 # per-datapoint HTML (top-10 per class by ALERCE probability)
+    SN/     <oid>.html x up-to-10
+    AGN/    <oid>.html x up-to-10
+    VS/     <oid>.html x up-to-10
+    asteroid/ ...
+    bogus/    ...
+  plots/               # matplotlib charts + README.md describing each
+    per_class_accuracy.png
+    five_class_confusion.png
+    stage3_confusion.png
+    token_distribution.png
+    error_breakdown.png
+    calibration.png
+    README.md
+```
+
+Also updates `runs/index.md` (human-readable table) and `runs/index.jsonl` (programmatic) with the new run's key metrics.
 
 ## When to Use
 
-- Right after the user launches `run_tinker_benchmark.py` (capture *config*).
-- Right after `evaluate.py` completes (append *metrics* + observations).
-- When the user explicitly asks to log, document, or write up an experiment.
-- Before/after any prompt or `api_tinker.py` change that's worth A/B comparing.
+- Right after `run_tinker_benchmark.py` finishes and the user says "log this experiment" / "write up the run" / similar.
+- Right after `evaluate.py` completes.
+- Before/after any `prompts.py` / `api_tinker.py` / `api_openai.py` change worth A/B-comparing.
 
 ## Workflow
 
-Copy this checklist and track progress:
-
 ```
-- [ ] 1. Determine experiment label & output path
-- [ ] 2. Gather config (model, prompts, command, git state)
-- [ ] 3. Gather data slice info (manifest path, n samples, classes)
-- [ ] 4. Capture diff vs prior run (if applicable)
-- [ ] 5. Fill template, write to experiments/EXP-<date>-<slug>.md
-- [ ] 6. After eval: append metrics + observations
+- [ ] 1. Identify the run's JSONL + manifest + model
+- [ ] 2. Gather per-run context (hypothesis, baseline, observations)
+- [ ] 3. Call viz.build_run_folder.build_run_folder(...)
+- [ ] 4. Verify output structure + index update
+- [ ] 5. Report back with paths + top-line metrics
 ```
 
-### Step 1 — Label & path
+### Step 1 — Identify inputs
 
-- Slug: short kebab-case (e.g. `qwen35-think-newprompt`, `kimi-fewshot-v2`).
-- Path: `experiments/EXP-YYYYMMDD-<slug>.md` (use today's date in local TZ).
-- If a file with the same slug already exists today, append `-2`, `-3`, etc.
+From the launch command or recent terminal output, pull:
 
-### Step 2 — Config gathering (REQUIRED, do these tool calls)
+- `--out <path.jsonl>` → `jsonl_path`
+- `--manifest <path.csv>` → `manifest_path`
+- `--model <HF id or openai id>` → `model_name`
+- `--prompts <module>` → `prompts_module` (default `"prompts"`)
+- `--backend` if specified, otherwise infer from model id (anything with `gpt` → openai, else tinker)
 
-Run these in parallel where possible:
+### Step 2 — Gather per-run context (optional but strongly encouraged)
 
-- `git rev-parse --short HEAD` → commit hash
-- `git status --porcelain` → flag dirty working tree
-- `git log -1 --format="%s%n%an %ad" --date=short` → last commit subject/author/date
-- Read `prompts.py` (or whichever module was passed via `--prompts`) — capture: `SYSTEM_PROMPT` first ~10 lines, list of metadata keys returned by `manifest_row_to_metadata`, any Stage 1/2/3 guidance.
-- Read the relevant section of `api_tinker.py` to capture the **renderer** chosen for this model and the effective `max_tokens` (reasoning models auto-bump to 16384).
-- From the launch command (or terminal output): record `--model`, `--manifest`, `--out`, `--prompts`, `--concurrency`, `--limit`, any other flags.
+Before building the folder, ask the user (or infer):
 
-### Step 3 — Data slice
+- **Hypothesis** (1-3 sentences): what is this run testing / expected to show
+- **Baseline comparison** (1-3 sentences): which prior run is this compared against, what changed
+- **Observations** (fill AFTER seeing metrics): did the hypothesis match, any surprises, suggested next experiment
 
-Read the manifest CSV referenced by `--manifest`:
-- Total rows.
-- Class distribution (count per `target_class`).
-- Whether it's `manifest_fewshot.csv` (held-out 100), `manifest_enriched.csv` (full), or other.
+Also peek at `git rev-parse --short HEAD` and `git status --porcelain` to know which commit + whether the tree is dirty. `build_run_folder` captures these automatically.
 
-### Step 4 — Diff vs prior run
+### Step 3 — Build the run folder
 
-If a prior `experiments/EXP-*.md` file exists for the same model OR same prompt module:
-- Pick the most recent matching one as the "baseline".
-- Note what changed: prompt module, renderer, max_tokens, concurrency, model, manifest size, code diffs in `prompts.py` / `api_tinker.py` / `evaluate.py` since baseline's commit (use `git diff <baseline_commit>..HEAD -- prompts.py api_tinker.py evaluate.py --stat`).
-- Record explicitly: "Compared to EXP-XXXX, this run changes: …".
+Invoke the orchestrator. Two options:
 
-### Step 5 — Write the report
+**(a) From Python (preferred when you already have all args):**
 
-Use [template.md](template.md) verbatim, filling every section. Leave `TBD` for fields that require post-run info (parse rate, accuracy). NEVER invent numbers.
+```python
+from viz.build_run_folder import build_run_folder
 
-### Step 6 — Post-eval update
+run_dir = build_run_folder(
+    jsonl_path="results/fewshot_kimi_think_newparser.jsonl",
+    manifest_path="data/manifest_fewshot.csv",
+    model_name="moonshotai/Kimi-K2.5",
+    prompts_module="prompts",
+    slug_override="kimi-k25-think",          # optional; default = slugified model name
+    run_timestamp=None,                       # optional; default = jsonl mtime as YYYYMMDD-HHMM
+    hypothesis="Switch Kimi K2.5 to thinking-enabled renderer; expect parse rate stays ~100%, accuracy lifts.",
+    comparison="Compared to prior Kimi DisableThinking run. Only renderer changed.",
+    observations="Best open-source result so far: 49% 5-class, 100% parse. AGN still 0/20 — universal failure mode.",
+    backend_hint="tinker",
+)
+```
 
-After `evaluate.py` runs, append the **Results** section with:
-- 5-class accuracy, per-class accuracy, per-class F1
-- Stage 1/2/3 staged accuracy
-- JSON parse rate (`json_valid_rate`)
-- Effective n (parsed / total)
-- Confusion matrix (use the `part_c_stage3_confusion_matrix` block, formatted as a small markdown table)
-- Notable misclassification patterns (top 1-2 sentences)
+**(b) From CLI:**
 
-Then add an **Observations** section answering:
-- Did the result match the hypothesis?
-- Any surprises (e.g. parse rate dropped, one class collapsed)?
-- Suggested next experiment (one sentence).
+```bash
+python -m viz.build_run_folder \
+  --jsonl results/fewshot_kimi_think_newparser.jsonl \
+  --manifest data/manifest_fewshot.csv \
+  --model moonshotai/Kimi-K2.5 \
+  --slug kimi-k25-think \
+  --hypothesis "..." \
+  --comparison "..." \
+  --observations "..."
+```
 
-## Required Sections (template summary)
+The orchestrator does, in order:
 
-The report must contain:
+1. Loads the JSONL + manifest.
+2. Computes run timestamp (JSONL mtime by default) and slug (from model name by default).
+3. Creates `runs/<timestamp>-<slug>/` and copies the JSONL to `run.jsonl`.
+4. Runs `evaluate.evaluate_jsonl(...)` on the in-folder copy — this writes `error_category` + `value_errors` back into each JSONL row *and* saves the full metrics dict to `metrics.json`.
+5. Picks top-10-by-ALERCE-probability per class from the manifest, filtered to oids actually present in the run.
+6. Generates one `logtree` HTML per selected oid into `viz/<class>/<oid>.html`.
+7. Generates up to 6 matplotlib plots into `plots/` + a `plots/README.md`.
+8. Writes `report.md` containing every metric from `evaluate.py` (11 sub-sections, see `viz/enriched_report.py`).
+9. Regenerates `runs/index.md` and `runs/index.jsonl`.
 
-1. **Metadata** — date, slug, status, commit, dirty? operator
-2. **Hypothesis** — what are we testing, expected outcome
-3. **Baseline / Comparison** — which prior EXP to compare against, what changed
-4. **Configuration** — model, renderer, max_tokens, temperature, concurrency, prompt module
-5. **Prompt summary** — system prompt fingerprint (first 10 lines) + listed metadata fields + any custom Stage instructions
-6. **Data** — manifest path, n samples, class distribution
-7. **Command** — exact CLI invocation
-8. **Output** — path to results JSONL, runtime, n successful
-9. **Code diff vs baseline** — `git diff --stat` of relevant files
-10. **Library versions** — `pip show tinker-cookbook tinker | grep -i version` (one line each)
-11. **Results** — metrics, confusion matrix (filled post-eval)
-12. **Observations** — did it match hypothesis, surprises, next steps
+### Step 4 — Verify output
 
-See [template.md](template.md) for the exact format.
+Check:
 
-## Iterative Improvement
+- `runs/<ts>-<slug>/report.md` exists and contains a non-empty Results section.
+- `runs/<ts>-<slug>/viz/` has 5 subfolders (SN / AGN / VS / asteroid / bogus) with HTMLs.
+- `runs/<ts>-<slug>/plots/` has PNGs plus `README.md`.
+- The new run appears in `runs/index.md`.
 
-This skill is meant to evolve. After 2-3 reports, ask:
-- Are any sections never filled? → Remove them from the template.
-- Are any new fields needed (e.g. cost tracking, GPU type)? → Add to the template.
-- Is the slug convention working? → Adjust naming rule.
+### Step 5 — Report back to user
+
+Tell the user:
+
+- The new run folder path.
+- Top-line metrics: 5-class accuracy, parse rate, truncated rate, MSRS.
+- Where the interactive HTMLs live (`viz/<class>/<oid>.html`).
+- Which plots were generated (or skipped because of missing data — e.g. `calibration.png` is skipped if fewer than 5 linked Part-B records exist).
+
+## What gets captured
+
+The enriched `report.md` contains **every** metric returned by `evaluate.evaluate_jsonl`, organized into 11 sub-sections:
+
+1. Run-level counts (`n_examples`, `n_errors`, `json_parseable`, `json_valid_rate`)
+2. Token statistics (`output_tokens` + `answer_tokens`: mean / median / min / max / p95; `n_truncated`, `truncated_rate`)
+3. Error breakdown (all format codes + top-10 value errors + n rows with value errors)
+4. Part A (per-question + macro + exact-match)
+5. Part B (MSRS + per-dim mean + self-pass rate)
+6. Part B↔C calibration (n_linked, mean-confidence-correct / -incorrect, calibration_gap, pearson_r, high/low-confidence accuracy)
+7. Part C stage-wise (n_evaluable, stage-1 / -2 / -3 raw + conditional, end-to-end, **final 5-class**)
+8. Per-class breakdown (accuracy / correct / total for all 5 classes)
+9. Binary PRF at stages 1 & 2 (real_object=+, astrophysical=+)
+10. Stage-3 subclass PRF (macro F1 + per-class)
+11. Stage-3 confusion matrix
+
+Metadata, Configuration (model/renderer/max_tokens/reasoning_mode/concurrency/prompt_module), Data (manifest path, class distribution), Hypothesis, Comparison, Observations, Plots (inline preview), and Per-datapoint HTML links round out the report.
 
 ## Anti-patterns
 
-- Do not invent metrics — if eval hasn't run, leave `TBD` and update later.
-- Do not paste the entire `prompts.py` — only the system-prompt header + key field list.
-- Do not skip the git commit hash; it is the single most important field for reproducibility.
-- Do not store reports anywhere except `experiments/`.
-- If the working tree is dirty, set `Dirty: true` and list modified files — this is a *warning*, not a blocker.
+- Do **not** invent metrics. If eval hasn't run, `build_run_folder` will run it automatically; don't pre-fill numbers.
+- Do **not** write to `experiments/` or `report/` anymore — those directories are kept as archive only. All new runs go under `runs/`.
+- Do **not** skip capturing the git commit; `build_run_folder` does this for you, don't override.
+- If the working tree is dirty, the report records it — this is a *warning*, not a blocker. Recommend the user commit first for a fully reproducible run.
+- Never hand-edit `runs/index.md` or `runs/index.jsonl` — they are regenerated from every run's `metrics.json` on each invocation.
+
+## Iterative improvement
+
+This skill is designed to evolve. After a handful of real runs, consider:
+
+- Adding cross-run comparison tables to `runs/index.md` (e.g. difference vs best run).
+- Adding a `plots/trend.png` showing metric trajectory over time.
+- Adding cost tracking fields (OpenAI `$` per run) once available.
+- Trimming unused report sections if a metric never varies meaningfully.
+
+## Backfilling historical runs
+
+The 7 runs prior to this skill's existence were backfilled with `python -m viz._backfill`. That script is preserved in `viz/` as a reference for what to do when migrating future legacy jsonl+EXP-md pairs into the `runs/` layout.

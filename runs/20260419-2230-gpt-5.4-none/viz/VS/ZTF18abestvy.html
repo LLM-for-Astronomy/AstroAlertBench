@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="en">
+<head>
+<title>ZTF18abestvy — VS</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.45;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 14px;
+    background: var(--lt-bg, #f5f5f5);
+    color: var(--lt-text, #333);
+}
+
+.lt-root {
+    background: var(--lt-card, white);
+    padding: 1.2rem 1.4rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.lt-title {
+    margin: 0 0 0.5rem 0;
+    color: var(--lt-accent, #2563eb);
+    border-bottom: 2px solid var(--lt-border, #e5e7eb);
+    padding-bottom: 0.5rem;
+}
+
+.lt-subtitle {
+    color: var(--lt-sub, #666);
+    font-size: 0.875rem;
+    margin-bottom: 1.2rem;
+}
+
+.lt-section {
+    margin: 0.95rem 0;
+    padding-left: 0.75rem;
+    border-left: 2px solid var(--lt-border, #e5e7eb);
+}
+
+.lt-section-body {
+    margin-top: 0.12rem;
+}
+
+.lt-section h2, .lt-section h3, .lt-section h4, .lt-section h5, .lt-section h6 {
+    margin: 0.2rem 0;
+    line-height: 1.3;
+    color: var(--lt-accent, #2563eb);
+}
+
+.lt-h2 { font-size: 1.15rem; }
+.lt-h3 { font-size: 1.05rem; }
+.lt-h4 { font-size: 0.98rem; }
+.lt-h5 { font-size: 0.95rem; }
+.lt-h6 { font-size: 0.92rem; }
+
+.lt-p {
+    margin: 0.2rem 0;
+    white-space: pre-wrap;
+}
+
+.lt-details {
+    margin: 0.35rem 0;
+    border: 1px solid var(--lt-border, #e5e7eb);
+    border-radius: 4px;
+    padding: 0.35rem 0.45rem;
+}
+
+.lt-details summary {
+    cursor: pointer;
+    font-weight: 600;
+    user-select: none;
+}
+
+.lt-details-body {
+    margin-top: 0.25rem;
+    padding: 0.35rem 0.45rem;
+    background: var(--lt-bg, #f5f5f5);
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.lt-details-body pre {
+    margin: 0;
+    font-family: var(--lt-mono, "Courier New", monospace);
+    font-size: 0.875rem;
+    white-space: pre-wrap;
+}
+
+.lt-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    margin: 0.6rem 0;
+    font-size: 0.875rem;
+    border: 1px solid var(--lt-border, #d5dbe3);
+    border-radius: 6px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.lt-table th {
+    background: var(--lt-table-head-bg, #eef2f7);
+    color: var(--lt-text, #1f2937);
+    padding: 0.5rem;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 1px solid var(--lt-border, #d5dbe3);
+}
+
+.lt-table td {
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--lt-border, #e5e7eb);
+}
+
+.lt-table tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+.lt-table-caption {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--lt-text, #333);
+}
+
+.lt-exc {
+    background: #fee;
+    border: 2px solid #c00;
+    border-radius: 4px;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+}
+
+.lt-exc summary {
+    color: #c00;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.lt-exc pre {
+    margin-top: 0.5rem;
+    font-family: var(--lt-mono, "Courier New", monospace);
+    font-size: 0.875rem;
+    overflow-x: auto;
+}
+
+.answer, .reward {
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    display: inline-block;
+    margin: 0.25rem 0;
+}
+
+.answer {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.reward {
+    background: #dcfce7;
+    color: #166534;
+}
+
+</style></head>
+<body class="lt-root">
+  <h1 class="lt-title">ZTF18abestvy — VS</h1>
+  <div class="lt-subtitle">Generated 2026-04-20T09:55:30</div>
+  <section class="lt-section">
+    <h2 class="lt-h2">Verdict</h2>
+    <div class="lt-section-body">
+      <div class="lt-table-caption">Prediction vs gold</div>
+      <table class="lt-table">
+        <thead>
+          <tr>
+            <th>key</th>
+            <th>value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Gold (5-class)</td>
+            <td>VS</td>
+          </tr>
+          <tr>
+            <td>Predicted (5-class)</td>
+            <td>VS</td>
+          </tr>
+          <tr>
+            <td>Correct?</td>
+            <td>  [correct]</td>
+          </tr>
+          <tr>
+            <td>Stage 1 (real/artifact)</td>
+            <td>real_object   (gold: real_object)  [correct]</td>
+          </tr>
+          <tr>
+            <td>Stage 2 (astro/solar)</td>
+            <td>astrophysical   (gold: astrophysical)  [correct]</td>
+          </tr>
+          <tr>
+            <td>Stage 3 (subclass)</td>
+            <td>variable_star   (gold: variable_star)  [correct]</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="lt-section">
+    <h2 class="lt-h2">Input</h2>
+    <div class="lt-section-body">
+      <section class="lt-section">
+        <h3 class="lt-h3">Montage image (Science | Reference | Difference)</h3>
+        <div class="lt-section-body">
+          <div><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAABvCAIAAACVazCFAABAo0lEQVR42u29eZBkd3UmenPf97UyK7Oy9u6upTdJ3XRLLaGHBMgEM4NhAIE92PAElnkhh83IMiCFg8Vjxg8MjhA4kMBGNpsDWYNASGihJaFdvVRXdVfXnpWV+77v2/vjG877+eZSVQLxiBf5+6MjO+tuee93z/qdcwQezwQ3WIP1O7yEg1swWAOMDtZgDTA6WAOMDtZgDTA6WIM1wOhgDTA6WIM1wOhgDTA6WIM1wOhgDdYAo4M1wOhgDdYAo4M1WAOMDtYAo4M1WL/RJX5ju5lMpo9+9GPXXHONUqnc2Nj4u7/7n8FgsHOz++//+oMPPnjx4oXfzR//t3/7t9dccy3vy9///fdks9nf7Ikeeuhfvvzl//vSpUu/Oz/89ddff/jhh/9/i1GBQPClL33p0qXFO+74P9vt9qlTp0ZGPF0x+qd/eufv8o+/55578OEHP/jh//gff/P/FYZuueWWycmpr3/9/oHI/I1h1GKxeDyj99xzTyaT4Tju8ccfH9zHX2cNDTnUavXgPvwmMZpIJFKp1Hve854HHnig3W7T9zKZ7L/9t4/ccMMNRqPx/Plz9913H+k4jUZz5513XnfdiVqt9uijj37/+9+DBnzooe+84x3vPHjwoNfr/dKX/tbv93c9Ttfd37zV62q///3v3Xbb742Njb3yyst///d/f+edf3rmzJlkMvnVr34V9sxDD/3Lt7714C233Hr06NFYLPbtb3/7l798nj3yqVOnP/zhD4+MjCSTyX/8x3986aUXv/jFL544cZLjuFtvvfXv/u5//vznP/8t/9i9/K7Oy4a9d9ddf3b8+PFCofDtb3/rv//3uz/4wQ/E4/Hf+PW/EZ+p1Wp99rOfPXPmxgceeOD666+n7//qrz49OTn56U9/+kMfun1nx8/uct9993Ec90d/9JF77vnL22677YYbzuD797zn97/xjW984APvT6WSf/Ind/Y6Tq/d36TV63Rvf/s7Pv/5z33sYx+dmJi8//6vX758+b/+1/c9++yzf/7nf077vv/9H/jBD77/3vf+/ne/+6+f+cxnXC4Xe+RDhw498MA33/e+9/74xz++++67hULhZz7zmYceeujJJ59829v+j5///Oe//R+7l9/Vedkcx33605+p1Wp/8Ad/8Cd/8onrrrtu17v32/br19ZW//iP/+jJJ5/88z//i89//gtSqdTpdJ44ceLzn/+c37+TyWQefPAB2tjjGZ2ePvCVr3wll8v5fL7HHvvpDTf8b2T/r//1yObmRj6ff/jhh6empjiO6zxOn93fjNXndI8++mgsFguHw88+e7ZQKPzsZ4+VSqWf/OTRoaEhmUyGbX76059cvny5XC4//fTTFy9ePHXqFHvwBx984OLFi6VS6dFHf6xSqcxm897P/uatXX9X52WPjIwcOHDgK1/5ciqVTKVS999//5t3/eI3vGetVvu3f/u3n//8ya985Ssf+tCHrl69GovFcrlc55YOx5BSqXz88Sfom8XFRXyIRqP4kM3m5HI5x3Eul4t3nD67vxmrz+mSyQQ+FIvFWCxKnzmOk8vl1WqV4zjWd0wmk1qtjj34Nddc+/a3v31kZMRqtQoEAolEsvezv3lr19/VedkOhyMej5dKpV89vuybd/3iX3P/bDbz7LNnZ2fnXnzxRbPZLJfLK5VKh/2azGQy73vfe1njtddKpVK84+xr919//Zqn0+v19HlsbPSxx35G/52cnLz33nu/9rWv/cu/PJROp3/0o4d/42d/M1bXy87l8kajUSwWNxoNjuMcDuebd/1vRNe73e477vi40+kUi8Uez+hNN711cfHS+vr61tbWPffcY7fbjUbjHXfcQdtvbKxnMulPfOIT7PPrtTqPs6/df/31a57ugx+83eMZValUH/jAB4eGHM899yz9yW4fKpfLa2uryWTy3e/+T7DqOI4rFPIezwi06m/5x+5ldb3stbXVXC73yU/+XxqNxm63f/Sjf/wbuXu/MYym02mbzfa1r/3DT37y07/+679+6qmnvve977Xb7fvuu7dWq91///0PPvgtkUjE+lj33nvv8PDwd77z0E9/+tg3v/nA2NhYr4N3Hmdfu//669c83eOP/+yv/uqeH/7w306ePPmpT32qUCjQn15++aXFxcVvfOMfH3zwWz6fDxKI47izZ88KhaIf//jRG24481v+sXtZXS+7Xq9/9rOf9Xg8P/jBDz//+S/89Kc/5TiuUqm8GdcvGPQp+c3GcX6n8km/tTUzM/uFL3zhv/yX//y7Eh8drMH6fwEkFk9MTNx1112PPvrom3WKwV0erDe27r333muuuVYqlUYikaeffuqHP/zhm3Siga4frN/1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" style="max-width:100%;height:auto;border:1px solid #888;" alt="ZTF18abestvy montage"></div>
+        </div>
+      </section>
+      <section class="lt-section">
+        <h3 class="lt-h3">Metadata exposed to model</h3>
+        <div class="lt-section-body">
+          <div class="lt-table-caption">Metadata fields</div>
+          <table class="lt-table">
+            <thead>
+              <tr>
+                <th>key</th>
+                <th>value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>fid</td>
+                <td>2.0</td>
+              </tr>
+              <tr>
+                <td>isdiffpos_raw</td>
+                <td>f</td>
+              </tr>
+              <tr>
+                <td>magpsf</td>
+                <td>15.952669143676758</td>
+              </tr>
+              <tr>
+                <td>sigmapsf</td>
+                <td>0.1620972454547882</td>
+              </tr>
+              <tr>
+                <td>sgscore1</td>
+                <td>0.9962499737739564</td>
+              </tr>
+              <tr>
+                <td>distpsnr1</td>
+                <td>1.7010197639465332</td>
+              </tr>
+              <tr>
+                <td>classtar</td>
+                <td>0.9509999752044678</td>
+              </tr>
+              <tr>
+                <td>fwhm</td>
+                <td>1.7599999904632568</td>
+              </tr>
+              <tr>
+                <td>ndethist</td>
+                <td>1.0</td>
+              </tr>
+              <tr>
+                <td>ncovhist</td>
+                <td>33.0</td>
+              </tr>
+              <tr>
+                <td>firstmjd</td>
+                <td>58306.19114580005</td>
+              </tr>
+              <tr>
+                <td>chinr</td>
+                <td>0.8550000190734863</td>
+              </tr>
+              <tr>
+                <td>sharpnr</td>
+                <td>-0.0439999997615814</td>
+              </tr>
+              <tr>
+                <td>sgmag1</td>
+                <td>13.508500099182127</td>
+              </tr>
+              <tr>
+                <td>srmag1</td>
+                <td>13.06700038909912</td>
+              </tr>
+              <tr>
+                <td>simag1</td>
+                <td>12.77400016784668</td>
+              </tr>
+              <tr>
+                <td>szmag1</td>
+                <td>12.612000465393066</td>
+              </tr>
+              <tr>
+                <td>nmtchps</td>
+                <td>7.0</td>
+              </tr>
+              <tr>
+                <td>deltajd</td>
+                <td>2333.3665625001304</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </section>
+  <section class="lt-section">
+    <h2 class="lt-h2">Prompt</h2>
+    <div class="lt-section-body">
+      <details class="lt-details">
+        <summary>System prompt (click to expand)</summary>
+        <div class="lt-details-body">
+          <div><pre>You are an experienced astrophysicist. Your task is to classify astronomical transient candidates using three image cutouts and associated metadata.
+
+The montage is labeled left-to-right on the PNG as Science, Template, and Image. Template is the coadded reference (baseline) image; Image is the difference image (science minus reference). In the guide below, &quot;reference&quot; means the Template panel and &quot;difference&quot; means the Image panel.
+
+Your task is to analyze a single first-detection astronomical alert using:
+(1) a single tiled image containing three cutouts, and
+(2) alert-level metadata as raw ZTF-style candidate fields (see reference below).
+
+You must classify the alert using only the provided evidence.
+Do not use additional light-curve history, spectroscopy, or information from catalogs
+or databases beyond the metadata fields and images supplied in this prompt (pre-filled
+PS1-derived columns count as supplied metadata; do not query external archives).
+If the evidence is ambiguous, say so in the scientific rationale, but still return the required structured outputs.
+
+Goal:
+Determine whether the alert is most consistent with one of the following
+five classes:
+- Supernova
+- Variable Star
+- AGN
+- Asteroid
+- Bogus
+
+In this benchmark, &quot;Variable Star&quot; means Galactic (stellar) variable candidates as a class label; &quot;AGN&quot; means active galactic nucleus variability—both can vary in nature, but the two labels are distinct here.
+
+Stage 2 (Part C: solar_system vs astrophysical) guidance:
+- solar_system: Prioritize coherent Science–Template evidence of a moving or offset point-like counterpart relative to the Template, or streak-like behavior, especially when ndethist is very small under the field definition (sparse linkage at the same sky location is expected for some movers).
+- solar_system: PS1 neighbor colors and star–galaxy scores describe a catalog match that may be unrelated along the line of sight; a stellar-like PS1 neighbor alone does not rule out solar_system if the cutouts support motion or offset.
+- astrophysical: Choose when variability or a transient on/near a persistent host is better supported by linkage and cutouts (often higher ndethist at fixed sky position, but not required), or by clear SN-like / variable / AGN interpretation without a mover story consistent with the images.
+- When stage2 is solar_system, the Asteroid label applies in this benchmark; do not assign supernova, variable_star, or AGN unless stage2 is astrophysical.
+
+Important image interpretation guide:
+- The input image consists of three 63 x 63 pixel cutouts tiled horizontally:
+  Science (left), Reference (middle; reference baseline), Difference (right; difference).
+  Top labels on the montage read Science, Reference, Difference.
+- Locate the central candidate: The transient candidate is always located at the exact geometric center of each of the three panels. Identify this central source first, then use the surrounding pixels to determine context (e.g., host galaxies) or rule out distractors (e.g., off-center bright stars causing diffraction spikes).
+- Science (left): the current observation.
+- Reference (middle): historical coadded baseline at the same sky location.
+- Difference (right): science minus reference (subtraction image).
+- A localized residual in the difference image may indicate a real brightness change. In many simple cases, real point-like sources appear as roughly circular residuals with predominantly positive (white) or predominantly negative (black) flux; more complex patterns are possible—use all three panels together.
+- Dipole or &quot;yin-yang&quot; patterns (adjacent positive and negative residuals) are common when subtraction fails (PSF mismatch, astrometric misalignment, differential chromatic refraction, and similar image-differencing issues). The same morphology can also appear for real sources when the science and reference positions differ slightly, including slow-moving solar-system objects—compare Science vs Template for a coherent offset of a counterpart before assuming bogus. If you see a dipole together with very low ndethist, perform that Science–Template offset check before defaulting to Variable Star or other astrophysical classes. Edge effects, striping, streaks, crosses, and diffuse irregular residuals are more often bogus.
+- Do not use ndethist or ncovhist alone as sufficient proof of any class; always combine them with the cutouts (see field reference for definitions).
+- When ndethist is very small, you must explicitly compare Science vs Template for positional offset or motion of a counterpart before setting stage2 to astrophysical; that check is required when discriminating solar_system from variables.
+- Treat ncovhist as cadence/coverage context the same way: informative, not a standalone classifier.
+- Compare the science and template/reference images to judge whether a source is new, variable, persistent, offset, extended, or absent.
+- Use the images together with the metadata. Do not rely on images alone when
+  metadata provide important context.
+
+Important metadata instructions:
+- The user message lists [ZTF CANDIDATE FIELDS] as field names and values exactly as in the benchmark extract (not pre-decoded band names or subtraction words).
+- Use the following reference to interpret those fields. Part A asks for decoded quantities: filter_band must be g, r, or i (derive from fid), and subtraction_sign must be positive or negative (derive from isdiffpos using the reference).
+
+ZTF candidate field reference (schema: https://zwickytransientfacility.github.io/ztf-avro-alert/schema.html):
+- fid: filter ID (integer). 1 = g, 2 = r, 3 = i.
+- isdiffpos: string flag. t or 1 =&gt; positive subtraction (science minus reference), i.e. brighter in science than reference.
+  f or 0 =&gt; negative subtraction (reference minus science), i.e. fainter in science than reference.
+- firstmjd: first detection time in modified Julian date (MJD) from the survey object record (object-level). This is not the same as the Avro candidate field jd, which is the observation time in Julian Date (JD) days in the alert packet (~2.45e6 scale).
+- magpsf: PSF-fit magnitude on the difference (DIA) image at the candidate position [mag]; lower = brighter (ZTF alert pipeline).
+- sigmapsf: 1-sigma uncertainty in magpsf on that difference-image fit [mag].
+- fwhm: FWHM assuming Gaussian core from SExtractor [pixels].
+
+Two different star/galaxy indicators (do not merge them):
+- classtar: Star/galaxy classification score from SExtractor for this candidate. The public Avro schema does not specify which stamp (science vs difference) SExtractor used; treat it as a morphological score and combine with the three cutouts. It is not derived from the Pan-STARRS1 catalog.
+- sgscore1 and distpsnr1 (PS1 neighbor): sgscore1 is the star/galaxy score of the closest Pan-STARRS1 (PS1) catalog source within 30 arcsec; 0 &lt;= sgscore1 &lt;= 1, with values closer to 1 implying higher likelihood of being a star (ZTF schema wording). distpsnr1 is the angular distance in arcseconds to that closest PS1 source. If distpsnr1 is large, or PS1 fields are missing or sentinel values, treat sgscore1 as weak or ambiguous—the nearest PS1 object may be an unrelated projection near the line of sight.
+
+- chinr: DAOPhot chi parameter of the nearest source in the reference-image PSF catalog within 30 arcsec.
+- sharpnr: DAOPhot sharpness of that nearest reference PSF source within 30 arcsec (values near 0 are more point-like).
+
+- ndethist: Number of spatially coincident detections within 1.5 arcsec over survey history, counting only detections on the same ZTF field and readout channel as this candidate; raw detections down to photometric S/N ~3 are included (ZTF schema). Values shown match alert-level history for this candidate. This is not the same as a plain-language &quot;object visit count.&quot;
+- ncovhist: Number of times this sky position fell on any ZTF field and readout channel over survey history (ZTF schema).
+
+Soft ZTF-specific context (heuristics, not sole proof): Very low ndethist (often 1 on a first notable alert) is common among solar-system candidates because linkage under the definition above can be sparse; it is not proof by itself, since cadence and linking can also yield low counts for other kinds of sources. When ndethist is very small and Science vs Template shows a coherent positional offset of a point-like counterpart or morphology consistent with motion (e.g. streak) together with the difference image, treat solar_system (Part C stage2) as a strong leading hypothesis unless other evidence clearly supports a variable or host-dominated astrophysical scenario. Higher ndethist at a fixed sky position is more suggestive of repeated activity at that location (e.g. variable stars, AGN) but remains context- and survey-cadence-dependent.
+
+- sgmag1, srmag1, simag1, szmag1: PS1 PSF magnitudes of the closest PS1 catalog source within 30 arcsec in g, r, i, z [mag]. Derived colors (e.g. g-r, r-i) describe that matched PS1 object (often host+nucleus blend), not necessarily the transient alone—use distpsnr1 and cutouts.
+- nmtchps: number of PS1 catalog sources within 30 arcsec.
+- deltajd: time span in days between first and last detection for this object (object-level).
+
+Sentinel values: numeric -999 (and similar schema null sentinels) means no valid measurement. Do not interpret -999 as a physical magnitude, distance, or flux; do not use it as numeric evidence in Part B or Part C. For Part A, copy magpsf and sigmapsf from the input when they are real measurements. If they are missing or sentinels, you must still satisfy the JSON number types if the schema requires floats—do not invent astrophysical photometry; state clearly in Part B that those inputs were missing or non-physical.
+
+
+General reasoning instructions:
+- First, read and interpret the metadata using the field reference.
+- Then, analyze the science, reference, and difference cutouts jointly.
+- Base your explanation on concrete evidence from the provided input.
+- Prefer cautious, evidence-grounded reasoning over overconfident speculation.
+- If multiple interpretations are plausible, name the leading interpretation and one alternative.
+- If evidence is mixed, choose the most likely class and explain the main uncertainty in Part B.
+
+Important: self-scores must evaluate the quality of the written reasoning
+itself, not just your confidence in the final classification.
+
+Part B scoring rubric:
+You must score your own Part B reasoning using the following shared 0--5 rubric.
+Use this rubric exactly when assigning:
+- self_score_key_evidence
+- self_score_leading_interpretation_and_support
+- self_score_alternative_analysis
+
+The three reasoning dimensions are:
+
+1. Evidence quality
+   - Does the cited evidence actually appear in the provided images and metadata?
+   - Is the cited evidence scientifically relevant to the classification task?
+
+2. Leading-interpretation quality
+   - Is the proposed leading interpretation plausible?
+   - Is it supported by the cited evidence?
+
+3. Alternative-analysis quality
+   - Is the alternative explanation scientifically plausible?
+   - Is it discussed in a coherent way using the provided evidence?
+
+Rubric:
+- 5 = Scientifically coherent, specific, and well grounded in the provided input.
+- 4 = Mostly coherent and grounded, with only minor omissions or imprecision.
+- 3 = Broadly plausible but incomplete, vague, or only weakly tied to the
+      provided evidence.
+- 2 = Weak analysis with major omissions, generic claims, or poorly justified
+      links between evidence and interpretation.
+- 1 = Largely unsupported or internally inconsistent.
+- 0 = Clearly flawed, contradictory, or hallucinatory.
+
+Self-scoring instructions:
+- Score each of the three Part B fields separately.
+- Use only integers from 0 to 5.
+- Be strict and evidence-based.
+- Do not give high scores unless the reasoning is clearly grounded in the provided images and metadata.
+
+You must return your answer as a single JSON object with three top-level keys
+(&quot;Part A&quot;, &quot;Part B&quot;, &quot;Part C&quot;) matching this structure:
+
+{
+  &quot;Part A&quot;: {
+    &quot;filter_band&quot;: &quot;&lt;g | r | i&gt;&quot;,
+    &quot;subtraction_sign&quot;: &quot;&lt;positive | negative&gt;&quot;,
+    &quot;magpsf&quot;: &lt;float&gt;,
+    &quot;sigmapsf&quot;: &lt;float&gt;,
+    &quot;ndethist&quot;: &lt;int&gt;,
+    &quot;ncovhist&quot;: &lt;int&gt;
+  },
+  &quot;Part B&quot;: {
+    &quot;key_evidence&quot;: &quot;&lt;string&gt;&quot;,
+    &quot;leading_interpretation_and_support&quot;: &quot;&lt;string&gt;&quot;,
+    &quot;alternative_analysis&quot;: &quot;&lt;string&gt;&quot;,
+    &quot;self_score_key_evidence&quot;: &lt;int 0-5&gt;,
+    &quot;self_score_leading_interpretation_and_support&quot;: &lt;int 0-5&gt;,
+    &quot;self_score_alternative_analysis&quot;: &lt;int 0-5&gt;
+  },
+  &quot;Part C&quot;: {
+    &quot;stage1&quot;: &quot;&lt;artifact | real_object&gt;&quot;,
+    &quot;stage2&quot;: &quot;&lt;solar_system | astrophysical | N/A&gt;&quot;,
+    &quot;stage3&quot;: &quot;&lt;supernova | variable_star | AGN | N/A&gt;&quot;
+  }
+}
+
+Output constraints:
+- For Part A:
+  - filter_band must be exactly one of: g, r, i
+  - subtraction_sign must be exactly one of: positive, negative
+  - magpsf must be a float
+  - sigmapsf must be a float
+  - ndethist must be an integer
+  - ncovhist must be an integer
+- For Part B:
+  - each self score must be an integer from 0 to 5
+  - keep each rationale field concise and evidence-based
+- For Part C:
+  - stage1 must be exactly one of: artifact, real_object
+  - stage2 must be exactly one of: solar_system, astrophysical, N/A
+  - stage3 must be exactly one of: supernova, variable_star, AGN, N/A
+
+Logical consistency rules:
+- If stage1 = artifact, then stage2 = N/A and stage3 = N/A.
+- If stage1 = real_object and stage2 = solar_system, then stage3 = N/A.
+- If stage1 = real_object and stage2 = astrophysical, then stage3 must be one
+  of: supernova, variable_star, AGN.
+
+Do not add any extra headings, commentary, markdown, or explanation outside the required format.
+Please limit your total output length (including thoughts, if any) to under 8192 tokens. 
+</pre></div>
+        </div>
+      </details>
+      <section class="lt-section">
+        <h3 class="lt-h3">User prompt</h3>
+        <div class="lt-section-body">
+          <div><pre>[ALERT IDENTIFIERS]
+- Object ID: ZTF18abestvy
+
+[ZTF CANDIDATE FIELDS]
+- fid: 2
+- isdiffpos: f
+- firstmjd: 58306.2
+- magpsf: 15.9527
+- sigmapsf: 0.162097
+- fwhm: 1.76
+- classtar: 0.951
+- sgscore1: 0.99625
+- distpsnr1: 1.70102
+- chinr: 0.855
+- sharpnr: -0.044
+- ndethist: 1
+- ncovhist: 33
+- sgmag1: 13.5085
+- srmag1: 13.067
+- simag1: 12.774
+- szmag1: 12.612
+- nmtchps: 7
+- deltajd: 2333.37
+
+Field definitions and sentinel rules are in the system message.
+
+Analyze this alert and return the JSON response.</pre></div>
+        </div>
+      </section>
+    </div>
+  </section>
+  <section class="lt-section">
+    <h2 class="lt-h2">Model output</h2>
+    <div class="lt-section-body">
+      <section class="lt-section">
+        <h3 class="lt-h3">Raw text (full model output incl. thinking, verbatim from jsonl)</h3>
+        <div class="lt-section-body">
+          <div><pre>{
+  &quot;Part A&quot;: {
+    &quot;filter_band&quot;: &quot;r&quot;,
+    &quot;subtraction_sign&quot;: &quot;negative&quot;,
+    &quot;magpsf&quot;: 15.9527,
+    &quot;sigmapsf&quot;: 0.162097,
+    &quot;ndethist&quot;: 1,
+    &quot;ncovhist&quot;: 33
+  },
+  &quot;Part B&quot;: {
+    &quot;key_evidence&quot;: &quot;The central source is a bright point source in both Science and Template, with the Science image slightly fainter than the Template, matching the negative subtraction flag. The Difference panel shows a compact dipole-like residual centered on the source rather than a clean isolated new source. Metadata indicate a very star-like counterpart (classtar 0.951; PS1 sgscore1 0.996 at 1.7 arcsec) and only one historical coincident detection despite 33 coverages.&quot;,
+    &quot;leading_interpretation_and_support&quot;: &quot;Most consistent with a real Galactic variable star. The source is clearly present in the reference image, is point-like, and the alert is a negative subtraction, indicating fading relative to baseline rather than a new transient. The stellar morphology in both image and metadata strongly favors a star over a galaxy/AGN host. Although ndethist=1 is low, the Science and Template panels do not show an obvious offset or streak suggesting motion; instead they support variability at a fixed stellar position.&quot;,
+    &quot;alternative_analysis&quot;: &quot;A solar-system object is the main alternative because ndethist is only 1 and the difference residual has some dipole character. However, the central source appears coincident in Science and Template rather than clearly shifted, and there is a strong pre-existing stellar counterpart at the alert position, so a moving-object interpretation is less well supported. Bogus is less likely because the residual is centered on a real bright source and is consistent with a modest brightness change.&quot;,
+    &quot;self_score_key_evidence&quot;: 4,
+    &quot;self_score_leading_interpretation_and_support&quot;: 4,
+    &quot;self_score_alternative_analysis&quot;: 4
+  },
+  &quot;Part C&quot;: {
+    &quot;stage1&quot;: &quot;real_object&quot;,
+    &quot;stage2&quot;: &quot;astrophysical&quot;,
+    &quot;stage3&quot;: &quot;variable_star&quot;
+  }
+}</pre></div>
+        </div>
+      </section>
+      <section class="lt-section">
+        <h3 class="lt-h3">Parsed JSON (extracted by evaluate.extract_json_object)</h3>
+        <div class="lt-section-body">
+          <div><pre>{
+  &quot;Part A&quot;: {
+    &quot;filter_band&quot;: &quot;r&quot;,
+    &quot;subtraction_sign&quot;: &quot;negative&quot;,
+    &quot;magpsf&quot;: 15.9527,
+    &quot;sigmapsf&quot;: 0.162097,
+    &quot;ndethist&quot;: 1,
+    &quot;ncovhist&quot;: 33
+  },
+  &quot;Part B&quot;: {
+    &quot;key_evidence&quot;: &quot;The central source is a bright point source in both Science and Template, with the Science image slightly fainter than the Template, matching the negative subtraction flag. The Difference panel shows a compact dipole-like residual centered on the source rather than a clean isolated new source. Metadata indicate a very star-like counterpart (classtar 0.951; PS1 sgscore1 0.996 at 1.7 arcsec) and only one historical coincident detection despite 33 coverages.&quot;,
+    &quot;leading_interpretation_and_support&quot;: &quot;Most consistent with a real Galactic variable star. The source is clearly present in the reference image, is point-like, and the alert is a negative subtraction, indicating fading relative to baseline rather than a new transient. The stellar morphology in both image and metadata strongly favors a star over a galaxy/AGN host. Although ndethist=1 is low, the Science and Template panels do not show an obvious offset or streak suggesting motion; instead they support variability at a fixed stellar position.&quot;,
+    &quot;alternative_analysis&quot;: &quot;A solar-system object is the main alternative because ndethist is only 1 and the difference residual has some dipole character. However, the central source appears coincident in Science and Template rather than clearly shifted, and there is a strong pre-existing stellar counterpart at the alert position, so a moving-object interpretation is less well supported. Bogus is less likely because the residual is centered on a real bright source and is consistent with a modest brightness change.&quot;,
+    &quot;self_score_key_evidence&quot;: 4,
+    &quot;self_score_leading_interpretation_and_support&quot;: 4,
+    &quot;self_score_alternative_analysis&quot;: 4
+  },
+  &quot;Part C&quot;: {
+    &quot;stage1&quot;: &quot;real_object&quot;,
+    &quot;stage2&quot;: &quot;astrophysical&quot;,
+    &quot;stage3&quot;: &quot;variable_star&quot;
+  }
+}</pre></div>
+        </div>
+      </section>
+    </div>
+  </section>
+  <section class="lt-section">
+    <h2 class="lt-h2">Scoring</h2>
+    <div class="lt-section-body">
+      <section class="lt-section">
+        <h3 class="lt-h3">Part A — metadata-reading per field</h3>
+        <div class="lt-section-body">
+          <div class="lt-table-caption">Part A correctness</div>
+          <table class="lt-table">
+            <thead>
+              <tr>
+                <th>key</th>
+                <th>value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>filter_band</td>
+                <td>pred=&#x27;r&#x27;   gold=&#x27;r&#x27;   [correct]</td>
+              </tr>
+              <tr>
+                <td>subtraction_sign</td>
+                <td>pred=&#x27;negative&#x27;   gold=&#x27;negative&#x27;   [correct]</td>
+              </tr>
+              <tr>
+                <td>magpsf</td>
+                <td>pred=15.9527   gold=15.952669143676758   [correct]</td>
+              </tr>
+              <tr>
+                <td>sigmapsf</td>
+                <td>pred=0.162097   gold=0.1620972454547882   [correct]</td>
+              </tr>
+              <tr>
+                <td>ndethist</td>
+                <td>pred=1   gold=1.0   [correct]</td>
+              </tr>
+              <tr>
+                <td>ncovhist</td>
+                <td>pred=33   gold=33.0   [correct]</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section class="lt-section">
+        <h3 class="lt-h3">Part C — stage-by-stage</h3>
+        <div class="lt-section-body">
+          <div class="lt-table-caption">Stage outcomes</div>
+          <table class="lt-table">
+            <thead>
+              <tr>
+                <th>key</th>
+                <th>value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Gold (5-class)</td>
+                <td>VS</td>
+              </tr>
+              <tr>
+                <td>Predicted (5-class)</td>
+                <td>VS</td>
+              </tr>
+              <tr>
+                <td>Correct?</td>
+                <td>  [correct]</td>
+              </tr>
+              <tr>
+                <td>Stage 1 (real/artifact)</td>
+                <td>real_object   (gold: real_object)  [correct]</td>
+              </tr>
+              <tr>
+                <td>Stage 2 (astro/solar)</td>
+                <td>astrophysical   (gold: astrophysical)  [correct]</td>
+              </tr>
+              <tr>
+                <td>Stage 3 (subclass)</td>
+                <td>variable_star   (gold: variable_star)  [correct]</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section class="lt-section">
+        <h3 class="lt-h3">Error categories</h3>
+        <div class="lt-section-body">
+          <div class="lt-table-caption">Parser + value errors</div>
+          <table class="lt-table">
+            <thead>
+              <tr>
+                <th>key</th>
+                <th>value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>error_category (format)</td>
+                <td>ok</td>
+              </tr>
+              <tr>
+                <td>value_errors</td>
+                <td>(none)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </section>
+  <section class="lt-section">
+    <h2 class="lt-h2">Tokens &amp; run info</h2>
+    <div class="lt-section-body">
+      <div class="lt-table-caption">Token counts</div>
+      <table class="lt-table">
+        <thead>
+          <tr>
+            <th>key</th>
+            <th>value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>n_prompt_tokens</td>
+            <td>3369</td>
+          </tr>
+          <tr>
+            <td>n_output_tokens</td>
+            <td>462</td>
+          </tr>
+          <tr>
+            <td>n_answer_tokens</td>
+            <td>462</td>
+          </tr>
+          <tr>
+            <td>n_reasoning_tokens</td>
+            <td>0</td>
+          </tr>
+          <tr>
+            <td>max_tokens</td>
+            <td>20000</td>
+          </tr>
+          <tr>
+            <td>truncated</td>
+            <td>False</td>
+          </tr>
+          <tr>
+            <td>finish_reason</td>
+            <td>completed</td>
+          </tr>
+          <tr>
+            <td>reasoning_effort</td>
+            <td>none</td>
+          </tr>
+          <tr>
+            <td>model</td>
+            <td>gpt-5.4</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</body>
+</html>

@@ -1,0 +1,132 @@
+{
+  "n_examples": 100,
+  "n_errors": 0,
+  "json_parseable": 100,
+  "json_valid_rate": 1.0,
+  "output_tokens": {
+    "mean": 3868.2,
+    "median": 3652,
+    "min": 2021,
+    "max": 6582,
+    "p95": 5898
+  },
+  "answer_tokens": {
+    "mean": 3867.2,
+    "median": 3651,
+    "min": 2020,
+    "max": 6581
+  },
+  "n_truncated": 0,
+  "truncated_rate": 0.0,
+  "error_breakdown": {
+    "format": {
+      "extra_text_around_json": 100
+    },
+    "value_top10": {},
+    "n_with_value_errors": 0
+  },
+  "part_a_per_question_accuracy": {
+    "filter_band": 1.0,
+    "subtraction_sign": 1.0,
+    "magpsf": 1.0,
+    "sigmapsf": 1.0,
+    "ndethist": 1.0,
+    "ncovhist": 1.0
+  },
+  "part_a_macro_accuracy": 1.0,
+  "part_a_exact_match_rate": 1.0,
+  "part_b_msrs": 4.54,
+  "part_b_per_dim_mean_self": {
+    "key_evidence": 4.96,
+    "leading_interpretation": 4.73,
+    "alternative_analysis": 3.93
+  },
+  "part_b_self_pass_rate": 0.97,
+  "part_bc_confidence_accuracy": {
+    "n_linked": 100,
+    "mean_confidence_correct": 4.5578,
+    "mean_confidence_incorrect": 4.5229,
+    "calibration_gap": 0.0349,
+    "pearson_r": 0.0638,
+    "accuracy_high_confidence": 0.4845,
+    "n_high_confidence": 97,
+    "accuracy_low_confidence": 0.6667,
+    "n_low_confidence": 3
+  },
+  "part_c_n_evaluable": 100,
+  "part_c_stage1_accuracy": 0.82,
+  "part_c_stage2_accuracy": 0.73,
+  "part_c_stage3_accuracy": 0.58,
+  "part_c_stage2_conditional_accuracy": 0.8875,
+  "part_c_stage3_conditional_accuracy": 0.5167,
+  "part_c_end_to_end_staged_accuracy": 0.49,
+  "part_c_final_5class_accuracy": 0.49,
+  "per_class_accuracy": {
+    "SN": 0.6,
+    "AGN": 0.0,
+    "VS": 0.95,
+    "asteroid": 0.8,
+    "bogus": 0.1
+  },
+  "per_class_total": {
+    "AGN": 20,
+    "SN": 20,
+    "VS": 20,
+    "asteroid": 20,
+    "bogus": 20
+  },
+  "per_class_correct": {
+    "SN": 12,
+    "VS": 19,
+    "asteroid": 16,
+    "bogus": 2
+  },
+  "part_c_stage1_prf_real_object": {
+    "precision": 0.8163,
+    "recall": 1.0,
+    "f1": 0.8989
+  },
+  "part_c_stage2_prf_astrophysical": {
+    "precision": 0.8088,
+    "recall": 0.9167,
+    "f1": 0.8594
+  },
+  "part_c_stage3_macro_f1": 0.4684,
+  "part_c_stage3_per_class_prf": {
+    "supernova": {
+      "precision": 1.0,
+      "recall": 0.6,
+      "f1": 0.75
+    },
+    "variable_star": {
+      "precision": 0.5,
+      "recall": 0.95,
+      "f1": 0.6552
+    },
+    "AGN": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    }
+  },
+  "part_c_stage3_confusion_matrix": {
+    "supernova": {
+      "supernova": 12,
+      "variable_star": 0,
+      "AGN": 5,
+      "N/A": 3
+    },
+    "variable_star": {
+      "supernova": 0,
+      "variable_star": 19,
+      "AGN": 0,
+      "N/A": 1
+    },
+    "AGN": {
+      "supernova": 0,
+      "variable_star": 19,
+      "AGN": 0,
+      "N/A": 1
+    }
+  }
+}
