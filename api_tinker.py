@@ -12,8 +12,10 @@ Requires:
 
 Default vision model: moonshotai/Kimi-K2.5 (zero-shot; override via TINKER_MODEL or --model).
 
-Renderer routing (tinker-cookbook): Kimi K2.5 → KimiK25DisableThinkingRenderer (structured JSON);
-Qwen3.5* → Qwen3_5Renderer; Qwen3-VL* → Qwen3VLInstructRenderer. Llama Vision is not wired here.
+Renderer routing (tinker-cookbook): Kimi K2.5 → KimiK25Renderer (thinking enabled);
+Qwen3.5* → Qwen3_5Renderer (thinking enabled); Qwen3-VL* → Qwen3VLInstructRenderer.
+Reasoning renderers auto-bump max_tokens to 20000; sample_vlm separates thinking
+from answer_text so JSON parsing only sees the post-thinking output. Llama Vision is not wired here.
 """
 from __future__ import annotations
 
@@ -68,13 +70,14 @@ def build_messages(
 def get_renderer(model_name: str, tokenizer: Any, image_processor: Any) -> Any:
     """
     Return a tinker-cookbook renderer for the given HF model id.
-    Kimi K2.5 uses thinking-disabled mode so assistant output is direct JSON-friendly text.
+    Kimi K2.5 uses the thinking-enabled renderer; sample_vlm splits thinking from
+    answer_text via _extract_text_content, so JSON parsing still operates on clean text.
     """
     mn = model_name.lower()
     if "kimi" in mn and "k2.5" in mn:
-        from tinker_cookbook.renderers.kimi_k25 import KimiK25DisableThinkingRenderer
+        from tinker_cookbook.renderers.kimi_k25 import KimiK25Renderer
 
-        return KimiK25DisableThinkingRenderer(tokenizer, image_processor)
+        return KimiK25Renderer(tokenizer, image_processor)
     if "qwen3.5" in mn or "qwen3-35" in mn:
         from tinker_cookbook.renderers.qwen3_5 import Qwen3_5Renderer
 

@@ -51,6 +51,34 @@ GOLD_STAGES: dict[str, tuple[str, str, str]] = {
 
 FLOAT_TOLERANCE = 0.1
 
+# Required top-level keys in a well-formed answer JSON.
+REQUIRED_TOP_KEYS = (("Part A", "part_a"), ("Part B", "part_b"), ("Part C", "part_c"))
+
+# Allowed enum values for Part C stages.
+STAGE1_VALUES = {"real_object", "artifact"}
+STAGE2_VALUES = {"solar_system", "astrophysical", "N/A"}
+STAGE3_VALUES = {"supernova", "variable_star", "AGN", "N/A"}
+
+# Format error codes (parser layer, mutually exclusive).
+FORMAT_OK = "ok"
+FORMAT_TRUNCATED_NO_JSON = "truncated_no_json"
+FORMAT_TRUNCATED_PARTIAL_JSON = "truncated_partial_json"
+FORMAT_PARSE_FAILED = "parse_failed"
+FORMAT_SCHEMA_MISSING_TOP_LEVEL = "schema_missing_top_level"
+FORMAT_SCHEMA_WRONG_TYPE = "schema_wrong_type"
+FORMAT_EXTRA_TEXT_AROUND_JSON = "extra_text_around_json"
+
+# Common refusal phrases (case-insensitive substring match).
+REFUSAL_PHRASES = (
+    "i cannot determine",
+    "i can't determine",
+    "i am unable to",
+    "i'm unable to",
+    "cannot classify",
+    "insufficient information to classify",
+    "i refuse",
+)
+
 # ---------------------------------------------------------------------------
 # JSON extraction
 # ---------------------------------------------------------------------------
@@ -290,6 +318,157 @@ def _binary_prf(tp: int, fp: int, fn: int) -> dict[str, float]:
 
 
 # ---------------------------------------------------------------------------
+# Error categorization (format + value)
+# ---------------------------------------------------------------------------
+
+
+def _get_top_key(parsed: dict, key_pair: tuple[str, str]) -> Any:
+    for k in key_pair:
+        if k in parsed:
+            return parsed[k]
+    return None
+
+
+def categorize_format_error(
+    answer_text: str,
+    raw_text: str,
+    parsed: dict | None,
+    truncated: bool,
+) -> str:
+    """Classify the parser-side outcome of one record.
+
+    Returns one of FORMAT_* codes. Mutually exclusive — first matching condition
+    wins. The order of checks reflects severity (truncation > parse fail > schema).
+    """
+    text_for_check = answer_text if answer_text else raw_text or ""
+    has_open_brace = "{" in text_for_check
+
+    if parsed is None:
+        if truncated:
+            return FORMAT_TRUNCATED_PARTIAL_JSON if has_open_brace else FORMAT_TRUNCATED_NO_JSON
+        return FORMAT_PARSE_FAILED
+
+    if not isinstance(parsed, dict):
+        return FORMAT_SCHEMA_WRONG_TYPE
+
+    for key_pair in REQUIRED_TOP_KEYS:
+        val = _get_top_key(parsed, key_pair)
+        if val is None:
+            return FORMAT_SCHEMA_MISSING_TOP_LEVEL
+        if not isinstance(val, dict):
+            return FORMAT_SCHEMA_WRONG_TYPE
+
+    # JSON is structurally valid. If significant text surrounds it, flag (warning,
+    # not a hard fail — record still scores normally).
+    stripped = (answer_text or "").strip()
+    if stripped:
+        first = stripped.find("{")
+        last = stripped.rfind("}")
+        if first > 50 or (last != -1 and len(stripped) - last - 1 > 50):
+            return FORMAT_EXTRA_TEXT_AROUND_JSON
+
+    return FORMAT_OK
+
+
+def _is_na(val: Any) -> bool:
+    return val is None or normalize_stage2(val) == "N/A" or normalize_stage3_label(val) == "N/A"
+
+
+def find_value_errors(
+    parsed: dict,
+    gold_a: dict | None,
+    raw_text: str = "",
+) -> list[str]:
+    """Return list of value-error codes for one record. Codes can co-occur.
+
+    Includes:
+      - part_a_wrong_<field> / part_a_missing_<field>
+      - Part C cross-field consistency rules (c1_*, c2_*)
+      - enum violations
+      - Part B presence + score-range checks
+      - refusal detection
+    """
+    errors: list[str] = []
+
+    # ---- Part A field-level ----
+    part_a = _get_top_key(parsed, ("Part A", "part_a"))
+    if isinstance(part_a, dict) and gold_a is not None:
+        for q in PART_A_QUESTIONS:
+            gold_val = gold_a.get(q)
+            if gold_val is None:
+                continue
+            pred_val = part_a.get(q)
+            if pred_val is None:
+                errors.append(f"part_a_missing_{q}")
+            elif not check_part_a_question(q, pred_val, gold_val):
+                errors.append(f"part_a_wrong_{q}")
+
+    # ---- Part C consistency ----
+    part_c = _get_top_key(parsed, ("Part C", "part_c"))
+    if isinstance(part_c, dict):
+        s1_raw = part_c.get("stage1")
+        s2_raw = part_c.get("stage2")
+        s3_raw = part_c.get("stage3")
+        s1 = normalize_stage1(s1_raw)
+        s2 = normalize_stage2(s2_raw)
+        s3 = normalize_stage3_label(s3_raw)
+
+        if s1_raw is not None and s1 is None:
+            errors.append("enum_violation_stage1")
+        if s2_raw is not None and s2 is None:
+            errors.append("enum_violation_stage2")
+        if s3_raw is not None and s3 is None:
+            errors.append("enum_violation_stage3")
+
+        if s1 == "artifact":
+            if s2 not in (None, "N/A"):
+                errors.append("c1_artifact_must_zero_others")
+            elif s3 not in (None, "N/A"):
+                errors.append("c1_artifact_must_zero_others")
+        elif s1 == "real_object":
+            if s2 == "N/A":
+                errors.append("c1_real_requires_stage2")
+            if s2 == "solar_system" and s3 not in (None, "N/A"):
+                errors.append("c2_solar_must_zero_stage3")
+            if s2 == "astrophysical" and s3 not in {"supernova", "AGN", "variable_star"}:
+                errors.append("c2_astro_requires_subtype")
+
+    # ---- Part B presence + ranges ----
+    part_b = _get_top_key(parsed, ("Part B", "part_b"))
+    if not isinstance(part_b, dict):
+        errors.append("part_b_missing")
+    else:
+        for dim in ("key_evidence", "leading_interpretation_and_support", "alternative_analysis"):
+            if part_b.get(dim) in (None, ""):
+                errors.append(f"part_b_missing_{dim}")
+        for k in PART_B_SELF_SCORE_KEYS:
+            v = part_b.get(k)
+            if v is None:
+                continue
+            try:
+                iv = int(v)
+                if not (1 <= iv <= 5):
+                    errors.append(f"part_b_score_out_of_range_{k}")
+            except (ValueError, TypeError):
+                errors.append(f"part_b_score_out_of_range_{k}")
+        conf = part_b.get("confidence_overall")
+        if conf is not None:
+            try:
+                cf = float(conf)
+                if not (1 <= cf <= 5):
+                    errors.append("part_b_confidence_out_of_range")
+            except (ValueError, TypeError):
+                errors.append("part_b_confidence_out_of_range")
+
+    # ---- Refusal detection ----
+    low = (raw_text or "").lower()
+    if any(p in low for p in REFUSAL_PHRASES):
+        errors.append("refusal")
+
+    return errors
+
+
+# ---------------------------------------------------------------------------
 # Main evaluation
 # ---------------------------------------------------------------------------
 
@@ -297,8 +476,15 @@ def _binary_prf(tp: int, fp: int, fn: int) -> dict[str, float]:
 def evaluate_jsonl(
     predictions_path: Path,
     manifest_path: Path,
+    write_back_errors: bool = True,
 ) -> dict[str, Any]:
-    """Compute full AstroAlertBench metrics from a JSONL predictions file."""
+    """Compute full AstroAlertBench metrics from a JSONL predictions file.
+
+    If `write_back_errors` is True (default), each row is augmented in-place with
+    `error_category` (one FORMAT_* code) and `value_errors` (list of codes), and
+    the JSONL file is rewritten. This lets downstream tools (notebooks, the
+    log-experiment skill) inspect why specific rows failed without re-running.
+    """
     manifest = pd.read_csv(manifest_path, low_memory=False)
     gold_map = manifest.set_index("oid")
 
@@ -316,6 +502,10 @@ def evaluate_jsonl(
     n = len(rows)
     n_errors = sum(1 for r in rows if r.get("error"))
     json_ok = 0
+
+    # Error category accumulators
+    format_counts: Counter[str] = Counter()
+    value_error_counts: Counter[str] = Counter()
 
     # Part A accumulators
     a_correct: Counter[str] = Counter()
@@ -350,23 +540,47 @@ def evaluate_jsonl(
 
     for r in rows:
         if r.get("error"):
+            r["error_category"] = "runtime_error"
+            r["value_errors"] = []
+            format_counts["runtime_error"] += 1
             continue
         oid = r["oid"]
         tc = r.get("target_class")
         if tc is None and oid in gold_map.index:
             tc = gold_map.loc[oid, "target_class"]
         raw = r.get("raw_text", "")
+        answer = r.get("answer_text", raw)
         parsed = r.get("parsed")
         if parsed is None:
-            parsed = extract_json_object(raw)
+            parsed = extract_json_object(answer)
+        truncated = bool(r.get("truncated"))
+
+        # ---- Format error categorization (one code per row) ----
+        fmt = categorize_format_error(answer, raw, parsed, truncated)
+        r["error_category"] = fmt
+        format_counts[fmt] += 1
+
+        # ---- Gold Part A (used by both value-error finder and Part A scoring) ----
+        gold_a = None
+        if oid in gold_map.index:
+            gold_a = get_gold_part_a(gold_map.loc[oid])
+
+        # ---- Value error categorization (multi-label) ----
+        if isinstance(parsed, dict):
+            verrs = find_value_errors(parsed, gold_a, raw_text=raw)
+            r["value_errors"] = verrs
+            for code in verrs:
+                value_error_counts[code] += 1
+        else:
+            r["value_errors"] = []
+
         if parsed is None:
             continue
         json_ok += 1
 
         # ---- Part A ----
         part_a = parsed.get("Part A") or parsed.get("part_a")
-        if isinstance(part_a, dict) and oid in gold_map.index:
-            gold_a = get_gold_part_a(gold_map.loc[oid])
+        if isinstance(part_a, dict) and gold_a is not None:
             all_q_correct = True
             for q in PART_A_QUESTIONS:
                 pred_val = part_a.get(q)
@@ -485,6 +699,19 @@ def evaluate_jsonl(
     if any("truncated" in r for r in rows):
         metrics["n_truncated"] = n_truncated
         metrics["truncated_rate"] = round(n_truncated / n, 4) if n else 0.0
+
+    # ---- Error breakdown (format codes are mutually exclusive; value codes co-occur) ----
+    metrics["error_breakdown"] = {
+        "format": dict(format_counts.most_common()),
+        "value_top10": dict(value_error_counts.most_common(10)),
+        "n_with_value_errors": sum(1 for r in rows if r.get("value_errors")),
+    }
+
+    # ---- Persist per-row categorization back to the JSONL ----
+    if write_back_errors:
+        with open(predictions_path, "w", encoding="utf-8") as f:
+            for r in rows:
+                f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
     # Part A metrics
     per_q_acc = {}
@@ -712,8 +939,15 @@ if __name__ == "__main__":
         action="store_true",
         help="Print metrics as JSON instead of human-readable report",
     )
+    ap.add_argument(
+        "--no-write-back",
+        action="store_true",
+        help="Do NOT write per-row error_category and value_errors back into the JSONL.",
+    )
     args = ap.parse_args()
-    m = evaluate_jsonl(args.predictions, args.manifest)
+    m = evaluate_jsonl(
+        args.predictions, args.manifest, write_back_errors=not args.no_write_back
+    )
     if args.json:
         print(json.dumps(m, indent=2))
     else:

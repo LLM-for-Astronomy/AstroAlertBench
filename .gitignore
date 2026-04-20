@@ -28,9 +28,6 @@ data/*_backup_*.csv
 results/
 charts/
 
-# Report
-report/
-
 # Local proposal PDF (not tracked)
 LLM_for_Astronomy Proposal.pdf
 
