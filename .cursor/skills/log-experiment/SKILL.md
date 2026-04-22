@@ -55,6 +55,7 @@ From the launch command or recent terminal output, pull:
 - `--model <HF id or openai id>` → `model_name`
 - `--prompts <module>` → `prompts_module` (default `"prompts"`)
 - `--backend` if specified, otherwise infer from model id (anything with `gpt` → openai, else tinker)
+- `--thinking enabled|disabled` (tinker only): selects `Qwen3_5Renderer` vs `Qwen3_5DisableThinkingRenderer` (and Kimi equivalents). The JSONL now records `reasoning_mode` + `renderer` per row, so the report picks this up automatically — no extra CLI arg needed at log time. Reflect it in the slug though (e.g. `qwen35-4b-nothink-benchmark-full`).
 
 ### Step 2 — Gather per-run context (optional but strongly encouraged)
 

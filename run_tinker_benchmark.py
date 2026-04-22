@@ -15,6 +15,9 @@ Example (OpenAI, GPT-5.4 with thinking high):
 Example (OpenAI, GPT-5.4 with thinking disabled):
   python run_tinker_benchmark.py --backend openai --manifest data/manifest_fewshot.csv --model gpt-5.4 --reasoning-effort none --out results/fewshot_gpt54_none.jsonl --concurrency 8
 
+Example (Tinker, Qwen3.5 with thinking disabled — use *DisableThinkingRenderer):
+  python run_tinker_benchmark.py --manifest data/manifest_benchmark_final.csv --model Qwen/Qwen3.5-4B --thinking disabled --out results/benchmark_qwen35_4b_nothink.jsonl --concurrency 32
+
 Parallel execution (default concurrency=1 for backward compat):
   python run_tinker_benchmark.py --manifest data/manifest_fewshot.csv --out results/fewshot.jsonl --concurrency 64
 
@@ -76,6 +79,16 @@ def main() -> None:
         choices=["none", "low", "medium", "high", "xhigh"],
         help="OpenAI backend only. Controls GPT-5.x reasoning_effort. 'none' disables thinking.",
     )
+    ap.add_argument(
+        "--thinking", type=str, default="enabled",
+        choices=["enabled", "disabled"],
+        help=(
+            "Tinker backend only. For Kimi K2.5 and Qwen3.5 family, selects between "
+            "the thinking-enabled renderer (default) and the *DisableThinkingRenderer. "
+            "No-op for Qwen3-VL and other non-reasoning models. Ignored on --backend openai "
+            "(use --reasoning-effort instead)."
+        ),
+    )
     args = ap.parse_args()
 
     if args.backend == "openai":
@@ -123,6 +136,23 @@ def main() -> None:
     if args.reasoning_effort is not None and args.backend != "openai":
         print(
             f"Warning: --reasoning-effort is only used with --backend openai; ignoring.",
+            file=sys.stderr,
+        )
+    if args.backend == "tinker":
+        thinking_bool = args.thinking == "enabled"
+        extra_kwargs["thinking"] = thinking_bool
+        if not api_tinker._model_supports_thinking_toggle(model) and args.thinking == "disabled":
+            print(
+                f"Warning: --thinking disabled has no effect for model {model!r} "
+                "(only Kimi K2.5 and Qwen3.5 have a *DisableThinkingRenderer). "
+                "Proceeding with the default renderer.",
+                file=sys.stderr,
+            )
+        print(f"Tinker renderer thinking mode: {'enabled' if thinking_bool else 'disabled'}")
+    elif args.thinking != "enabled":
+        print(
+            "Warning: --thinking only affects --backend tinker; use --reasoning-effort "
+            "with --backend openai. Ignoring.",
             file=sys.stderr,
         )
 

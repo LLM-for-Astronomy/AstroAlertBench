@@ -139,24 +139,25 @@ def _extract_config_from_rows(
         cfg["backend"] = backend_hint or "tinker"
     if "max_tokens" in r0:
         cfg["max_tokens"] = r0["max_tokens"]
-    # Renderer / reasoning mode lookup for tinker backend
+    # Renderer / reasoning mode: prefer what the runner recorded per row (new
+    # runs carry these fields directly), fall back to model-name inference for
+    # legacy JSONLs that pre-date the fields.
     if cfg["backend"] == "tinker":
-        try:
-            from api_tinker import get_renderer
-            from transformers import AutoTokenizer
-            # Don't actually instantiate; just figure out which class would be used.
+        if "renderer" in r0:
+            cfg["renderer"] = r0["renderer"]
+        if "reasoning_mode" in r0:
+            cfg["reasoning_mode"] = r0["reasoning_mode"]
+        if "renderer" not in cfg or "reasoning_mode" not in cfg:
             mn = (cfg["model"] or "").lower()
             if "kimi" in mn and "k2.5" in mn:
-                cfg["renderer"] = "KimiK25Renderer"
-                cfg["reasoning_mode"] = "enabled"
+                cfg.setdefault("renderer", "KimiK25Renderer")
+                cfg.setdefault("reasoning_mode", "enabled")
             elif "qwen3.5" in mn or "qwen3_5" in mn or "qwen" in mn:
-                cfg["renderer"] = "Qwen3_5Renderer"
-                cfg["reasoning_mode"] = "enabled"
+                cfg.setdefault("renderer", "Qwen3_5Renderer")
+                cfg.setdefault("reasoning_mode", "enabled")
             else:
-                cfg["renderer"] = "(unknown — see api_tinker.get_renderer)"
-                cfg["reasoning_mode"] = "unknown"
-        except Exception:
-            pass
+                cfg.setdefault("renderer", "(unknown — see api_tinker.get_renderer)")
+                cfg.setdefault("reasoning_mode", "unknown")
     return cfg
 
 

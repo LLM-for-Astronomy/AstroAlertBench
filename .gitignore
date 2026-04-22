@@ -26,14 +26,12 @@ data/*_backup_*.csv
 
 # Model API outputs (regenerate with run_tinker_benchmark.py)
 results/
-charts/
 
-# Report
-report/
-
-# Local proposal PDF (not tracked)
-LLM_for_Astronomy Proposal.pdf
+# Results (regenerate with evaluate.py & skill log-experiment)
+results_comparison/
+runs/
 
 # Files from other projects for reference
 eval_test_iteration_000040.html
 logtree_html_tutorial.md
+LLM_for_Astronomy Proposal.pdf

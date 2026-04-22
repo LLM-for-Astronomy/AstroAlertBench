@@ -12,10 +12,16 @@ Requires:
 
 Default vision model: moonshotai/Kimi-K2.5 (zero-shot; override via TINKER_MODEL or --model).
 
-Renderer routing (tinker-cookbook): Kimi K2.5 → KimiK25Renderer (thinking enabled);
-Qwen3.5* → Qwen3_5Renderer (thinking enabled); Qwen3-VL* → Qwen3VLInstructRenderer.
+Renderer routing (tinker-cookbook):
+  - Kimi K2.5     -> KimiK25Renderer        (thinking=True, default)
+                 or KimiK25DisableThinkingRenderer   (thinking=False)
+  - Qwen3.5*      -> Qwen3_5Renderer         (thinking=True, default)
+                 or Qwen3_5DisableThinkingRenderer   (thinking=False)
+  - Qwen3-VL*     -> Qwen3VLInstructRenderer (thinking flag ignored)
 Reasoning renderers auto-bump max_tokens to 20000; sample_vlm separates thinking
-from answer_text so JSON parsing only sees the post-thinking output. Llama Vision is not wired here.
+from answer_text so JSON parsing only sees the post-thinking output. When
+thinking=False on Qwen3.5/Kimi, no reasoning block is emitted and max_tokens is
+left at the caller's value (typically 2048). Llama Vision is not wired here.
 """
 from __future__ import annotations
 
@@ -67,21 +73,38 @@ def build_messages(
     ]
 
 
-def get_renderer(model_name: str, tokenizer: Any, image_processor: Any) -> Any:
+def get_renderer(
+    model_name: str,
+    tokenizer: Any,
+    image_processor: Any,
+    thinking: bool = True,
+) -> Any:
     """
     Return a tinker-cookbook renderer for the given HF model id.
-    Kimi K2.5 uses the thinking-enabled renderer; sample_vlm splits thinking from
-    answer_text via _extract_text_content, so JSON parsing still operates on clean text.
+
+    `thinking` toggles between the thinking-enabled and thinking-disabled variants
+    for hybrid-reasoning models (Kimi K2.5, Qwen3.5). For Qwen3-VL (non-reasoning)
+    and all fallback models the flag is a no-op. sample_vlm splits thinking from
+    answer_text via _extract_text_content, so JSON parsing still operates on clean
+    text regardless of which variant is used.
     """
     mn = model_name.lower()
     if "kimi" in mn and "k2.5" in mn:
-        from tinker_cookbook.renderers.kimi_k25 import KimiK25Renderer
+        from tinker_cookbook.renderers.kimi_k25 import (
+            KimiK25DisableThinkingRenderer,
+            KimiK25Renderer,
+        )
 
-        return KimiK25Renderer(tokenizer, image_processor)
+        cls = KimiK25Renderer if thinking else KimiK25DisableThinkingRenderer
+        return cls(tokenizer, image_processor)
     if "qwen3.5" in mn or "qwen3-35" in mn:
-        from tinker_cookbook.renderers.qwen3_5 import Qwen3_5Renderer
+        from tinker_cookbook.renderers.qwen3_5 import (
+            Qwen3_5DisableThinkingRenderer,
+            Qwen3_5Renderer,
+        )
 
-        return Qwen3_5Renderer(tokenizer, image_processor)
+        cls = Qwen3_5Renderer if thinking else Qwen3_5DisableThinkingRenderer
+        return cls(tokenizer, image_processor)
     if "qwen3-vl" in mn:
         from tinker_cookbook.renderers.qwen3 import Qwen3VLInstructRenderer
 
@@ -96,17 +119,27 @@ def get_renderer(model_name: str, tokenizer: Any, image_processor: Any) -> Any:
     return Qwen3VLInstructRenderer(tokenizer, image_processor)
 
 
+def _model_supports_thinking_toggle(model_name: str) -> bool:
+    """Whether `thinking` actually changes behavior for this model."""
+    mn = model_name.lower()
+    return ("kimi" in mn and "k2.5" in mn) or ("qwen3.5" in mn) or ("qwen3-35" in mn)
+
+
 import threading
 
-_vlm_cache: dict[str, tuple[Any, Any, Any, Any]] = {}
+_vlm_cache: dict[tuple[str, bool], tuple[Any, Any, Any, Any]] = {}
 _vlm_cache_lock = threading.Lock()
 
 
-def _get_vlm_objects(model_name: str) -> tuple[Any, Any, Any, Any]:
-    """Return (tokenizer, renderer, service, sampling_client), cached per model."""
+def _get_vlm_objects(
+    model_name: str,
+    thinking: bool = True,
+) -> tuple[Any, Any, Any, Any]:
+    """Return (tokenizer, renderer, service, sampling_client), cached per (model, thinking)."""
+    key = (model_name, bool(thinking))
     with _vlm_cache_lock:
-        if model_name in _vlm_cache:
-            return _vlm_cache[model_name]
+        if key in _vlm_cache:
+            return _vlm_cache[key]
 
     try:
         from tinker_cookbook import tokenizer_utils
@@ -118,12 +151,12 @@ def _get_vlm_objects(model_name: str) -> tuple[Any, Any, Any, Any]:
 
     tokenizer = tokenizer_utils.get_tokenizer(model_name)
     image_processor = get_image_processor(model_name)
-    renderer = get_renderer(model_name, tokenizer, image_processor)
+    renderer = get_renderer(model_name, tokenizer, image_processor, thinking=thinking)
     service = tinker.ServiceClient()
     sampling_client = service.create_sampling_client(base_model=model_name)
 
     with _vlm_cache_lock:
-        _vlm_cache[model_name] = (tokenizer, renderer, service, sampling_client)
+        _vlm_cache[key] = (tokenizer, renderer, service, sampling_client)
     return tokenizer, renderer, service, sampling_client
 
 
@@ -166,9 +199,15 @@ def sample_vlm(
     model_name: str = DEFAULT_MODEL,
     max_tokens: int = 2048,
     temperature: float = 0.2,
+    thinking: bool = True,
 ) -> dict[str, Any]:
     """
     Run one VLM completion via Tinker sampling client + model-appropriate cookbook renderer.
+
+    `thinking` selects between the *Renderer (chain-of-thought enabled) and
+    *DisableThinkingRenderer (direct answer) variants for Kimi K2.5 and Qwen3.5.
+    For models without a disable-thinking variant the flag is a no-op.
+
     Returns a dict with:
       - "raw_text": full model output (including thinking, for archival)
       - "answer_text": non-thinking text only (for parsing into JSON)
@@ -176,8 +215,10 @@ def sample_vlm(
       - "n_answer_tokens": estimated tokens for answer_text only (full - thinking)
       - "max_tokens": effective sampling limit (so we can detect truncation)
       - "truncated": True if generation hit the max_tokens cap
+      - "renderer": class name of the renderer actually used
+      - "reasoning_mode": "enabled" or "disabled"
     """
-    tokenizer, renderer, _, sampling_client = _get_vlm_objects(model_name)
+    tokenizer, renderer, _, sampling_client = _get_vlm_objects(model_name, thinking=thinking)
 
     effective_max = max_tokens
     if _is_reasoning_renderer(renderer) and max_tokens <= 4096:
@@ -215,6 +256,8 @@ def sample_vlm(
         "n_answer_tokens": n_answer_tokens,
         "max_tokens": effective_max,
         "truncated": n_output_tokens >= effective_max,
+        "renderer": type(renderer).__name__,
+        "reasoning_mode": "enabled" if thinking else "disabled",
     }
 
 
@@ -224,14 +267,20 @@ def run_one(
     row: Any,
     stamps_root: Path | None = None,
     model_name: str = DEFAULT_MODEL,
+    thinking: bool = True,
 ) -> dict[str, Any]:
-    """Build metadata from manifest row, load montage, call VLM. Returns dict with raw_text and answer_text."""
+    """Build metadata from manifest row, load montage, call VLM. Returns dict with raw_text and answer_text.
+
+    `thinking` selects the thinking-enabled (default) vs thinking-disabled
+    renderer for Kimi K2.5 / Qwen3.5. Ignored for models without a
+    disable-thinking variant.
+    """
     meta = manifest_row_to_metadata(row)
     img = montage_path(target_class, oid, stamps_root)
     if not img.is_file():
         raise FileNotFoundError(f"Missing montage: {img}")
     messages = build_messages(oid, target_class, meta, img)
-    vlm_out = sample_vlm(messages, model_name=model_name)
+    vlm_out = sample_vlm(messages, model_name=model_name, thinking=thinking)
     return {
         "oid": oid,
         "target_class": target_class,
@@ -243,4 +292,6 @@ def run_one(
         "max_tokens": vlm_out["max_tokens"],
         "truncated": vlm_out["truncated"],
         "model": model_name,
+        "renderer": vlm_out["renderer"],
+        "reasoning_mode": vlm_out["reasoning_mode"],
     }
