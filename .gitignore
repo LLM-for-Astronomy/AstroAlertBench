@@ -28,7 +28,6 @@ data/*_backup_*.csv
 results/
 
 # Results (regenerate with evaluate.py & skill log-experiment)
-results_comparison/
 runs/
 
 # Files from other projects for reference
