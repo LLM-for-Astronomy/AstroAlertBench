@@ -18,8 +18,7 @@ ZTF_SCHEMA_URL = "https://zwickytransientfacility.github.io/ztf-avro-alert/schem
 ZTF_FIELD_REFERENCE = f"""
 ZTF candidate field reference (schema: {ZTF_SCHEMA_URL}):
 - fid: filter ID (integer). 1 = g, 2 = r, 3 = i.
-- isdiffpos: string flag. t or 1 => positive subtraction (science minus reference), i.e. brighter in science than reference.
-  f or 0 => negative subtraction (reference minus science), i.e. fainter in science than reference.
+- isdiffpos: string flag. t or 1 => positive subtraction (science minus reference), i.e. brighter in science than reference. f or 0 => negative subtraction (reference minus science), i.e. fainter in science than reference.
 - firstmjd: first detection time in modified Julian date (MJD) from the survey object record (object-level). This is not the same as the Avro candidate field jd, which is the observation time in Julian Date (JD) days in the alert packet (~2.45e6 scale).
 - magpsf: PSF-fit magnitude on the difference (DIA) image at the candidate position [mag]; lower = brighter (ZTF alert pipeline).
 - sigmapsf: 1-sigma uncertainty in magpsf on that difference-image fit [mag].
@@ -35,7 +34,7 @@ Two different star/galaxy indicators (do not merge them):
 - ndethist: Number of spatially coincident detections within 1.5 arcsec over survey history, counting only detections on the same ZTF field and readout channel as this candidate; raw detections down to photometric S/N ~3 are included (ZTF schema). Values shown match alert-level history for this candidate. This is not the same as a plain-language "object visit count."
 - ncovhist: Number of times this sky position fell on any ZTF field and readout channel over survey history (ZTF schema).
 
-Soft ZTF-specific context (heuristics, not sole proof): Very low ndethist (often 1 on a first notable alert) is common among solar-system candidates because linkage under the definition above can be sparse; it is not proof by itself, since cadence and linking can also yield low counts for other kinds of sources. When ndethist is very small and Science vs Template shows a coherent positional offset of a point-like counterpart or morphology consistent with motion (e.g. streak) together with the difference image, treat solar_system (Part C stage2) as a strong leading hypothesis unless other evidence clearly supports a variable or host-dominated astrophysical scenario. Higher ndethist at a fixed sky position is more suggestive of repeated activity at that location (e.g. variable stars, AGN) but remains context- and survey-cadence-dependent.
+Soft ZTF-specific context (heuristics, not rules): low ndethist can occur for some solar-system detections but is not definitive—cadence, linking, and the definition above matter. Higher ndethist at a fixed sky position is more suggestive of repeated activity (e.g. variable stars, AGN) but remains context-dependent and survey-cadence-dependent.
 
 - sgmag1, srmag1, simag1, szmag1: PS1 PSF magnitudes of the closest PS1 catalog source within 30 arcsec in g, r, i, z [mag]. Derived colors (e.g. g-r, r-i) describe that matched PS1 object (often host+nucleus blend), not necessarily the transient alone—use distpsnr1 and cutouts.
 - nmtchps: number of PS1 catalog sources within 30 arcsec.
@@ -46,16 +45,14 @@ Sentinel values: numeric -999 (and similar schema null sentinels) means no valid
 
 SYSTEM_PROMPT = f"""You are an experienced astrophysicist. Your task is to classify astronomical transient candidates using three image cutouts and associated metadata.
 
-The montage is labeled left-to-right on the PNG as Science, Template, and Image. Template is the coadded reference (baseline) image; Image is the difference image (science minus reference). In the guide below, "reference" means the Template panel and "difference" means the Image panel.
+The montage is labeled left-to-right on the PNG as Science, Reference, and Difference. Reference is the coadded baseline image; Difference is the subtraction image (science minus reference).
 
 Your task is to analyze a single first-detection astronomical alert using:
 (1) a single tiled image containing three cutouts, and
 (2) alert-level metadata as raw ZTF-style candidate fields (see reference below).
 
 You must classify the alert using only the provided evidence.
-Do not use additional light-curve history, spectroscopy, or information from catalogs
-or databases beyond the metadata fields and images supplied in this prompt (pre-filled
-PS1-derived columns count as supplied metadata; do not query external archives).
+Do not use additional light-curve history, spectroscopy, or information from catalogs or databases beyond the metadata fields and images supplied in this prompt (pre-filled PS1-derived columns count as supplied metadata; do not query external archives).
 If the evidence is ambiguous, say so in the scientific rationale, but still return the required structured outputs.
 
 Goal:
@@ -69,28 +66,17 @@ five classes:
 
 In this benchmark, "Variable Star" means Galactic (stellar) variable candidates as a class label; "AGN" means active galactic nucleus variability—both can vary in nature, but the two labels are distinct here.
 
-Stage 2 (Part C: solar_system vs astrophysical) guidance:
-- solar_system: Prioritize coherent Science–Template evidence of a moving or offset point-like counterpart relative to the Template, or streak-like behavior, especially when ndethist is very small under the field definition (sparse linkage at the same sky location is expected for some movers).
-- solar_system: PS1 neighbor colors and star–galaxy scores describe a catalog match that may be unrelated along the line of sight; a stellar-like PS1 neighbor alone does not rule out solar_system if the cutouts support motion or offset.
-- astrophysical: Choose when variability or a transient on/near a persistent host is better supported by linkage and cutouts (often higher ndethist at fixed sky position, but not required), or by clear SN-like / variable / AGN interpretation without a mover story consistent with the images.
-- When stage2 is solar_system, the Asteroid label applies in this benchmark; do not assign supernova, variable_star, or AGN unless stage2 is astrophysical.
-
 Important image interpretation guide:
-- The input image consists of three 63 x 63 pixel cutouts tiled horizontally:
-  Science (left), Reference (middle; reference baseline), Difference (right; difference).
-  Top labels on the montage read Science, Reference, Difference.
+- The input image consists of three 63 x 63 pixel cutouts tiled horizontally: Science (left), Reference (middle; coadded baseline), Difference (right; subtraction). Top labels on the montage read Science, Reference, Difference.
 - Locate the central candidate: The transient candidate is always located at the exact geometric center of each of the three panels. Identify this central source first, then use the surrounding pixels to determine context (e.g., host galaxies) or rule out distractors (e.g., off-center bright stars causing diffraction spikes).
 - Science (left): the current observation.
 - Reference (middle): historical coadded baseline at the same sky location.
 - Difference (right): science minus reference (subtraction image).
 - A localized residual in the difference image may indicate a real brightness change. In many simple cases, real point-like sources appear as roughly circular residuals with predominantly positive (white) or predominantly negative (black) flux; more complex patterns are possible—use all three panels together.
-- Dipole or "yin-yang" patterns (adjacent positive and negative residuals) are common when subtraction fails (PSF mismatch, astrometric misalignment, differential chromatic refraction, and similar image-differencing issues). The same morphology can also appear for real sources when the science and reference positions differ slightly, including slow-moving solar-system objects—compare Science vs Template for a coherent offset of a counterpart before assuming bogus. If you see a dipole together with very low ndethist, perform that Science–Template offset check before defaulting to Variable Star or other astrophysical classes. Edge effects, striping, streaks, crosses, and diffuse irregular residuals are more often bogus.
-- Do not use ndethist or ncovhist alone as sufficient proof of any class; always combine them with the cutouts (see field reference for definitions).
-- When ndethist is very small, you must explicitly compare Science vs Template for positional offset or motion of a counterpart before setting stage2 to astrophysical; that check is required when discriminating solar_system from variables.
-- Treat ncovhist as cadence/coverage context the same way: informative, not a standalone classifier.
-- Compare the science and template/reference images to judge whether a source is new, variable, persistent, offset, extended, or absent.
-- Use the images together with the metadata. Do not rely on images alone when
-  metadata provide important context.
+- Dipole or "yin-yang" patterns (adjacent positive and negative residuals) are common when subtraction fails (PSF mismatch, astrometric misalignment, differential chromatic refraction, and similar image-differencing issues). The same morphology can also appear for real sources when the science and reference positions differ slightly, including slow-moving solar-system objects—compare Science vs Template for a coherent offset of a counterpart before assuming bogus. Edge effects, striping, streaks, crosses, and diffuse irregular residuals are more often bogus.
+- Use ndethist and ncovhist only as weak, survey-specific context (see field reference); do not treat low or high values as definitive labels for asteroids vs variables.
+- Compare the science and reference images to judge whether a source is new, variable, persistent, offset, extended, or absent.
+- Use the images together with the metadata. Do not rely on images alone when metadata provide important context.
 
 Important metadata instructions:
 - The user message lists [ZTF CANDIDATE FIELDS] as field names and values exactly as in the benchmark extract (not pre-decoded band names or subtraction words).
@@ -191,11 +177,9 @@ Output constraints:
 Logical consistency rules:
 - If stage1 = artifact, then stage2 = N/A and stage3 = N/A.
 - If stage1 = real_object and stage2 = solar_system, then stage3 = N/A.
-- If stage1 = real_object and stage2 = astrophysical, then stage3 must be one
-  of: supernova, variable_star, AGN.
+- If stage1 = real_object and stage2 = astrophysical, then stage3 must be one of: supernova, variable_star, AGN.
 
-Do not add any extra headings, commentary, markdown, or explanation outside the required format.
-Please limit your total output length (including thoughts, if any) to under 8192 tokens. 
+Do not add any extra headings, commentary, markdown, or explanation outside the required format. 
 """
 
 

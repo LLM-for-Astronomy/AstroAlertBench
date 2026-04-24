@@ -15,6 +15,20 @@ Example (OpenAI, GPT-5.4 with thinking high):
 Example (OpenAI, GPT-5.4 with thinking disabled):
   python run_tinker_benchmark.py --backend openai --manifest data/manifest_fewshot.csv --model gpt-5.4 --reasoning-effort none --out results/fewshot_gpt54_none.jsonl --concurrency 8
 
+Example (Google Gemini 2.5 Pro, dynamic thinking = reasoning high):
+  set GOOGLE_API_KEY=...
+  python run_tinker_benchmark.py --backend google --manifest data/manifest_benchmark_final.csv --model gemini-2.5-pro --reasoning-effort high --out results/benchmark_gemini25_pro_high.jsonl --concurrency 8
+
+Example (Google Gemini 2.5 Flash, thinking disabled):
+  python run_tinker_benchmark.py --backend google --manifest data/manifest_benchmark_final.csv --model gemini-2.5-flash --reasoning-effort none --out results/benchmark_gemini25_flash_none.jsonl --concurrency 8
+
+Example (Anthropic Claude Opus 4.7, adaptive thinking):
+  set ANTHROPIC_API_KEY=...
+  python run_tinker_benchmark.py --backend anthropic --manifest data/manifest_benchmark_final.csv --model claude-opus-4-7 --reasoning-effort high --out results/benchmark_opus47_think.jsonl --concurrency 8
+
+Example (Anthropic Claude Opus 4.7, thinking disabled):
+  python run_tinker_benchmark.py --backend anthropic --manifest data/manifest_benchmark_final.csv --model claude-opus-4-7 --reasoning-effort none --out results/benchmark_opus47_nothink.jsonl --concurrency 8
+
 Example (Tinker, Qwen3.5 with thinking disabled — use *DisableThinkingRenderer):
   python run_tinker_benchmark.py --manifest data/manifest_benchmark_final.csv --model Qwen/Qwen3.5-4B --thinking disabled --out results/benchmark_qwen35_4b_nothink.jsonl --concurrency 32
 
@@ -71,13 +85,33 @@ def main() -> None:
         help="Prompt module name (default: prompts). Use 'prompts_agn_instruction' for full fields + AGN vs VS guidance.",
     )
     ap.add_argument(
-        "--backend", type=str, default="tinker", choices=["tinker", "openai"],
-        help="API backend (default: tinker). 'openai' calls OpenAI Responses API via api_openai.py.",
+        "--backend", type=str, default="tinker",
+        choices=["tinker", "openai", "google", "anthropic"],
+        help=(
+            "API backend (default: tinker). "
+            "'openai' calls OpenAI Responses API via api_openai.py. "
+            "'google' calls Gemini generate_content via api_google.py. "
+            "'anthropic' calls Claude Messages API via api_anthropic.py."
+        ),
     )
     ap.add_argument(
         "--reasoning-effort", type=str, default=None,
-        choices=["none", "low", "medium", "high", "xhigh"],
-        help="OpenAI backend only. Controls GPT-5.x reasoning_effort. 'none' disables thinking.",
+        choices=["none", "minimal", "low", "medium", "high", "xhigh"],
+        help=(
+            "OpenAI / Google / Anthropic backends. "
+            "OpenAI: GPT-5.x reasoning_effort ('none' disables, 'xhigh' ceiling). "
+            "Google: on Gemini 2.5 maps effort -> integer thinking_budget "
+            "(none=0, minimal=128, low=1024, medium=8192, high=-1/dynamic); "
+            "on Gemini 3.x maps 1:1 to thinking_level {minimal, low, medium, high}. "
+            "'none' is only valid on Flash variants (2.5-flash can disable; 2.5-pro and "
+            "Gemini 3.x are thinking-only). 'minimal' is Flash-only on both families. "
+            "'xhigh' is always rejected (Gemini caps at high / dynamic). "
+            "Anthropic (Claude Opus 4.7): 'none' disables thinking; "
+            "{minimal, low, medium, high} enable adaptive thinking "
+            "(thinking.type=adaptive + output_config.effort=<level>); "
+            "'high' is the recommended adaptive thinking setting. "
+            "'xhigh' is rejected (Anthropic enum tops out at 'high')."
+        ),
     )
     ap.add_argument(
         "--thinking", type=str, default="enabled",
@@ -95,6 +129,14 @@ def main() -> None:
         import api_openai
         backend_module = api_openai
         default_model = api_openai.DEFAULT_MODEL
+    elif args.backend == "google":
+        import api_google
+        backend_module = api_google
+        default_model = api_google.DEFAULT_MODEL
+    elif args.backend == "anthropic":
+        import api_anthropic
+        backend_module = api_anthropic
+        default_model = api_anthropic.DEFAULT_MODEL
     else:
         backend_module = api_tinker
         default_model = api_tinker.DEFAULT_MODEL
@@ -131,11 +173,13 @@ def main() -> None:
     total = len(df)
 
     extra_kwargs: dict = {}
-    if args.backend == "openai" and args.reasoning_effort is not None:
+    _EFFORT_BACKENDS = ("openai", "google", "anthropic")
+    if args.backend in _EFFORT_BACKENDS and args.reasoning_effort is not None:
         extra_kwargs["reasoning_effort"] = args.reasoning_effort
-    if args.reasoning_effort is not None and args.backend != "openai":
+    if args.reasoning_effort is not None and args.backend not in _EFFORT_BACKENDS:
         print(
-            f"Warning: --reasoning-effort is only used with --backend openai; ignoring.",
+            "Warning: --reasoning-effort is only used with --backend "
+            "openai/google/anthropic; ignoring.",
             file=sys.stderr,
         )
     if args.backend == "tinker":
