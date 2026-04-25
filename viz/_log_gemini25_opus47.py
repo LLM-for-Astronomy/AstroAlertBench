@@ -35,7 +35,7 @@ RUNS = [
         "model": "gemini-2.5-pro",
         "slug": "gemini25-pro-high-benchmark-full",
         "backend": "google",
-        "concurrency": "8 init (stopped on quota; partial 1050/1500)",
+        "concurrency": "8 init + 4 retry (498 rows resumed via retry_failed.py)",
         "hypothesis": (
             "First Google-backend entry on the full 1500-row benchmark. "
             "Gemini 2.5 Pro with dynamic thinking_budget=-1 ('high' effort) is "
@@ -53,13 +53,13 @@ RUNS = [
             "adaptive thinking (runs/20260423-0942-opus47-think-benchmark-full), "
             "and the open-source Kimi K2.5 / Qwen3.5 sweeps "
             "(runs/20260420-1226-kimi-k25-benchmark-full and the Apr-21 "
-            "thinking/no-thinking grid)."
+            "thinking/no-thinking grid). Also paired with gemini-2.5-flash "
+            "none (runs/20260423-2110-...) for an in-family thinking-vs-off "
+            "A/B."
         ),
         "observations": (
-            "(placeholder — partial run, full metrics require resuming with "
-            "retry_failed.py once the per-day quota refreshes; a follow-up "
-            "log pass will refresh this section with a metric-driven "
-            "narrative.)"
+            "(placeholder — refreshed in a second pass once the metrics from "
+            "the now-complete 1500/1500 run are read.)"
         ),
         "reasoning_effort": "high",
     },

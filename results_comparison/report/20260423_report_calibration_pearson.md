@@ -1,4 +1,16 @@
-# Calibration & confidence-correctness comparison — 13 full-benchmark runs (Apr 23 2026)
+# Calibration & confidence-correctness comparison — 13 full-benchmark runs (Apr 23 2026, refreshed Apr 24 with full Gemini 2.5 Pro)
+
+**Apr 24 refresh:** the Gemini 2.5 Pro high run was completed (1500/1500
+parsed, 0 errors) via `retry_failed.py` and re-logged at
+`runs/20260424-1809-gemini25-pro-high-benchmark-full`. Its row in this
+report has been updated in place — gap fell from 0.0371 (partial slice) to
+**0.0098** and Pearson r fell from +0.125 to **+0.030** (the previously
+unsampled asteroid + most of the bogus rows added a huge mass of
+high-confidence-but-wrong predictions, flattening the distribution). All
+charts under `charts/calibration_apr23/` were regenerated. Claude Opus 4.7
+nothink is still annotated `*` (879/1500 parsed) pending its own retry.
+
+---
 
 How "honest" is each model about its own predictions? This report compares the
 **calibration gap** (mean confidence on correct rows minus mean confidence on
@@ -43,7 +55,7 @@ files directly, so the figures always agree with the tables).
 | 2 | GPT-5.4 none                | 1500 / 1500 | 43.67 % | 0.1413 | +0.2185 |
 | 3 | Claude Opus 4.7 think       | 1500 / 1500 | 60.60 % | 0.0350 | +0.0470 |
 | 4 | Claude Opus 4.7 nothink ✱   |  879 / 1500 | 34.87 % * | 0.0920 | +0.1327 |
-| 5 | Gemini 2.5 Pro high ✱       | 1002 / 1050 | 31.47 % * | 0.0371 | +0.1250 |
+| 5 | Gemini 2.5 Pro high         | 1500 / 1500 | 41.93 % | 0.0098 | +0.0302 |
 | 6 | Gemini 2.5 Flash none       | 1500 / 1500 | 36.27 % | 0.1263 | +0.1847 |
 | 7 | Kimi K2.5 think             | 1497 / 1500 | 49.34 % | 0.0325 | +0.0486 |
 | 8 | Qwen3.5-397B think          | 1500 / 1500 | 44.27 % | 0.0014 | +0.0047 |
@@ -84,12 +96,12 @@ gives itself a notable confidence lift on correct answers. Error bars are
 |---|---:|---:|---|
 | Qwen3.5-397B think    | 0.0014 | ±0.052 | Essentially zero — confidence is flat across correct/incorrect. |
 | Qwen3.5-4B think      | 0.0068 | ±0.116 | Same flat-confidence story; SE huge because n_parsed = 314. |
+| **Gemini 2.5 Pro high**   | **0.0098** | ±0.052 | Now complete at 1500/1500 — gap collapsed from 0.0371 (partial) when asteroid + bogus high-conf-but-wrong rows were added. |
 | Qwen3.5-35B think     | 0.0147 | ±0.069 | Tiny gap, low n in low-conf bin (1). |
 | Qwen3.5-397B nothink  | 0.0214 | ±0.058 | Slight lift; gap ≈ 0.4·SE — not significant. |
 | Qwen3.5-35B nothink   | 0.0298 | ±0.061 | Still ≤ 0.5·SE. |
 | Kimi K2.5 think       | 0.0325 | ±0.052 | Small but two bins are *populated* (1359 vs 138) so the gap is meaningful in distribution. |
 | **Claude Opus 4.7 think**   | **0.0350** | ±0.053 | Notably small for a high-accuracy model — adaptive thinking *narrows* the calibration gap. |
-| Gemini 2.5 Pro high ✱ | 0.0371 | ±0.063 | Best calibration among the partial runs; would shift after the missing 498 rows are added. |
 | Qwen3.5-4B nothink    | 0.0381 | ±0.064 | Indistinguishable from zero given SE. |
 | **Claude Opus 4.7 nothink** ✱ | **0.0920** | ±0.069 | Disabling thinking on Opus *opens* the gap by ≈ 2.6×. |
 | Gemini 2.5 Flash none | 0.1263 | ±0.054 | Gap ≈ 2.3·SE — clearly above noise. |
@@ -124,13 +136,13 @@ Error bars are Fisher's 1/√(n−3).*
 | **GPT-5.4 high**            | +0.2028 | ±0.026 | 7.9 |
 | Gemini 2.5 Flash none | +0.1847 | ±0.026 | 7.2 |
 | Claude Opus 4.7 nothink ✱   | +0.1327 | ±0.034 | 3.9 |
-| Gemini 2.5 Pro high ✱       | +0.1250 | ±0.032 | 3.9 |
 | Qwen3.5-4B nothink    | +0.1064 | ±0.027 | 3.9 |
 | Qwen3.5-35B nothink   | +0.0946 | ±0.027 | 3.5 |
 | Qwen3.5-35B think     | +0.0617 | ±0.034 | 1.8 |
 | Qwen3.5-397B nothink  | +0.0592 | ±0.028 | 2.1 |
 | Kimi K2.5 think       | +0.0486 | ±0.026 | 1.9 |
 | Claude Opus 4.7 think | +0.0470 | ±0.026 | 1.8 |
+| **Gemini 2.5 Pro high**     | **+0.0302** | ±0.026 | 1.2 |
 | Qwen3.5-4B think      | +0.0195 | ±0.057 | 0.3 |
 | Qwen3.5-397B think    | +0.0047 | ±0.026 | 0.2 |
 
@@ -165,25 +177,40 @@ under-using the confidence dimension altogether.*
 
 What jumps out:
 
-1. **Two clusters with a near-perfect monotone trend within each.**
-   Within the closed-source non-Anthropic block (GPT × 2, Gemini × 2),
-   gap and r move together: GPT-5.4 none > GPT-5.4 high > Gemini Flash none
-   > Gemini Pro high on both axes. Within the open-source Qwen block, the
-   ordering is also monotone but compressed near (0, 0).
+1. **Three clusters with a near-perfect monotone trend within each.**
+   GPT-5.4 (high/none) and Gemini 2.5 Flash sit in the "honest +
+   informative" upper-right; Anthropic Opus 4.7 nothink and the Qwen
+   nothink trio sit in the lower-middle band; the Qwen think trio +
+   Opus think + Kimi think + the now-complete Gemini 2.5 Pro all cluster
+   near the origin in the "low gap, low r" zone. Within each cluster the
+   ordering is monotone (gap and r co-move), as expected from the
+   linear-regression identity that bounds r by the gap divided by the
+   confidence SD.
 
-2. **Anthropic Opus 4.7 is the family that defies the trend.** The think
-   variant sits at (gap=0.035, r=0.047) — *less* informative than its
-   nothink sibling at (0.092, 0.133). On every other model with a thinking
-   A/B (GPT-5.4, the three Qwens), thinking either keeps r flat or pushes
-   it slightly down. The Opus split is the largest: enabling adaptive
-   thinking *cuts* the calibration signal almost in half.
+2. **Anthropic Opus 4.7 is the family that defies the trend across modes.**
+   The think variant sits at (gap=0.035, r=0.047) — *less* informative than
+   its nothink sibling at (0.092, 0.133). On every other model with a
+   thinking A/B (GPT-5.4, the three Qwens, and now Gemini 2.5 Pro vs
+   Flash), thinking either keeps r flat or pushes it slightly down. The
+   Opus split is the largest: enabling adaptive thinking *cuts* the
+   calibration signal almost in half.
 
-3. **Kimi K2.5 think is unusually close to the Opus-think point.**
+3. **Gemini 2.5 Pro joined the low-gap-low-r cluster after the resume.**
+   On its partial slice it appeared at (0.037, +0.125) — more informative
+   than Opus think and Kimi think — but the asteroid + bogus rows added
+   in the Apr-24 retry pass were almost all confidence-5-and-wrong, which
+   pulled the gap to 0.010 and r to +0.030. Gemini 2.5 Pro now anchors
+   the south-west of Fig C3 alongside Qwen3.5-397B think, while Gemini
+   2.5 Flash *none* remains in the upper-right honest cluster. The
+   intra-Gemini-family axis is dramatic: Flash-none discriminates
+   confidence well, Pro-high doesn't.
+
+4. **Kimi K2.5 think is unusually close to the Opus-think point.**
    (gap=0.0325, r=0.049) vs (0.035, 0.047). Two very different model
    families converge on the same calibration profile when "think hard,
    answer once" is the pattern.
 
-4. **Pearson r is bounded by the gap divided by the SD of the
+5. **Pearson r is bounded by the gap divided by the SD of the
    confidence distribution** (the linear-regression identity), so the
    trend in Fig C3 is partly mechanical: if a model parks 99 % of its
    predictions at confidence 5, both Δμ and r drop together. The way to
@@ -213,12 +240,16 @@ relationship. Three patterns to read off:
 - **Qwen runs cluster in the bottom-left.** Low accuracy *and* near-zero
   gap, again because they don't use the confidence dial. Calibration is
   moot when the dial is stuck.
-- **Gemini 2.5 Pro high** (the new partial run) sits exactly between Kimi
-  K2.5 (49 % / 0.03) and GPT-5.4 high (51 % / 0.13), at (47 % / 0.037).
-  Once the missing 498 rows arrive, expect both axes to move — accuracy
-  upward if the asteroid/bogus classes recover, gap most likely upward
-  too, since adding correctly-confident rows pulls the correct-mean
-  upward.
+- **Gemini 2.5 Pro high** (now complete after Apr-24 retry) ended up at
+  (42 % / 0.010), well to the south-west of where its partial slice
+  predicted (47 % / 0.037). Both axes moved *down*, not up: the
+  asteroid + bogus rows added in the retry were dominated by
+  high-confidence-but-wrong predictions, pulling both the absolute
+  accuracy and the calibration signal toward the low-information
+  corner. The original prediction "expect accuracy up if asteroid/bogus
+  recover" was wrong — those classes did not recover (asteroid 1 %,
+  bogus 51.7 %), and their high-confidence wrong predictions actively
+  *hurt* calibration.
 
 A linear fit through the 13 points gives `acc ≈ 1.51 · gap + 0.30`, but
 that is a noisy summary across model families — within a family the
@@ -308,15 +339,18 @@ The two notable outliers are:
 
 ## 8. Caveats and partial runs
 
-- **Gemini 2.5 Pro high** is annotated `*` because the JSONL is 1050/1500
-  (1002 ok + 48 quota fails); 450 manifest OIDs were never attempted. The
-  parsed-subset calibration numbers above use only those 1002 rows and will
-  shift once `retry_failed.py` finishes the missing rows. The shift is
-  expected to be modest because the missing rows are concentrated in the
-  asteroid (102/300 done) and bogus (0/300 done) classes — adding those
-  classes will mostly grow the *incorrect* group (these are the two classes
-  Gemini already collapses to VS most aggressively), which would *widen*
-  the gap and probably increase the Pearson r toward GPT-5.4 territory.
+- **Gemini 2.5 Pro high — now complete (Apr 24).** The original snapshot
+  in this report used the 1050/1500 partial slice (1002 ok + 48 quota
+  fails). After the Apr-24 retry pass added the missing 450 + 48 rows, the
+  full-run numbers are gap = **0.0098** (was 0.0371) and r = **+0.0302**
+  (was +0.1250). The earlier prediction in this section that the gap and r
+  would "widen toward GPT-5.4 territory" was *wrong*: instead of the
+  expected widening, both metrics collapsed toward zero because the
+  newly-sampled asteroid (1 % accuracy) and bogus (51.7 %) rows were
+  largely high-confidence-and-wrong, flattening the correct-vs-incorrect
+  confidence distribution. This is itself a useful negative finding —
+  Gemini 2.5 Pro emits ~5 confidence on essentially every row regardless
+  of whether it can actually solve the class.
 - **Claude Opus 4.7 nothink** is similarly annotated `*` because only
   879/1500 rows have a parsed prediction; the 621 missing are dominated by
   the asteroid + bogus tail of the queue (those classes are simply absent
@@ -360,11 +394,15 @@ The two notable outliers are:
    most of the calibration signal — gap goes 0.035 → 0.092 and r goes
    0.047 → 0.133. Adaptive thinking on Opus appears to *flatten* the
    confidence distribution.
-4. **The Gemini family is family-specific.** Pro-high (partial) is closer
-   to the well-calibrated end (r = 0.125), Flash-none is at the GPT-5.4
-   end of the scale (r = 0.185, gap = 0.126). Pro thinks > Flash thinks
-   doesn't — and Flash is *more* informative confidence-wise — same
-   reverse-of-expected pattern as Opus.
+4. **The Gemini family is dramatic on the calibration axis.**
+   The two variants are at *opposite ends* of the calibration spectrum
+   on this benchmark: Pro-high (now complete) at the south-west origin
+   (r = 0.030, gap = 0.010, 100 % of mass in the high bin), Flash-none
+   at the GPT-5.4 corner (r = 0.185, gap = 0.126, n_low = 83 with a
+   real ~9 pp accuracy lift on the high bin). Flash *with no reasoning
+   at all* gives a usable confidence triage signal; Pro *with maximum
+   thinking* gives essentially none. Same reverse-of-expected
+   "more thinking → flatter confidence" pattern as Opus 4.7.
 5. **The Qwen family doesn't use the confidence dial.** All three sizes,
    thinking-on or off, have ≥ 95 % of predictions in the high bin and
    r ≤ +0.11. The reported calibration gaps near zero are not a
