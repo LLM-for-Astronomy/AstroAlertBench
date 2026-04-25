@@ -98,7 +98,7 @@ RUNS = [
         "model": "claude-opus-4-7",
         "slug": "opus47-nothink-benchmark-full",
         "backend": "anthropic",
-        "concurrency": "2 (rate-limit-bound; SDK retry on 429/5xx)",
+        "concurrency": "2 initial run + 2 on retry_failed.py (rate-limit-bound; SDK retry on 429/5xx)",
         "hypothesis": (
             "Direct A/B counterpart to the already-logged Opus 4.7 adaptive-"
             "thinking run (runs/20260423-0942-opus47-think-benchmark-full). "
@@ -116,10 +116,8 @@ RUNS = [
             "none (this script) for a third non-reasoning vendor data point."
         ),
         "observations": (
-            "(placeholder — a small number of rows still failed with rate-"
-            "limit / transient errors; this folder will be re-logged after "
-            "retry_failed.py mops them up so the metrics reflect a clean "
-            "1500/1500 run.)"
+            "(placeholder — refreshed by viz/_refresh_opus47_nothink_obs.py "
+            "once the run finished 1500/1500 via retry_failed.py.)"
         ),
         "reasoning_effort": "none",
     },

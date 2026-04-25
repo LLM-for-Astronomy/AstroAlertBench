@@ -52,7 +52,7 @@ RUNS = [
     ("GPT-5.4 high",            "runs/20260421-2024-gpt-5.4-high-benchmark-full",                "tab:blue",   "o"),
     ("GPT-5.4 none",            "runs/20260421-2032-gpt-5.4-none-benchmark-full",                "tab:blue",   "s"),
     ("Claude Opus 4.7 think",   "runs/20260423-0942-opus47-think-benchmark-full",                "tab:orange", "o"),
-    ("Claude Opus 4.7 nothink", "runs/20260423-1200-opus47-nothink-benchmark-full",              "tab:orange", "s"),
+    ("Claude Opus 4.7 nothink", "runs/20260424-2324-opus47-nothink-benchmark-full",              "tab:orange", "s"),
     ("Gemini 2.5 Pro high",     "runs/20260424-1809-gemini25-pro-high-benchmark-full",           "tab:green",  "o"),
     ("Gemini 2.5 Flash none",   "runs/20260423-2110-gemini25-flash-none-benchmark-full",         "tab:green",  "s"),
     ("Kimi K2.5 think",         "runs/20260420-1226-kimi-k25-benchmark-full",                    "tab:purple", "o"),
@@ -252,7 +252,7 @@ def chart_calibration_gap_bar(rows: list[RunRow]) -> None:
     ax.set_xticklabels(labels, rotation=35, ha="right", fontsize=9)
     ax.set_ylabel("Calibration gap  (mean conf when correct − mean conf when incorrect)")
     ax.set_title("C1 — Calibration gap across full-benchmark runs (smaller is better)\n"
-                 "* Claude Opus 4.7 nothink is partial (n_parsed=879 / 1500).")
+                 "All 13 runs are full 1500/1500 as of Apr 24.")
     ax.axhline(0.0, color="gray", linewidth=0.6)
     ax.grid(axis="y", linestyle=":", alpha=0.4)
     fig.tight_layout()
