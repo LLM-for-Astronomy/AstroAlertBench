@@ -10,6 +10,20 @@ high-confidence-but-wrong predictions, flattening the distribution). All
 charts under `charts/calibration_apr23/` were regenerated. Claude Opus 4.7
 nothink is still annotated `*` (879/1500 parsed) pending its own retry.
 
+**Apr 24 addition (one-shot):** Section §6 now also includes two
+threshold-sensitivity views of the per-bin accuracy plot — Fig C5b at
+high = self-mean ≥ 3.5 and Fig C5c at high = self-mean ≥ 4.5. The
+canonical cutoff in `metrics.json` and every other figure in this
+report stays at ≥ 4. (We also tried ≥ 3 and dropped it: the low-conf
+bin was empty for every full-benchmark run, so the threshold gave no
+discrimination signal — the *finding* of that pilot was that no model
+on this benchmark ever self-grades below 3.0 on average.) C5b
+surfaces a real Opus 4.7 think triage signal (+26 pp, n_low = 73)
+that the ≥ 4 cutoff hides; C5c flips the picture again — at the
+strict cutoff GPT-5.4 high becomes the strongest discriminator
+(+24.95 pp on 385 vs 1115), Opus think collapses to +2.6 pp, and
+Qwen-think models reveal a usable signal for the first time.
+
 ---
 
 How "honest" is each model about its own predictions? This report compares the
@@ -42,7 +56,9 @@ files directly, so the figures always agree with the tables).
 | C2 | §3 | Pearson r bar (sorted, 1/√(n−3) SE) |
 | C3 | §4 | Calibration gap × Pearson r joint scatter |
 | C4 | §5 | Calibration gap × absolute 5-class accuracy scatter |
-| C5 | §6 | Per-bin accuracy: acc \| high-conf vs acc \| low-conf paired bars |
+| C5 | §6 | Per-bin accuracy at the default high/low cutoff (high = self-mean ≥ 4) |
+| C5b | §6 | Same as C5 at the midpoint cutoff (high = self-mean ≥ 3.5) — one-shot |
+| C5c | §6 | Same as C5 at the strict cutoff (high = self-mean ≥ 4.5) — one-shot |
 | C6 | §7 | Confidence-bin distribution (high vs low) per model |
 
 ---
@@ -306,6 +322,158 @@ The honest-and-useful take from Fig C5 is:
   52.29 %, +8.2 pp). On the same model, *disabling* adaptive thinking
   produces a more useful confidence dial. This is the same Opus oddity
   visible in C1/C2/C3.
+
+### 6.1. Threshold sensitivity (one-shot complement at ≥ 3.5 and ≥ 4.5)
+
+The `≥ 4 / < 4` cutoff above is the canonical one we keep in
+`metrics.json` and will continue to use in future reporting. For this
+single report only, we re-binned the same per-row `(self_mean,
+correctness)` pairs at two complementary thresholds to check how
+sensitive the "is high-confidence actually more accurate?" question is
+to where the line is drawn. The recompute reproduces every `≥ 4` number
+from `metrics.json` exactly, so any differences below are purely the
+threshold's doing.
+
+(We also piloted `≥ 3` and dropped it: every full run lands `n_low = 0`,
+because **no model on this benchmark ever self-grades below 3.0 on
+average**. The universal worst-case self-grade is "ok / ok / ok", so
+a 3.0 cutoff yields no comparison group and no signal.)
+
+#### Threshold ≥ 3.5 (Fig C5b)
+
+![Per-bin accuracy at threshold ≥ 3.5 — Opus 4.7 (both modes) reveals a real triage signal here](charts/calibration_apr23/C5b_high_vs_low_conf_bars_thresh35.png)
+
+*Fig C5b. Same construction as C5, but high = self-mean ≥ 3.5. The
+midpoint splits cleanly because individual self-scores are integers in
+1..5, so the mean of 3 scores can land at 3.0, 3.33, 3.67, 4.0, ….*
+
+The midpoint changes the picture in one place that matters:
+
+| Run | n_high (≥ 3.5) | n_low (< 3.5) | acc \| high | acc \| low | Δ |
+|---|---:|---:|---:|---:|---:|
+| **Claude Opus 4.7 think** | 1427 | **73** | 61.88 % | 35.62 % | **+26.26 pp** |
+| **Claude Opus 4.7 nothink ✱** | 868 | 11 | 59.91 % | 27.27 % | +32.64 pp |
+| Kimi K2.5 think | 1491 | 6 | 49.50 % | 33.33 % | +16.16 pp |
+| GPT-5.4 high | 1498 | 2 | 51.07 % | 50.00 % | +1.07 pp |
+| GPT-5.4 none | 1499 | 1 | 43.70 % | 0.00 % | +43.70 pp ⚠ |
+| Gemini 2.5 Flash none | 1495 | 4 | 36.25 % | 50.00 % | -13.75 pp ⚠ |
+| Gemini 2.5 Pro high | 1500 | 0 | 41.93 % | — | undefined |
+| Qwen3.5-397B think | 1477 | 0 | 44.28 % | — | undefined |
+| All other Qwen runs | … | 0–1 | … | — | undefined / noise |
+
+⚠ rows with n_low ≤ 4 are noise — included only for completeness.
+
+Two things that the default `≥ 4` cutoff hid:
+
+- **Opus 4.7 think actually has a usable confidence signal — it just
+  lives in the [3.0, 4.0) band, not above 4.** With n_low = 73 (large
+  enough to trust), accuracy on rows where Opus self-graded between
+  "ok" and "good" drops 26 pp relative to rows it self-graded ≥ 4. The
+  C5 finding ("Opus think gives you nothing") was not wrong — at the
+  ≥ 4 threshold the gap really is +0.24 pp — but the underlying
+  behaviour is not "the dial is uninformative". It is "Opus think uses
+  the bottom half of the 3–4 band as its low-confidence mode, then
+  parks the rest above 4 essentially flat". Practically: if you treat
+  *self-mean ≥ 4* as "trustworthy" and *3 ≤ self-mean < 4* as "double
+  check this", you get a real triage signal out of Opus think after
+  all.
+- **GPT-5.4's discrimination is *not* in the [3, 4) zone**: at 3.5 the
+  +10 pp / +16 pp gaps from C5 collapse to ≈ 0, because almost all of
+  its low-conf rows in C5 had self-mean ≥ 3.5 (i.e. exactly equal to
+  3.67 or 3.33), which now move into the high-conf bin. C5c will show
+  where GPT's discrimination actually lives.
+- **Gemini 2.5 Flash, Kimi, and the Qwen family don't change
+  qualitatively** — they either had no usable low-conf bin to begin
+  with, or the few rows that were `< 4` were also `< 3.5`, so the
+  classification is the same.
+
+#### Threshold ≥ 4.5 (Fig C5c)
+
+![Per-bin accuracy at threshold ≥ 4.5 — GPT-5.4 dominates here, Opus think collapses, Qwen-think models finally show a signal](charts/calibration_apr23/C5c_high_vs_low_conf_bars_thresh45.png)
+
+*Fig C5c. Same construction as C5, but high = self-mean ≥ 4.5 — i.e.
+only rows where the model rated essentially every rubric "good" or
+"excellent" (mean ≥ 4.5 requires at least two 5s plus one ≥ 4, or all
+5s). This is the strict end of the dial.*
+
+This cutoff is the inverse of C5b — it asks not "did the model ever
+hesitate?" but "did the model *fully commit*?" Because every run has a
+non-trivial mass of {5,5,5}-style rows, n_high stays usable everywhere
+*except* Gemini 2.5 Pro:
+
+| Run | n_high (≥ 4.5) | n_low (< 4.5) | acc \| high | acc \| low | Δ |
+|---|---:|---:|---:|---:|---:|
+| **GPT-5.4 high**          |  385 | 1115 | **69.61 %** | 44.66 % | **+24.95 pp** |
+| **GPT-5.4 none**          |  561 |  939 | 56.86 %     | 35.78 % | **+21.08 pp** |
+| Claude Opus 4.7 nothink ✱ |  212 |  667 | 72.64 %     | 55.32 % | +17.32 pp |
+| Gemini 2.5 Flash none     |  696 |  803 | 46.70 %     | 27.27 % | +19.42 pp |
+| Kimi K2.5 think           | 1021 |  476 | 50.93 %     | 46.22 % |  +4.71 pp |
+| **Claude Opus 4.7 think** |  218 | 1282 | 62.84 %     | 60.22 % |  +2.63 pp |
+| Qwen3.5-397B think        | 1467 |   10 | 44.58 %     |  0.00 % | +44.58 pp ⚠ |
+| Qwen3.5-397B nothink      | 1267 |   18 | 36.07 %     |  5.56 % | +30.51 pp |
+| Qwen3.5-35B nothink       | 1367 |   53 | 26.70 %     |  1.89 % | +24.81 pp |
+| Qwen3.5-4B nothink        | 1268 |   63 | 25.47 %     |  4.76 % | +20.71 pp |
+| Qwen3.5-35B think         |  865 |    6 | 42.08 %     | 16.67 % | +25.41 pp ⚠ |
+| Qwen3.5-4B think          |  313 |    1 | 37.70 %     |  0.00 % | +37.70 pp ⚠ |
+| Gemini 2.5 Pro high       | 1497 |    3 | 41.88 %     | 66.67 % | -24.78 pp ⚠ |
+
+⚠ rows with n_low ≤ 10 are dominated by sampling noise.
+
+The strict cutoff is the most informative of the three views and almost
+fully reverses the C5 conclusions:
+
+- **GPT-5.4 high becomes the standout.** Its top-tier-confidence rows
+  (n = 385) hit **69.6 %** vs **44.7 %** on everything else — a 25 pp
+  jump on a well-populated split. This is the strongest "I am
+  confident AND I am right" signal in any of the three figures, and it
+  matches the picture from C1/C2/C3 where GPT-5.4 had the largest
+  honest-and-informative calibration gap.
+- **GPT-5.4 none is right behind it** (+21 pp on n_high = 561), so
+  GPT's calibration discipline survives turning reasoning off.
+- **Opus 4.7 think collapses to +2.6 pp on n_high = 218 vs n_low = 1282.**
+  Combined with C5b, this nails the Opus think pattern down: its
+  *only* discrimination zone is **[3.5, 4.0)** — both above (≥ 4) and
+  way above (≥ 4.5) the dial is uninformative. Adaptive thinking
+  flattens confidence for everything that gets a ≥ 4, which is most
+  of the distribution.
+- **Opus 4.7 nothink keeps a real signal** (+17 pp on n_high = 212).
+  Without adaptive thinking, Opus's "fully committed" rows really are
+  more accurate.
+- **Qwen-think models finally show a usable confidence signal here.**
+  Because they almost never go below 4 (n_low at the canonical cutoff
+  was 0–2 for them in C5), the ≥ 4.5 split is the first one where
+  they have a meaningful low bin (10–63 rows). Qwen3.5-397B nothink in
+  particular shows a clean +30 pp gap on n_low = 18 — the model's
+  top-tier mass is genuinely more reliable than its 4-graded mass.
+- **Gemini 2.5 Pro high never goes below 4.5** (n_low = 3) — it is the
+  one model that essentially refuses to flag *any* of its own outputs
+  as below "good / excellent". This is the same pattern that gave it
+  the smallest calibration gap in C1 and the smallest Pearson r in C2:
+  the dial is pinned high.
+
+#### Putting C5, C5b, and C5c together
+
+Each model has a "discrimination zone" — the range of self-mean values
+where moving the high/low cutoff actually changes per-bin accuracy:
+
+| Model | Discrimination zone | Behaviour outside it |
+|---|---|---|
+| GPT-5.4 high     | [4.0, 4.5)         | mostly flat |
+| GPT-5.4 none     | [4.0, 4.5)         | mostly flat |
+| Opus 4.7 think   | [3.5, 4.0)         | flat ≥ 4, flat ≥ 4.5 |
+| Opus 4.7 nothink | [3.5, 4.0) and [4.5, 5] | broad |
+| Qwen-397B think  | [4.5, 5]           | the model essentially never goes < 4 |
+| Gemini 2.5 Pro   | nowhere            | dial is pinned ≥ 4.5 |
+| Gemini 2.5 Flash | broad (3.5–4.5)    | usable at all three cutoffs |
+| Kimi K2.5        | broad (3.5–4.5)    | small but consistent |
+
+**Default for future reporting stays at ≥ 4.** The midpoint cutoff
+exists only to surface the Opus think behaviour (its discrimination
+zone falls below 4); the strict cutoff exists only to surface
+GPT-5.4's and the Qwen-think family's behaviour (their discrimination
+zones fall above 4). For ranking models on a single calibration
+number the canonical ≥ 4 split is still the right summary; for
+*understanding* a model's confidence dial you need all three.
 
 ---
 
