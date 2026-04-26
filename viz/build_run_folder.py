@@ -49,6 +49,7 @@ from viz.html_report import render_datapoint_html  # noqa: E402
 from viz.plots import build_all_plots  # noqa: E402
 from viz.enriched_report import write_enriched_report  # noqa: E402
 from viz.index import append_jsonl_summary, regenerate_index  # noqa: E402
+from viz._runmeta import format_wallclock_line, read_runmeta, summarize  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -227,6 +228,20 @@ def build_run_folder(
         manifest_path=manifest_path,
         write_back_errors=True,
     )
+    # 4b. Pick up the wall-clock runmeta sidecar (if present), copy it into the
+    # run folder for provenance, and inject a `wall_clock` block into metrics
+    # so cross-run reports can read it from a single canonical location.
+    runmeta = read_runmeta(jsonl_path)
+    runmeta_summary = summarize(runmeta)
+    if runmeta is not None:
+        try:
+            (run_dir / "runmeta.json").write_text(
+                json.dumps(runmeta, indent=2), encoding="utf-8"
+            )
+        except Exception as e:
+            print(f"[runmeta] could not copy sidecar: {e}")
+    if runmeta_summary is not None:
+        metrics["wall_clock"] = runmeta_summary
     # Persist metrics as JSON for programmatic access.
     (run_dir / "metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
 
@@ -289,6 +304,9 @@ def build_run_folder(
         "model_label": cfg["model"],
         "original_jsonl": str(jsonl_path.relative_to(PROJECT_ROOT)) if PROJECT_ROOT in jsonl_path.parents else str(jsonl_path),
     }
+    wallclock_line = format_wallclock_line(runmeta_summary)
+    if wallclock_line:
+        meta["wallclock"] = wallclock_line
 
     # 10. Write enriched report
     write_enriched_report(

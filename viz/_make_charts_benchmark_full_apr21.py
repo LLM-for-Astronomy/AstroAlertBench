@@ -31,15 +31,19 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 RUNS = [
     # (short_label, metrics_json_path, color, family, reasoning)
-    ("gpt-5.4 high",      "runs/20260421-2024-gpt-5.4-high-benchmark-full/metrics.json",          "#d62728", "gpt-5.4", "think"),
-    ("Kimi K2.5 think",   "runs/20260420-1226-kimi-k25-benchmark-full/metrics.json",              "#9467bd", "Kimi",    "think"),
-    ("Qwen3.5-397B think","runs/20260420-1554-qwen35-397b-a17b-benchmark-full/metrics.json",      "#1f77b4", "Qwen397", "think"),
-    ("gpt-5.4 none",      "runs/20260421-2032-gpt-5.4-none-benchmark-full/metrics.json",          "#ff7f0e", "gpt-5.4", "nothink"),
-    ("Qwen3.5-397B nothink","runs/20260421-0025-qwen35-397b-a17b-nothink-benchmark-full/metrics.json","#2ca02c", "Qwen397", "nothink"),
-    ("Qwen3.5-35B think", "runs/20260420-2054-qwen35-35b-a3b-benchmark-full/metrics.json",        "#17becf", "Qwen35",  "think"),
-    ("Qwen3.5-35B nothink","runs/20260421-0019-qwen35-35b-a3b-nothink-benchmark-full/metrics.json","#bcbd22", "Qwen35",  "nothink"),
-    ("Qwen3.5-4B nothink","runs/20260421-0002-qwen35-4b-nothink-benchmark-full/metrics.json",     "#8c564b", "Qwen4",   "nothink"),
-    ("Qwen3.5-4B think",  "runs/20260420-1920-qwen35-4b-benchmark-full/metrics.json",             "#e377c2", "Qwen4",   "think"),
+    ("Opus 4.7 think",        "runs/20260423-0942-opus47-think-benchmark-full/metrics.json",        "#5b3a91", "Opus47",   "think"),
+    ("gpt-5.4 high",          "runs/20260421-2024-gpt-5.4-high-benchmark-full/metrics.json",        "#d62728", "gpt-5.4",  "think"),
+    ("Kimi K2.5 think",       "runs/20260420-1226-kimi-k25-benchmark-full/metrics.json",            "#9467bd", "Kimi",     "think"),
+    ("Opus 4.7 nothink",      "runs/20260424-2324-opus47-nothink-benchmark-full/metrics.json",      "#b894e0", "Opus47",   "nothink"),
+    ("Qwen3.5-397B think",    "runs/20260420-1554-qwen35-397b-a17b-benchmark-full/metrics.json",    "#1f77b4", "Qwen397",  "think"),
+    ("gpt-5.4 none",          "runs/20260421-2032-gpt-5.4-none-benchmark-full/metrics.json",        "#ff7f0e", "gpt-5.4",  "nothink"),
+    ("Gemini 2.5 Pro high",   "runs/20260424-1809-gemini25-pro-high-benchmark-full/metrics.json",   "#0a9396", "GeminiPro","think"),
+    ("Gemini 2.5 Flash none", "runs/20260423-2110-gemini25-flash-none-benchmark-full/metrics.json", "#94d2bd", "GeminiFl", "nothink"),
+    ("Qwen3.5-397B nothink",  "runs/20260421-0025-qwen35-397b-a17b-nothink-benchmark-full/metrics.json","#2ca02c", "Qwen397", "nothink"),
+    ("Qwen3.5-35B think",     "runs/20260420-2054-qwen35-35b-a3b-benchmark-full/metrics.json",      "#17becf", "Qwen35",   "think"),
+    ("Qwen3.5-35B nothink",   "runs/20260421-0019-qwen35-35b-a3b-nothink-benchmark-full/metrics.json","#bcbd22", "Qwen35",   "nothink"),
+    ("Qwen3.5-4B nothink",    "runs/20260421-0002-qwen35-4b-nothink-benchmark-full/metrics.json",   "#8c564b", "Qwen4",    "nothink"),
+    ("Qwen3.5-4B think",      "runs/20260420-1920-qwen35-4b-benchmark-full/metrics.json",           "#e377c2", "Qwen4",    "think"),
 ]
 
 plt.rcParams.update({
@@ -116,7 +120,7 @@ def chart_01_absolute_ranked(runs):
     errs = [r["se_abs"] * 100 for r in ordered]
     colors = [r["color"] for r in ordered]
 
-    fig, ax = plt.subplots(figsize=(9, 4.8))
+    fig, ax = plt.subplots(figsize=(9.5, 6.4))
     y = np.arange(len(labels))
     bars = ax.barh(y, vals, xerr=errs, color=colors, edgecolor="black",
                    linewidth=0.5, capsize=3, ecolor="#333333")
@@ -124,9 +128,9 @@ def chart_01_absolute_ranked(runs):
     ax.set_yticklabels(labels)
     ax.invert_yaxis()
     ax.set_xlabel("Absolute 5-class accuracy over all 1500 rows  (% ± 1σ SE)")
-    ax.set_title("Headline: absolute 5-class accuracy, ranked")
+    ax.set_title("Headline: absolute 5-class accuracy, ranked  (13 runs)")
     ax.xaxis.set_major_formatter(mticker.PercentFormatter(decimals=0))
-    ax.set_xlim(0, max(vals) * 1.18)
+    ax.set_xlim(0, max(vals) * 1.22)
     for bar, v, e in zip(bars, vals, errs):
         ax.text(v + e + 0.6, bar.get_y() + bar.get_height() / 2,
                 f"{v:.2f} ± {e:.2f}%", va="center", fontsize=8.5)
@@ -145,7 +149,7 @@ def chart_02_per_class_heatmap(runs):
                     for r in ordered])
     labels_row = [r["label"] for r in ordered]
 
-    fig, ax = plt.subplots(figsize=(7.5, 4.8))
+    fig, ax = plt.subplots(figsize=(8, 6.4))
     im = ax.imshow(mat, cmap="YlGnBu", vmin=0, vmax=100, aspect="auto")
     ax.set_xticks(range(len(classes)))
     ax.set_xticklabels(classes)
@@ -179,7 +183,7 @@ def chart_03_stagewise_cascade(runs):
 
     x = np.arange(len(labels))
     width = 0.2
-    fig, ax = plt.subplots(figsize=(10.5, 5))
+    fig, ax = plt.subplots(figsize=(13, 5.5))
     ax.bar(x - 1.5*width, s1, width, label="Stage-1 (real/artifact)", color="#4c72b0")
     ax.bar(x - 0.5*width, s2, width, label="Stage-2 (astro/solar)",   color="#55a868")
     ax.bar(x + 0.5*width, s3, width, label="Stage-3 (subclass)",      color="#c44e52")
@@ -251,7 +255,7 @@ def chart_05_token_economy(runs):
     p95 = [r["p95_out_tokens"] for r in ordered]
     max_ = [r["max_out_tokens"] for r in ordered]
 
-    fig, ax = plt.subplots(figsize=(9, 5))
+    fig, ax = plt.subplots(figsize=(9.5, 6.6))
     y = np.arange(len(labels))
     ax.barh(y, means, color="#4c72b0", label="Mean", edgecolor="black", linewidth=0.5)
     ax.scatter(p95, y, color="#dd8452", s=60, label="p95", zorder=3, marker="D", edgecolor="black", linewidth=0.5)
@@ -297,7 +301,7 @@ def chart_06_error_breakdown(runs):
         for i, k in enumerate(order):
             mat[i, j] = r["err"].get(k, 0)
 
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, ax = plt.subplots(figsize=(13, 5.5))
     x = np.arange(len(labels))
     bottoms = np.zeros(len(labels))
     for i, k in enumerate(order):
@@ -358,10 +362,11 @@ def chart_07_msrs_vs_accuracy(runs):
 # ----------------------------------------------------------------------------
 def chart_08_think_vs_nothink(runs):
     pairs = [
-        ("Qwen3.5-4B",    "Qwen4"),
-        ("Qwen3.5-35B",   "Qwen35"),
-        ("Qwen3.5-397B",  "Qwen397"),
-        ("gpt-5.4",       "gpt-5.4"),
+        ("Qwen3.5-4B",     "Qwen4"),
+        ("Qwen3.5-35B",    "Qwen35"),
+        ("Qwen3.5-397B",   "Qwen397"),
+        ("gpt-5.4",        "gpt-5.4"),
+        ("Claude Opus 4.7","Opus47"),
     ]
     by_family = {}
     for r in runs:
@@ -375,7 +380,7 @@ def chart_08_think_vs_nothink(runs):
 
     x = np.arange(len(labels))
     w = 0.35
-    fig, ax = plt.subplots(figsize=(9, 5))
+    fig, ax = plt.subplots(figsize=(11, 5.5))
     ax.bar(x - w/2, think, w, yerr=th_err, capsize=3, color="#4c72b0",
            edgecolor="black", linewidth=0.5, label="think / reasoning enabled")
     ax.bar(x + w/2, nothink, w, yerr=no_err, capsize=3, color="#dd8452",
@@ -385,7 +390,7 @@ def chart_08_think_vs_nothink(runs):
     ax.set_ylabel("Absolute 5-class accuracy (% ± 1σ)")
     ax.set_title("The reasoning dial: think vs nothink per family (n = 1500 each)")
     ax.yaxis.set_major_formatter(mticker.PercentFormatter(decimals=0))
-    ax.set_ylim(0, 65)
+    ax.set_ylim(0, 78)
     ax.legend(loc="upper left", framealpha=0.95)
 
     # Annotate delta and z

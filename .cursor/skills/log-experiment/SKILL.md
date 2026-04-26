@@ -1,6 +1,6 @@
 ---
 name: log-experiment
-description: Build a complete per-run folder under `runs/<timestamp>-<slug>/` for a VLM benchmark run in this ZTF project — runs evaluate.py if needed, copies the JSONL into the run folder, generates one logtree HTML per datapoint (top-10 per class by ALERCE probability), generates matplotlib plots, writes an enriched markdown report with every metric from evaluate.py, and updates runs/index.md. Use when the user starts, finishes, or wants to document a benchmark run (e.g. "log this experiment", "write up the run", "log the run we just did"). Use proactively right after `run_tinker_benchmark.py` finishes.
+description: Build a complete per-run folder under `runs/<timestamp>-<slug>/` for a VLM benchmark run in this ZTF project — runs evaluate.py if needed, copies the JSONL + the wall-clock runmeta sidecar into the run folder, generates one logtree HTML per datapoint (top-10 per class by ALERCE probability), generates matplotlib plots, writes an enriched markdown report with every metric from evaluate.py (including the wall-clock runtime line), and updates runs/index.md. Use when the user starts, finishes, or wants to document a benchmark run (e.g. "log this experiment", "write up the run", "log the run we just did"). Use proactively right after `run_tinker_benchmark.py` or `retry_failed.py` finishes.
 ---
 
 # Log Experiment
@@ -10,8 +10,9 @@ Produces a self-contained `runs/<timestamp>-<slug>/` folder for every VLM benchm
 ```
 runs/20260420-1855-<slug>/
   run.jsonl            # copy of predictions (annotated with error_category + value_errors by evaluate.py)
-  metrics.json         # full metrics dict from evaluate.py
-  report.md            # enriched markdown report, every metric listed
+  metrics.json         # full metrics dict from evaluate.py + wall_clock block
+  runmeta.json         # copy of <results>.runmeta.json (wall-clock per pass)
+  report.md            # enriched markdown report, every metric listed + wall-clock line
   viz/                 # per-datapoint HTML (top-10 per class by ALERCE probability)
     SN/     <oid>.html x up-to-10
     AGN/    <oid>.html x up-to-10
@@ -33,17 +34,19 @@ Also updates `runs/index.md` (human-readable table) and `runs/index.jsonl` (prog
 ## When to Use
 
 - Right after `run_tinker_benchmark.py` finishes and the user says "log this experiment" / "write up the run" / similar.
+- Right after `retry_failed.py` finishes a resume pass and the user wants to relog.
 - Right after `evaluate.py` completes.
-- Before/after any `prompts.py` / `api_tinker.py` / `api_openai.py` change worth A/B-comparing.
+- Before/after any `prompts.py` / `api_tinker.py` / `api_openai.py` / `api_google.py` / `api_anthropic.py` change worth A/B-comparing.
 
 ## Workflow
 
 ```
 - [ ] 1. Identify the run's JSONL + manifest + model
-- [ ] 2. Gather per-run context (hypothesis, baseline, observations)
-- [ ] 3. Call viz.build_run_folder.build_run_folder(...)
-- [ ] 4. Verify output structure + index update
-- [ ] 5. Report back with paths + top-line metrics
+- [ ] 2. Verify the wall-clock runmeta sidecar exists; back-fill if missing
+- [ ] 3. Gather per-run context (hypothesis, baseline, observations)
+- [ ] 4. Call viz.build_run_folder.build_run_folder(...)
+- [ ] 5. Verify output structure + index update + wall-clock line
+- [ ] 6. Report back with paths + top-line metrics + wall-clock
 ```
 
 ### Step 1 — Identify inputs
@@ -57,7 +60,62 @@ From the launch command or recent terminal output, pull:
 - `--backend` if specified, otherwise infer from model id (anything with `gpt` → openai, else tinker)
 - `--thinking enabled|disabled` (tinker only): selects `Qwen3_5Renderer` vs `Qwen3_5DisableThinkingRenderer` (and Kimi equivalents). The JSONL now records `reasoning_mode` + `renderer` per row, so the report picks this up automatically — no extra CLI arg needed at log time. Reflect it in the slug though (e.g. `qwen35-4b-nothink-benchmark-full`).
 
-### Step 2 — Gather per-run context (optional but strongly encouraged)
+### Step 2 — Verify wall-clock runmeta sidecar
+
+`run_tinker_benchmark.py` and `retry_failed.py` both write a sidecar at
+`<results_jsonl>.runmeta.json` on completion (additive — each pass appends one
+entry). `viz.build_run_folder` automatically:
+
+1. reads the sidecar,
+2. injects `metrics["wall_clock"] = {wall_clock_seconds_total, wall_clock_human, n_passes, estimated, passes[]}`,
+3. writes `<run_folder>/runmeta.json` (provenance copy),
+4. emits a `- **Wall-clock runtime:** ...` bullet in the Output section of `report.md`,
+5. surfaces it as a `Wall-clock` column in `runs/index.md` and `wall_clock_*` fields in `runs/index.jsonl`.
+
+**Check:**
+
+```bash
+ls results/<basename>.runmeta.json
+```
+
+If the sidecar is **missing** (e.g. the run pre-dates this skill, or PowerShell
+crashed before the writer ran), back-fill it before calling
+`build_run_folder`. Two options:
+
+(a) **PowerShell scrollback still has the `Wrote ... elapsed=Xs` line.** Open
+the matching terminal file under `terminals/<id>.txt`, search for `elapsed=`
+or `Wrote results`, then call `viz._runmeta.append_pass(...)` directly:
+
+```python
+from viz._runmeta import append_pass
+import datetime as dt
+
+finished = dt.datetime.fromisoformat("2026-04-23T09:43:00").astimezone()
+elapsed = 10790.7
+started = finished - dt.timedelta(seconds=elapsed)
+append_pass(
+    "results/benchmark_opus47_think.jsonl",
+    kind="initial",
+    started_at_unix=started.timestamp(),
+    finished_at_unix=finished.timestamp(),
+    elapsed_seconds=elapsed,
+    rows_attempted=1500, rows_ok=1500, rows_fail=0,
+    concurrency=2,
+    command="python run_tinker_benchmark.py --backend anthropic ...",
+)
+```
+
+(b) **Scrollback rolled off; only retry-pass elapsed survives.** Extrapolate
+the original sweep from retry throughput: `original_elapsed ≈ retry_elapsed /
+retry_rows × original_sweep_rows`. Pass `estimated=True` so reports flag the
+number as inferred. See `viz/_backfill_wallclock_apr25.py` for a full worked
+example covering both single-pass and two-pass cases.
+
+If a run truly has no recoverable wall-clock data (e.g. an old vLLM run on a
+different machine), simply skip — `build_run_folder` will omit the wall-clock
+line gracefully.
+
+### Step 3 — Gather per-run context (optional but strongly encouraged)
 
 Before building the folder, ask the user (or infer):
 
@@ -67,7 +125,7 @@ Before building the folder, ask the user (or infer):
 
 Also peek at `git rev-parse --short HEAD` and `git status --porcelain` to know which commit + whether the tree is dirty. `build_run_folder` captures these automatically.
 
-### Step 3 — Build the run folder
+### Step 4 — Build the run folder
 
 Invoke the orchestrator. Two options:
 
@@ -109,27 +167,32 @@ The orchestrator does, in order:
 2. Computes run timestamp (JSONL mtime by default) and slug (from model name by default).
 3. Creates `runs/<timestamp>-<slug>/` and copies the JSONL to `run.jsonl`.
 4. Runs `evaluate.evaluate_jsonl(...)` on the in-folder copy — this writes `error_category` + `value_errors` back into each JSONL row *and* saves the full metrics dict to `metrics.json`.
+4a. Reads `<results>.runmeta.json` if present, copies it to `<run_folder>/runmeta.json`, and injects a `wall_clock` block into `metrics.json`.
 5. Picks top-10-by-ALERCE-probability per class from the manifest, filtered to oids actually present in the run.
 6. Generates one `logtree` HTML per selected oid into `viz/<class>/<oid>.html`.
 7. Generates up to 6 matplotlib plots into `plots/` + a `plots/README.md`.
-8. Writes `report.md` containing every metric from `evaluate.py` (11 sub-sections, see `viz/enriched_report.py`).
-9. Regenerates `runs/index.md` and `runs/index.jsonl`.
+8. Writes `report.md` containing every metric from `evaluate.py` (11 sub-sections, see `viz/enriched_report.py`) plus a `Wall-clock runtime:` bullet in the Output section when runmeta is available.
+9. Regenerates `runs/index.md` (now with a `Wall-clock` column) and `runs/index.jsonl` (with `wall_clock_*` fields).
 
-### Step 4 — Verify output
+### Step 5 — Verify output
 
 Check:
 
 - `runs/<ts>-<slug>/report.md` exists and contains a non-empty Results section.
 - `runs/<ts>-<slug>/viz/` has 5 subfolders (SN / AGN / VS / asteroid / bogus) with HTMLs.
 - `runs/<ts>-<slug>/plots/` has PNGs plus `README.md`.
-- The new run appears in `runs/index.md`.
+- `runs/<ts>-<slug>/runmeta.json` exists (or you've explicitly skipped Step 2 for an irrecoverable run).
+- The Output section of `report.md` contains a `**Wall-clock runtime:** ...` bullet.
+- `metrics.json` has a top-level `wall_clock` block.
+- The new run appears in `runs/index.md` and the `Wall-clock` column is populated.
 
-### Step 5 — Report back to user
+### Step 6 — Report back to user
 
 Tell the user:
 
 - The new run folder path.
 - Top-line metrics: 5-class accuracy, parse rate, truncated rate, MSRS.
+- **Wall-clock runtime** (the `wall_clock_human` string from `metrics.json`, plus a note if any pass is `estimated`).
 - Where the interactive HTMLs live (`viz/<class>/<oid>.html`).
 - Which plots were generated (or skipped because of missing data — e.g. `calibration.png` is skipped if fewer than 5 linked Part-B records exist).
 
@@ -156,6 +219,7 @@ Metadata, Configuration (model/renderer/max_tokens/reasoning_mode/concurrency/pr
 - Do **not** invent metrics. If eval hasn't run, `build_run_folder` will run it automatically; don't pre-fill numbers.
 - Do **not** write to `experiments/` or `report/` anymore — those directories are kept as archive only. All new runs go under `runs/`.
 - Do **not** skip capturing the git commit; `build_run_folder` does this for you, don't override.
+- Do **not** invent wall-clock numbers. If the runmeta sidecar is missing and PowerShell scrollback has rolled off, either back-fill from terminal logs with explicit `estimated=True`, or omit wall-clock entirely. Plain guesses are worse than no entry.
 - If the working tree is dirty, the report records it — this is a *warning*, not a blocker. Recommend the user commit first for a fully reproducible run.
 - Never hand-edit `runs/index.md` or `runs/index.jsonl` — they are regenerated from every run's `metrics.json` on each invocation.
 

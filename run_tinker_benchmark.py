@@ -54,6 +54,10 @@ import pandas as pd
 import api_tinker
 from api_tinker import ROOT
 from evaluate import extract_json_object
+from viz._runmeta import (
+    current_command_line,
+    write_pass_from_perf_counter,
+)
 
 
 def _process_row(
@@ -204,6 +208,7 @@ def main() -> None:
     n_err = 0
     write_lock = threading.Lock()
     t0 = time.perf_counter()
+    t0_wall = time.time()
 
     with open(args.out, "w", encoding="utf-8") as fout:
         if args.concurrency <= 1:
@@ -250,8 +255,25 @@ def main() -> None:
                             fout.flush()
                         print(f"[{done_idx}/{total}] FAIL {oid}: {e}", file=sys.stderr)
 
-    elapsed = time.perf_counter() - t0
+    t1 = time.perf_counter()
+    elapsed = t1 - t0
     print(f"Wrote {args.out}  ok={n_ok}  fail={n_err}  elapsed={elapsed:.1f}s")
+    try:
+        sc = write_pass_from_perf_counter(
+            args.out,
+            kind="initial",
+            t0_perf=t0,
+            t1_perf=t1,
+            t0_wall_unix=t0_wall,
+            rows_attempted=total,
+            rows_ok=n_ok,
+            rows_fail=n_err,
+            concurrency=args.concurrency,
+            command=current_command_line(),
+        )
+        print(f"Runmeta sidecar updated: {sc}")
+    except Exception as e:
+        print(f"Warning: could not write runmeta sidecar: {e}", file=sys.stderr)
 
 
 if __name__ == "__main__":

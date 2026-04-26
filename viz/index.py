@@ -24,6 +24,7 @@ def _extract_metric_summary(report_md: str) -> dict[str, str]:
     out["n"] = _grab(r"n_examples\s*\|\s*([0-9]+)") or "—"
     out["trunc"] = _grab(r"truncated_rate\s*\|\s*([0-9.]+\s*%?)") or "—"
     out["msrs"] = _grab(r"MSRS \(mean self-rated score\):\*\*\s*([0-9.]+)") or "—"
+    out["wallclock"] = _grab(r"\*\*Wall-clock runtime:\*\*\s*([^\n]+)") or "—"
     return out
 
 
@@ -69,13 +70,13 @@ def regenerate_index(runs_root: Path) -> None:
         "",
         f"_{len(entries)} run(s) logged. Regenerated automatically; do not hand-edit._",
         "",
-        "| Run folder | Timestamp | Slug / model | n | Parse rate | 5-class acc | Truncated | MSRS |",
-        "|---|---|---|---|---|---|---|---|",
+        "| Run folder | Timestamp | Slug / model | n | Parse rate | 5-class acc | Truncated | MSRS | Wall-clock |",
+        "|---|---|---|---|---|---|---|---|---|",
     ]
     for e in entries:
         lines.append(
             f"| [`{e['folder']}`](./{e['folder']}/report.md) | {e['ts']} | {e['slug']} | "
-            f"{e['n']} | {e['parse']} | {e['5class']} | {e['trunc']} | {e['msrs']} |"
+            f"{e['n']} | {e['parse']} | {e['5class']} | {e['trunc']} | {e['msrs']} | {e['wallclock']} |"
         )
     lines.append("")
 
@@ -98,6 +99,7 @@ def regenerate_jsonl_index(runs_root: Path) -> None:
             metrics = json.loads(mj.read_text(encoding="utf-8"))
         except Exception:
             continue
+        wc = metrics.get("wall_clock") or {}
         entries.append({
             "folder": p.name,
             "n_examples": metrics.get("n_examples"),
@@ -105,6 +107,10 @@ def regenerate_jsonl_index(runs_root: Path) -> None:
             "final_5class_accuracy": metrics.get("part_c_final_5class_accuracy"),
             "part_b_msrs": metrics.get("part_b_msrs"),
             "truncated_rate": metrics.get("truncated_rate"),
+            "wall_clock_seconds_total": wc.get("wall_clock_seconds_total"),
+            "wall_clock_human": wc.get("wall_clock_human"),
+            "wall_clock_estimated": wc.get("estimated"),
+            "wall_clock_n_passes": wc.get("n_passes"),
         })
     path = runs_root / "index.jsonl"
     with open(path, "w", encoding="utf-8") as f:

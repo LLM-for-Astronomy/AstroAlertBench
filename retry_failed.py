@@ -68,6 +68,10 @@ import pandas as pd
 
 import api_tinker
 from evaluate import extract_json_object
+from viz._runmeta import (
+    current_command_line,
+    write_pass_from_perf_counter,
+)
 
 
 def _is_failed(rec: dict) -> bool:
@@ -208,6 +212,7 @@ def main() -> None:
     total = len(target_oids)
     write_lock = threading.Lock()
     t0 = time.perf_counter()
+    t0_wall = time.time()
 
     with open(retry_out, "w", encoding="utf-8") as fout:
         futures = {}
@@ -237,10 +242,27 @@ def main() -> None:
                         fout.flush()
                     print(f"[{done_idx}/{total}] FAIL {oid}: {e}", file=sys.stderr)
 
-    elapsed = time.perf_counter() - t0
+    t1 = time.perf_counter()
+    elapsed = t1 - t0
     print(f"\nRetry pass finished: ok={len(new_by_oid)}  fail={len(still_failed)}  "
           f"elapsed={elapsed:.1f}s")
     print(f"Retry-only log: {retry_out}")
+    try:
+        sc = write_pass_from_perf_counter(
+            args.results,
+            kind="retry",
+            t0_perf=t0,
+            t1_perf=t1,
+            t0_wall_unix=t0_wall,
+            rows_attempted=total,
+            rows_ok=len(new_by_oid),
+            rows_fail=len(still_failed),
+            concurrency=args.concurrency,
+            command=current_command_line(),
+        )
+        print(f"Runmeta sidecar updated: {sc}")
+    except Exception as e:
+        print(f"Warning: could not write runmeta sidecar: {e}", file=sys.stderr)
 
     # Rebuild merged output in MANIFEST ORDER. Priority for each OID:
     #   1) record produced in this retry pass (success or fresh error stub),
