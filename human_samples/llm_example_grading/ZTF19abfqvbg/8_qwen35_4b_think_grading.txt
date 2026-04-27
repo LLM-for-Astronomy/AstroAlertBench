@@ -1,0 +1,5 @@
+"leading_interpretation_and_support": "Variable Star. The persistence across Science and Template rules out a typical supernova. The high visit count (ncovhist=140) and detection count (ndethist=17) strongly suggest the source is a known variable star rather than a new transient event. The point-like morphology and negative subtraction are consistent with a variable star dipping in brightness."
+"alternative_analysis": "AGN is a possible alternative given the proximity to a PS1 neighbor (distpsnr1=0.17 arcsec) and the low star score of that neighbor (sgscore1=0.155), which suggests a galaxy. However, the high visit count and point-like nature favor a stellar variable. A solar system object is unlikely due to the lack of positional offset between Science and Template."
+LLM's Classification: VS
+Correct Class: AGN
+Your Grading: 

@@ -1,0 +1,5 @@
+"leading_interpretation_and_support": "The alert is most consistent with a Variable Star. The source is clearly visible in the Template (Reference) image, ruling out a Supernova (which would be new). The Science and Template images show the source at the same position, ruling out a Solar System object (which would show motion/offset). The Difference image shows a residual, confirming variability. The high classtar score supports a stellar nature."
+"alternative_analysis": "An alternative could be a 'Bogus' residual due to PSF mismatch, but the clean point-like morphology in both Science and Template, combined with the specific residual in the Difference image, strongly favors a real variable star. Another alternative is a Solar System object, but the lack of positional offset between Science and Template rules this out given the ndethist guidance."
+LLM's Classification: VS
+Correct Class: asteroid
+Your Grading: 

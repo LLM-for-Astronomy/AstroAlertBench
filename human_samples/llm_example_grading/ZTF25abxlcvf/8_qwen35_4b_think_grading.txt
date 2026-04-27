@@ -1,0 +1,5 @@
+"leading_interpretation_and_support": "The alert is most consistent with a Variable Star. The source is persistent (visible in Template) but brighter in Science (positive residual), indicating variability. The star-like morphology (`classtar`) supports this over an AGN. The low `ndethist` is likely due to linking issues or the source being a new variable detection, but the visual evidence of persistence confirms it's not a transient SN."
+"alternative_analysis": "A Bogus alert (subtraction artifact) is possible given the low `ndethist`, but the consistent presence in Science and Template makes this unlikely. An AGN is less likely due to the star-like morphology and PS1 neighbor being a galaxy."
+LLM's Classification: VS
+Correct Class: SN
+Your Grading: 

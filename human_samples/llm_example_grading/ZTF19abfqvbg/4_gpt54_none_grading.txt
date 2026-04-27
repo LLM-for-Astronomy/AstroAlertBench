@@ -1,0 +1,5 @@
+"leading_interpretation_and_support": "Most consistent with an AGN. The source appears persistent in the template and still present in science, but dimmer, matching a negative subtraction from a long-lived variable source rather than a one-time transient. The very close PS1 counterpart is galaxy-like, which supports nuclear variability in a host galaxy. The multi-year detection span and moderate number of detections argue against an asteroid and are less SN-like than ongoing AGN variability."
+"alternative_analysis": "A supernova is a weaker alternative if the subtraction is affected by host light and the event is in a galaxy, but the negative residual and long detection history are not a good match to a first-detection SN. A Galactic variable star is also less favored because the nearest PS1 match is not star-like, though the morphology alone is not decisive."
+LLM's Classification: AGN
+Correct Class: AGN
+Your Grading: 

@@ -1,0 +1,5 @@
+"leading_interpretation_and_support": "The alert is most consistent with a Variable Star. The source is point-like (high classtar), stationary (present in Template), and variable (positive residual in Difference). The high ncovhist with low ndethist suggests a source that is typically below detection threshold but brightened in this epoch, a common behavior for Galactic variables (e.g., eclipsing binaries, pulsating stars). The reddish colors (g-r ~ 0.85) are consistent with a stellar source."
+"alternative_analysis": "An AGN is a plausible alternative given the variability and point-like appearance, especially with the PS1 sgscore1 = 0 suggesting a galaxy-like classification in the reference catalog. However, the high ZTF classtar score favors a stellar classification. A Supernova is less likely because the source is present in the Template (implying it is not a new transient) and the magnitude (20.3) is fainter than typical SN peaks."
+LLM's Classification: VS
+Correct Class: SN
+Your Grading: 

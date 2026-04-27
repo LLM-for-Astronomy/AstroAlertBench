@@ -1,0 +1,5 @@
+"leading_interpretation_and_support": "The leading interpretation is a Variable Star (specifically, a variable AGN or nuclear transient). The evidence supports a real astrophysical variability event: the source is persistent (high ndethist), located at a fixed position (no offset between science and template), and shows significant flux decrease (negative subtraction). The association with a galaxy-like PS1 source (low sgscore, red colors) suggests an AGN host, and the variability is consistent with AGN flickering or a nuclear dip."
+"alternative_analysis": "An alternative explanation is a Supernova, but this is less likely because the source is present in the template (implying a persistent nucleus or host) and the event is a dimming (negative) rather than a brightening typical of a new SN. Another alternative is a bogus subtraction artifact, but the residual is clean, circular, and centered, with no dipole structure, and the source is clearly visible in both science and template images, ruling out a simple subtraction failure."
+LLM's Classification: VS
+Correct Class: AGN
+Your Grading: 

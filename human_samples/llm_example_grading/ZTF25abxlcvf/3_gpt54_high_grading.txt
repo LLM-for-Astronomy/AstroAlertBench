@@ -1,0 +1,5 @@
+"leading_interpretation_and_support": "Most consistent with a supernova-like astrophysical transient: a new positive point-source residual appears on top of or very near a pre-existing galaxy-like source, with no strong evidence for image artifact or solar-system motion. The single detection makes the classification tentative, but a first-detected SN on a compact host is a better fit than a Galactic variable star because the nearby PS1 counterpart is non-stellar."
+"alternative_analysis": "A plausible alternative is AGN variability, since the transient is very close to the center of a persistent galaxy-like source and may be effectively nuclear at this resolution. An asteroid is less favored despite ndethist=1 because the cutouts do not show a clear science-template positional offset or trail consistent with motion."
+LLM's Classification: SN
+Correct Class: SN
+Your Grading: 
