@@ -23,13 +23,13 @@ def _section(md: str, header: str) -> str | None:
     return m.group(1).strip() if m else None
 
 
-# slug → (jsonl, manifest, model, exp_md_filename, prompts_module, backend, slug_override, timestamp_override)
+# Narrative sections are pulled from existing `report.md` if present (legacy EXP-*.md removed).
 BACKFILLS: list[dict] = [
     {
         "jsonl": "results/fewshot_qwen35_newparser.jsonl",
         "manifest": "data/manifest_fewshot.csv",
         "model": "Qwen/Qwen3.5-35B-A3B",
-        "exp_md": "experiments/EXP-20260419-qwen35-baseline-newparser.md",
+        "n_report": "runs/20260419-2047-qwen35-35b-a3b-baseline/report.md",
         "prompts_module": "prompts",
         "backend": "tinker",
         "slug": "qwen35-35b-a3b-baseline",
@@ -38,7 +38,7 @@ BACKFILLS: list[dict] = [
         "jsonl": "results/fewshot_qwen35_tokenlimit.jsonl",
         "manifest": "data/manifest_fewshot.csv",
         "model": "Qwen/Qwen3.5-35B-A3B",
-        "exp_md": "experiments/EXP-20260419-qwen35-tokenlimit.md",
+        "n_report": "runs/20260419-2047-qwen35-35b-a3b-tokenlimit/report.md",
         "prompts_module": "prompts_token_limit_instruction",
         "backend": "tinker",
         "slug": "qwen35-35b-a3b-tokenlimit",
@@ -47,7 +47,7 @@ BACKFILLS: list[dict] = [
         "jsonl": "results/fewshot_qwen35_397b_newparser.jsonl",
         "manifest": "data/manifest_fewshot.csv",
         "model": "Qwen/Qwen3.5-397B-A17B",
-        "exp_md": "experiments/EXP-20260419-qwen35-397b.md",
+        "n_report": "runs/20260419-2230-qwen35-397b-a17b/report.md",
         "prompts_module": "prompts",
         "backend": "tinker",
         "slug": "qwen35-397b-a17b",
@@ -56,7 +56,7 @@ BACKFILLS: list[dict] = [
         "jsonl": "results/fewshot_qwen35_4b_newparser.jsonl",
         "manifest": "data/manifest_fewshot.csv",
         "model": "Qwen/Qwen3.5-4B",
-        "exp_md": "experiments/EXP-20260419-qwen35-4b.md",
+        "n_report": "runs/20260419-2230-qwen35-4b/report.md",
         "prompts_module": "prompts",
         "backend": "tinker",
         "slug": "qwen35-4b",
@@ -65,7 +65,7 @@ BACKFILLS: list[dict] = [
         "jsonl": "results/fewshot20_gpt54_high.jsonl",
         "manifest": "data/manifest_fewshot_20.csv",
         "model": "gpt-5.4",
-        "exp_md": "experiments/EXP-20260419-gpt54-high.md",
+        "n_report": "runs/20260419-2230-gpt-5.4-high/report.md",
         "prompts_module": "prompts",
         "backend": "openai",
         "slug": "gpt-5.4-high",
@@ -74,7 +74,7 @@ BACKFILLS: list[dict] = [
         "jsonl": "results/fewshot20_gpt54_none.jsonl",
         "manifest": "data/manifest_fewshot_20.csv",
         "model": "gpt-5.4",
-        "exp_md": "experiments/EXP-20260419-gpt54-none.md",
+        "n_report": "runs/20260419-2230-gpt-5.4-none/report.md",
         "prompts_module": "prompts",
         "backend": "openai",
         "slug": "gpt-5.4-none",
@@ -84,10 +84,10 @@ BACKFILLS: list[dict] = [
 
 def main() -> None:
     for spec in BACKFILLS:
-        exp_md_path = PROJECT_ROOT / spec["exp_md"]
+        narr_path = PROJECT_ROOT / spec["n_report"]
         hypothesis = comparison = observations = None
-        if exp_md_path.exists():
-            md = exp_md_path.read_text(encoding="utf-8")
+        if narr_path.exists():
+            md = narr_path.read_text(encoding="utf-8")
             hypothesis = _section(md, "Hypothesis")
             comparison = _section(md, "Baseline / Comparison")
             observations = _section(md, "Observations")

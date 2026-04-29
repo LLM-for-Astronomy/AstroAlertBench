@@ -2,12 +2,12 @@
 
 Comparison of four open-source VLMs on the same 100-row balanced fewshot manifest (`data/manifest_fewshot.csv`, 20 SN / 20 AGN / 20 VS / 20 asteroid / 20 bogus). All runs share the same prompts module (`prompts`), the same renderer family, the same 20 000-token budget, the same `evaluate.py` parser, and the same temperature (0.2). The only changing axis is the model id and (for Kimi) the renderer choice.
 
-| Run | Result file | EXP log |
+| Run | Result file | Run report |
 |---|---|---|
-| Qwen3.5-4B | `results/fewshot_qwen35_4b_newparser.jsonl` | `experiments/EXP-20260419-qwen35-4b.md` |
-| Qwen3.5-35B-A3B | `results/fewshot_qwen35_newparser.jsonl` | `experiments/EXP-20260419-qwen35-baseline-newparser.md` |
-| Qwen3.5-397B-A17B | `results/fewshot_qwen35_397b_newparser.jsonl` | `experiments/EXP-20260419-qwen35-397b.md` |
-| Kimi K2.5 (think) | `results/fewshot_kimi_think_newparser.jsonl` | `experiments/EXP-20260419-kimi-k25-think.md` |
+| Qwen3.5-4B | `results/fewshot_qwen35_4b_newparser.jsonl` | [`runs/20260419-2230-qwen35-4b/report.md`](../../runs/20260419-2230-qwen35-4b/report.md) |
+| Qwen3.5-35B-A3B | `results/fewshot_qwen35_newparser.jsonl` | [`runs/20260419-2047-qwen35-35b-a3b-baseline/report.md`](../../runs/20260419-2047-qwen35-35b-a3b-baseline/report.md) |
+| Qwen3.5-397B-A17B | `results/fewshot_qwen35_397b_newparser.jsonl` | [`runs/20260419-2230-qwen35-397b-a17b/report.md`](../../runs/20260419-2230-qwen35-397b-a17b/report.md) |
+| Kimi K2.5 (think) | `results/fewshot_kimi_think_newparser.jsonl` | [`runs/20260419-2230-kimi-k25-think/report.md`](../../runs/20260419-2230-kimi-k25-think/report.md) |
 
 ---
 
@@ -134,4 +134,4 @@ Combining the three runs that produced enough parsed rows to be meaningful (35B,
 
 ---
 
-*Inputs to this report:* `results/fewshot_*_newparser.jsonl` files dated 2026-04-19. *Eval pipeline:* `evaluate.py` (commit `e319137`). *EXP logs:* the four files in `experiments/EXP-20260419-*.md` referenced above.
+*Inputs to this report:* `results/fewshot_*_newparser.jsonl` files dated 2026-04-19. *Eval pipeline:* `evaluate.py` (commit `e319137`). *Run folders:* the four `runs/20260419-*` paths linked in the table above (plus token-limit A/B: `runs/20260419-2047-qwen35-35b-a3b-tokenlimit/`).

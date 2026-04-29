@@ -2,10 +2,10 @@
 
 A/B comparison of OpenAI's `gpt-5.4` with reasoning enabled (`high`) vs disabled (`none`) on a 20-row balanced subset (`data/manifest_fewshot_20.csv`, 4 per class). Both runs use the new `api_openai.py` backend, the same `prompts` module, the same `max_output_tokens=20000`, and the same concurrency. The only changing axis is the `--reasoning-effort` flag.
 
-| Run | Result file | EXP log |
+| Run | Result file | Run report |
 |---|---|---|
-| gpt-5.4 high | `results/fewshot20_gpt54_high.jsonl` | `experiments/EXP-20260419-gpt54-high.md` |
-| gpt-5.4 none | `results/fewshot20_gpt54_none.jsonl` | `experiments/EXP-20260419-gpt54-none.md` |
+| gpt-5.4 high | `results/fewshot20_gpt54_high.jsonl` | [`runs/20260419-2230-gpt-5.4-high/report.md`](../../runs/20260419-2230-gpt-5.4-high/report.md) |
+| gpt-5.4 none | `results/fewshot20_gpt54_none.jsonl` | [`runs/20260419-2230-gpt-5.4-none/report.md`](../../runs/20260419-2230-gpt-5.4-none/report.md) |
 
 > **Caveat up-front:** n = 20 (4 per class). One swung row = 25 pp of per-class accuracy. The directional findings below are interesting but not statistically conclusive; treat them as smoke signals warranting a 100-row rerun.
 
@@ -131,4 +131,4 @@ GPT-5.4 numbers are not directly comparable to the open-source 100-row runs beca
 
 ---
 
-*Inputs to this report:* `results/fewshot20_gpt54_{high,none}.jsonl` (run 2026-04-19). *Eval pipeline:* `evaluate.py` at commit `e319137`. *EXP logs:* `experiments/EXP-20260419-gpt54-{high,none}.md`.
+*Inputs to this report:* `results/fewshot20_gpt54_{high,none}.jsonl` (run 2026-04-19). *Eval pipeline:* `evaluate.py` at commit `e319137`. *Run folders:* `runs/20260419-2230-gpt-5.4-{high,none}/`.
