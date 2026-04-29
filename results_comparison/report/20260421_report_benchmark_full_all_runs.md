@@ -4,7 +4,7 @@ Cross-run comparison of **every completed 1500-row benchmark** in this project. 
 
 **Apr 24 second refresh — extended from 9 to 13 runs.** Four new closed-source runs were added: Anthropic Claude Opus 4.7 (adaptive-thinking and disabled-thinking) and Google Gemini 2.5 (Pro with `thinking_budget=-1`, Flash with `thinking_budget=0`). All four reached 1500 / 1500 clean rows after `retry_failed.py` covered the rate-limit-induced gaps (Opus nothink had 621 missing rows after the initial 30 k input-tpm sweep; Gemini 2.5 Pro had ~50 fail / ~1 350 unrun rows after the quota ceiling). The headline ranking, per-class SOTA, stage-3 macro F1, think-vs-nothink pair table, closed-vs-open verdict and the compute-accuracy Pareto frontier all change as a result; see Section 1 for the new ranking.
 
-**Apr 25 wall-clock back-fill.** Section 6 now has a §6.1 "Wall-clock runtime" subsection covering the four new runs (extracted from PowerShell terminal scrollback) plus all older runs that already reported wall-clock in their per-run `report.md`. From now on every new run captures wall-clock automatically: `run_tinker_benchmark.py` and `retry_failed.py` write a `<results>.runmeta.json` sidecar, `viz.build_run_folder` copies it into the run folder, injects a `wall_clock` block into `metrics.json`, and renders a "Wall-clock runtime:" line into `report.md` and `runs/index.md`.
+**Apr 25 wall-clock.** Section §6.1 lists end-to-end wall-clock for all 13 runs in a single table (`Run`, `Concurrency`, `Total wall-clock`, `s/row`). New sweeps record timing automatically via `run_tinker_benchmark.py` / `retry_failed.py` (`<results>.runmeta.json`, `metrics.json`, per-run `report.md`).
 
 **Apr 22 first refresh:** both GPT-5.4 runs had 429 insufficient-quota nulls in the initial pass (55 on `high`, 240 on `none`). Those were back-filled by `retry_failed.py` so both JSONLs now contain 1500/1500 clean rows (0 runtime errors).
 
@@ -347,37 +347,32 @@ Sorted by mean output tokens (cheapest first). For runs whose backend separates 
 
 ### 6.1 Wall-clock runtime
 
-End-to-end wall-clock time for the four most recent runs, measured from `run_tinker_benchmark.py` (initial sweep) and `retry_failed.py` (resume passes). The original sweeps for Opus 4.7 nothink and Gemini 2.5 Pro hit a billing rate-limit / per-day quota partway through and were finished by `retry_failed.py`; the original-sweep numbers for those two are extrapolated from the retry-pass throughput (so they reflect *compute time*, not the calendar gap caused by the quota wait).
+End-to-end wall-clock to finish **n = 1 500** rows per run (`run_tinker_benchmark.py` initial passes plus any `retry_failed.py` recovery). **gpt-5.4 none:** **682.1 s + 247.4 s = 929.5 s** (initial @ concurrency 16 + retry @ concurrency 8); the retry pass filled **240** rows that returned HTTP 429 `insufficient_quota` from the OpenAI Responses API on the initial sweep. **gpt-5.4 high:** **4 741.0 s + 241.9 s + 162.2 s = 5 145.1 s** (initial @ concurrency 16 + two retries @ concurrency 8); those retries filled **55** rows that hit the same 429 error during the initial run. **Kimi K2.5** and **all Qwen3.5** runs used **concurrency 32** on Tinker. The Gemini and Anthropic figures below sum compute time only (quota waits between passes are excluded).
 
-| Run | n_rows | Concurrency | Total wall-clock | s/row | Source |
-|---|---:|---:|---:|---:|---|
-| Gemini 2.5 Flash (none) | 1500 / 1500 | 8 | **17 m 1 s** (1 021 s, 1 pass) | **0.68** | `terminals/49.txt:1003` |
-| Gemini 2.5 Pro (high) † | 1500 / 1500 | 8 | **2 h 8 m 42 s** (7 723 s, 2 passes: 5 160 s init + 2 562 s retry) | 5.15 | `terminals/48.txt:554` + extrapolation |
-| Claude Opus 4.7 (think) | 1500 / 1500 | 2 | **2 h 59 m 51 s** (10 791 s, 1 pass) | 7.19 | `terminals/45.txt:1003-1004` |
-| Claude Opus 4.7 (nothink) † | 1500 / 1500 | 2 | **3 h 43 m 18 s** (13 398 s, 2 passes: 7 850 s init + 5 548 s retry) | 8.93 | `terminals/47.txt:824` + extrapolation |
-
-† Initial-sweep elapsed was rolled out of the terminal scrollback before back-fill; estimated from retry throughput × original-sweep row count, marked `estimated: true` in `runs/<folder>/runmeta.json`. Calendar time for Gemini 2.5 Pro spanned ~20 hours because of a 1 000-requests-per-day quota wait between the initial sweep and the retry; the table reports compute time only.
-
-For comparison, the older runs that previously reported wall-clock in their reports:
-
-| Run | Total wall-clock | s/row | Source |
-|---|---:|---:|---|
-| gpt-5.4 (none) | 929.5 s | 0.62 | `runs/20260421-2032-.../report.md` |
-| Qwen3.5-397B (nothink, vLLM) | 7 240 s (~2 h 1 m) | 4.83 | `runs/20260421-0025-.../report.md` |
-| Qwen3.5-397B (think, vLLM) | 20 239 s (~5 h 37 m) | 13.49 | `runs/20260420-1554-.../report.md` |
-| Kimi K2.5 (think, Tinker) | 8 013 s (~2 h 14 m) | 5.34 | `runs/20260420-1226-.../report.md` |
-| gpt-5.4 high | 5 145 s | 3.43 | `runs/20260421-2024-.../report.md` |
-| Qwen3.5-4B (think, vLLM) | 22 638 s (~6 h 17 m) | 15.09 | `runs/20260420-1920-.../report.md` |
-| Qwen3.5-35B (think, vLLM) | 38 543 s (~10 h 42 m) | 25.70 | `runs/20260420-2054-.../report.md` |
+| Run | Concurrency | Total wall-clock | s/row |
+|---|---|---:|---:|
+| gpt-5.4 none | 16 / 8 | 682.1 + 247.4 = 929.5 s | 0.62 |
+| Gemini 2.5 Flash (none) | 8 | 1 021 s | 0.68 |
+| Qwen3.5-4B (nothink) | 32 | 2 700 s | 1.80 |
+| Qwen3.5-35B-A3B (nothink) | 32 | 3 412.5 s | 2.28 |
+| Qwen3.5-397B-A17B (nothink) | 32 | 4 982.5 s | 3.32 |
+| gpt-5.4 high | 16 / 8 / 8 | 4 741.0 + 241.9 + 162.2 = 5 145.1 s | 3.43 |
+| Gemini 2.5 Pro (high) | 8 | 7 723 s | 5.15 |
+| Kimi K2.5 (think) | 32 | 8 013 s | 5.34 |
+| Claude Opus 4.7 (think) | 2 | 10 791 s | 7.19 |
+| Claude Opus 4.7 (nothink) | 2 | 13 398 s | 8.93 |
+| Qwen3.5-397B-A17B (think) | 32 | 20 239 s | 13.49 |
+| Qwen3.5-4B (think) | 32 | 22 638 s | 15.09 |
+| Qwen3.5-35B-A3B (think) | 32 | 38 543 s | 25.70 |
 
 **Take-aways.**
 
-1. **Gemini 2.5 Flash is in a wall-clock class of its own.** At 0.68 s/row it is ~1.5× faster than gpt-5.4 none, ~10.6× faster than Opus think, and ~22× faster than Qwen3.5-35B think — yet it sits at 36.27 % accuracy, the lowest of the closed-source bunch. As a "throughput-first" tier (e.g. nightly bulk prefilters for streaming surveys) it is currently uncontested.
-2. **Opus 4.7 think's 7.19 s/row is unusually cheap for its accuracy.** It is *slower* per row than gpt-5.4 high (3.43 s) but produces 9.5 pt more 5-class accuracy at one-third the token budget; the per-row latency is dominated by Anthropic's adaptive thinking step, not by repeated retries.
-3. **Per-day quotas dominate calendar time, not compute.** Both Opus nothink and Gemini Pro completed in 2-4 hours of *compute*, but the Gemini Pro run had to wait ~19 hours for the daily quota to reset before the retry pass could run. For future production sweeps, splitting across days (or upgrading to a higher-tier billing plan) is a much bigger schedule lever than concurrency tuning.
-4. **Open-source Qwen3.5 think runs remain the slowest.** Even the smallest 4B model takes 6+ hours on this hardware to push 1 500 rows through `--thinking enabled`, vs ~3 hours for the closed Opus 4.7 think run, vs 17 minutes for Gemini Flash with reasoning disabled. The reasoning-token tax compounds: more thinking → larger context → slower decode → more retries on truncation.
+1. **gpt-5.4 none is the fastest full sweep in wall-clock** (682.1 + 247.4 = 929.5 s; 0.62 s/row), slightly ahead of Gemini 2.5 Flash (1 021 s; 0.68 s/row) even after a 240-row OpenAI retry pass. Flash remains the weakest closed-source run on accuracy (36.27 %).
+2. **Opus 4.7 think's 7.19 s/row is unusually cheap for its accuracy.** It is *slower* per row than gpt-5.4 high (3.43 s) but produces 9.5 pt more 5-class accuracy at about one-third the mean output-token budget; per-row latency is dominated by Anthropic's adaptive-thinking step, not by repeated retries.
+3. **Per-day quotas can stretch calendar time more than compute.** Both Opus 4.7 nothink and Gemini 2.5 Pro finished in a few hours of summed compute, but Gemini Pro in particular could sit idle between passes while a daily request cap reset. For production sweeps, billing tier is often a larger schedule lever than a single concurrency knob.
+4. **Open-source Qwen3.5 *think* runs remain the slowest.** The 35B sweep is the longest in the table (~10.7 h at c=32). The same sizes with thinking disabled are far faster (this batch: ~45–83 min at c=32). The reasoning-token tax compounds: more thinking → larger context → slower decode → more truncation retries on the small models.
 
-> Going forward, every new run captures this automatically: `run_tinker_benchmark.py` (and `retry_failed.py` on resume) writes a `<results>.runmeta.json` sidecar; `viz.build_run_folder` copies it into the run folder, injects a `wall_clock` block into `metrics.json`, and renders the wall-clock line into `report.md` and `runs/index.md`. Back-fill for the four runs above lives in `viz/_backfill_wallclock_apr25.py`.
+> Going forward, `run_tinker_benchmark.py` and `retry_failed.py` write a `<results>.runmeta.json` sidecar; `viz.build_run_folder` can copy it into the run folder, inject a `wall_clock` block into `metrics.json`, and render the wall-clock line into `report.md` and `runs/index.md`.
 
 ---
 

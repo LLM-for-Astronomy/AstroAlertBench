@@ -34,6 +34,8 @@ Use `--manifest data/manifest_human_baselines_15.csv` and point `--out` per run,
 
 Evaluate with `evaluate.py --predictions <jsonl> --manifest data/manifest_human_baselines_15.csv`.
 
+**Full run folders** (same layout as `runs/20260421-2024-gpt-5.4-high-benchmark-full/` — `run.jsonl`, `metrics.json`, `runmeta.json` when available, `report.md`, `plots/`, `viz/`): from repo root run `python -m viz._build_human_baselines_15_run_folders` after all `results/human_baselines_15_*.jsonl` files exist. That creates `runs/<timestamp>-<slug>-human-baselines-15/` for each of the 13 model configs and refreshes `runs/index.md` / `runs/index.jsonl`.
+
 ---
 
 *Created 2026-04-18.*
