@@ -26,6 +26,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from prompts import STAMPS_LLM_DIRNAME
+
 import viz._make_human_baselines_batch as hb
 from viz.build_llm_example_grading import (
     MANIFEST,
@@ -265,7 +267,7 @@ def main() -> None:
         root = BASE_OUT / oid
         root.mkdir(parents=True, exist_ok=True)
 
-        src_montage = PROJECT_ROOT / "stamps_llm" / tc / oid / "montage.png"
+        src_montage = PROJECT_ROOT / STAMPS_LLM_DIRNAME / tc / oid / "montage.png"
         if not src_montage.is_file():
             print(f"[SKIP] missing montage {src_montage}", file=sys.stderr)
             continue

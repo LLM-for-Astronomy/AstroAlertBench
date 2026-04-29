@@ -34,7 +34,7 @@ except ImportError:
 
 from openai import OpenAI
 
-from prompts import SYSTEM_PROMPT, build_user_prompt, manifest_row_to_metadata
+from prompts import STAMPS_LLM_DIRNAME, SYSTEM_PROMPT, build_user_prompt, manifest_row_to_metadata
 
 DEFAULT_MODEL = os.environ.get("OPENAI_MODEL", "gpt-5.4")
 DEFAULT_REASONING_EFFORT = os.environ.get("OPENAI_REASONING_EFFORT", "high")
@@ -45,7 +45,7 @@ _VALID_EFFORT = {"none", "low", "medium", "high", "xhigh"}
 
 def montage_path(target_class: str, oid: str, root: Path | None = None) -> Path:
     base = root or ROOT
-    return base / "stamps_llm" / target_class / oid / "montage.png"
+    return base / STAMPS_LLM_DIRNAME / target_class / oid / "montage.png"
 
 
 def _encode_image(image_path: Path) -> str:

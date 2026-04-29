@@ -36,8 +36,8 @@ At this **early stage** we prioritize: (i) **reproducible data collection**, (ii
 ### 2.2 Modalities per Example
 
 1. **Metadata (tabular):** Fields returned by ALeRCE `query_objects` for each `oid` (e.g. coordinates, detection counts, times, `probability`, `classifier`, etc.), consolidated in `data/manifest.csv`.
-2. **Images (FITS):** For each accepted detection, three cutouts under `stamps/<class>/<oid>/`: `science.fits`, `template.fits`, `difference.fits` (63×63 ZTF-style stamps).
-3. **Images (LLM-facing PNG):** One **montage** per object under `stamps_llm/<class>/<oid>/montage.png`: three panels labeled **Science**, **Template**, **Image** (the third panel is the **difference** cutout; label text follows the montage script). Stretched to 8-bit with a percentile-based normalization for display.
+2. **Images (FITS):** For each accepted detection, three cutouts under `stamps_original/<class>/<oid>/`: `science.fits`, `template.fits`, `difference.fits` (63×63 ZTF-style stamps).
+3. **Images (LLM-facing PNG):** One **montage** per object under `stamps_llm_updated/<class>/<oid>/montage.png` by default (`prompts.STAMPS_LLM_DIRNAME`; legacy trees may use `stamps_llm/`): three panels labeled **Science**, **Template**, **Image** (the third panel is the **difference** cutout; label text follows the montage script). Stretched to 8-bit with a percentile-based normalization for display.
 
 ### 2.3 Summary Statistics (Current `data/summary.json`)
 
@@ -61,16 +61,17 @@ Selection used **500** objects per class. Reported **min / max** stamp-classifie
 | Path                           | Role                                                                                                                              |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
 | `download_alerce_benchmark.py` | Fetch ranked pools; fill 500/class with replacement; write `data/manifest.csv`, `data/summary.json`, `data/replacement_skips.log` |
-| `build_stamps_llm_montages.py` | FITS → PNG montages in `stamps_llm/`                                                                                              |
+| `build_stamps_llm_montages.py` | FITS → PNG montages (place updated outputs under `stamps_llm_updated/` for current runs)                                                                                              |
 | `data/manifest.csv`            | One row per benchmark example (oid, class, probabilities, candid, paths, …)                                                       |
-| `stamps/`, `stamps_llm/`       | Large binaries; **not** tracked in git; regenerate locally                                                                        |
+| `stamps_original/`, `stamps_llm/` | Large binaries; **not** tracked in git (FITS + optional legacy montages)                                                                        |
+| `stamps_llm_updated/` | PNG montages for VLMs; **may** be tracked in git for reproducible clones                                                                        |
 
 
 ### 2.5 What We Still Need (Dataset)
 
 - **Prompt-facing metadata subset:** Full broker metadata exists in principle; we still need a **fixed, documented** text serialization (which columns go into the model prompt vs. held out for scoring only)—as in AstroAlertBench’s distinction between *stored* vs *prompt-facing* metadata.
 - **Optional upgrade:** Align even more tightly with AstroAlertBench by attaching **AVRO-level** candidate fields for each chosen `candid` if we want parity with “first-detection packet” wording (current pipeline centers on object query + stamps + chosen candid).
-- **Hosting:** Large FITS/PNG trees require **separate release** (e.g. Zenodo, Hugging Face datasets, or Git LFS) if public redistribution is desired; the GitHub repo is **code + manifests** only.
+- **Hosting:** Large FITS trees (`stamps_original/`) often need **separate release** (e.g. Zenodo, Hugging Face datasets, or Git LFS); PNG montages in `stamps_llm_updated/` may be committed to GitHub if repo size is acceptable.
 
 ---
 

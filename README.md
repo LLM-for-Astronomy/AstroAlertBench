@@ -16,7 +16,7 @@ Refetches ranked pools and fills **500 stamps per class** (skips failed stamp UR
 python download_alerce_benchmark.py --rebuild
 ```
 
-Outputs: `data/manifest.csv`, `data/summary.json`, `data/replacement_skips.log`, and cutouts under `stamps/<class>/<oid>/`.
+Outputs: `data/manifest.csv`, `data/summary.json`, `data/replacement_skips.log`, and cutouts under `stamps_original/<class>/<oid>/` (raw FITS: science, template, difference).
 
 ## Build PNG montages for LLMs
 
@@ -24,7 +24,9 @@ Outputs: `data/manifest.csv`, `data/summary.json`, `data/replacement_skips.log`,
 python build_stamps_llm_montages.py
 ```
 
-Writes `stamps_llm/<class>/<oid>/montage.png` (Science | Template | Image panels) from existing FITS. Original FITS are unchanged.
+Configure the script (or copy outputs) so montages live under **`stamps_llm_updated/<class>/<oid>/montage.png`** (Science \| Template \| Image) from FITS in `stamps_original/`. **`stamps_llm/`** is an older tree kept only for comparison or legacy reruns. Original FITS are unchanged.
+
+**API / batch runners** (`api_*.py`, `run_tinker_benchmark.py`, viz helpers) resolve montages via `prompts.STAMPS_LLM_DIRNAME`, default **`stamps_llm_updated`**. To point at the legacy tree for one session, set `ZTF_STAMPS_LLM_DIR=stamps_llm`.
 
 ## Zero-shot evaluation (Tinker API)
 
@@ -47,14 +49,15 @@ python evaluate.py --predictions results/run1.jsonl --manifest data/manifest_enr
 |------|-------------|
 | `download_alerce_benchmark.py` | ALeRCE API download + replacement logic |
 | `build_stamps_llm_montages.py` | FITS → labeled PNG montages |
-| `prompts.py` | System + user prompts (Parts A–C, JSON schema) |
+| `prompts.py` | System + user prompts (Parts A–C, JSON schema); **`STAMPS_LLM_DIRNAME`** / `ZTF_STAMPS_LLM_DIR` for montage root (default `stamps_llm_updated`) |
 | `prompts_agn_instruction.py` | Same as `prompts.py` user metadata + extended system guidance for AGN vs variable star |
 | `api_tinker.py` | Tinker VLM sampling (Qwen3-VL + montage) |
 | `run_tinker_benchmark.py` | Batch JSONL runner |
 | `evaluate.py` | Parse JSON outputs; accuracy vs manifest |
 | `enrich_manifest_alerce.py` | Fetch `magpsf`, `sgscore*`, `fid_band`, etc. from ALeRCE AVRO/detections |
 | `data/` | Manifest and summary (tracked) |
-| `stamps/`, `stamps_llm/` | Large binaries — ignored by git; regenerate locally |
+| `stamps_original/`, `stamps_llm/` | Large binaries — **not** tracked (FITS + optional legacy montages); regenerate or copy locally |
+| `stamps_llm_updated/` | Default PNG montages for VLMs — **can be tracked** in git if you want the repo self-contained |
 
 ## GitHub
 
@@ -71,4 +74,4 @@ git push -u origin main
 
 If `git push` asks for credentials, use a [Personal Access Token](https://github.com/settings/tokens) (classic: enable `repo` scope) as the password, or install [GitHub CLI](https://cli.github.com/) and run `gh auth login`.
 
-Large FITS/PNG trees under `stamps/` and `stamps_llm/` are **not** tracked; only scripts and `data/` manifests are in git. Regenerate data locally with the commands above.
+Raw FITS under `stamps_original/` (and optional legacy `stamps_llm/`) are **not** tracked. PNG montages in **`stamps_llm_updated/`** may be committed so clones get the same VLM inputs without rebuilding from FITS.

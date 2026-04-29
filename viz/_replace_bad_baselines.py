@@ -10,7 +10,7 @@ Strategy:
   expert_examples (20) -- 35 total, including the three we are replacing.
 - From data/manifest_fewshot.csv, take candidates of the required class
   sorted by ALERCE probability (descending), and for each candidate test
-  whether its stamps_llm/<class>/<oid>/montage.png has visibly healthy
+  whether its stamps_llm_updated/<class>/<oid>/montage.png (default tree; see ``prompts.STAMPS_LLM_DIRNAME``) has visibly healthy
   stamps (no big black or white mask squares).
 - The first passing candidate is picked; its metadata / relabeled montage /
   combination image are written with the same layout as
@@ -28,7 +28,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = PROJECT_ROOT / "data" / "manifest_fewshot.csv"
 HB_ROOT = PROJECT_ROOT / "human_samples" / "human_baselines"
 EE_ROOT = PROJECT_ROOT / "human_samples" / "expert_examples"
-STAMPS_ROOT = PROJECT_ROOT / "stamps_llm"
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from prompts import STAMPS_LLM_DIRNAME
+
+STAMPS_ROOT = PROJECT_ROOT / STAMPS_LLM_DIRNAME
 
 TO_REPLACE: list[tuple[str, str]] = [
     ("ZTF21acnrjmb", "bogus"),

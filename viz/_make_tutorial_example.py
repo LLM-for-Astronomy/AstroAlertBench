@@ -17,11 +17,15 @@ import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from prompts import STAMPS_LLM_DIRNAME
 
 OID = "ZTF23abbaqzy"
 TARGET_CLASS = "SN"
 
-SRC_MONTAGE = PROJECT_ROOT / "stamps_llm" / TARGET_CLASS / OID / "montage.png"
+SRC_MONTAGE = PROJECT_ROOT / STAMPS_LLM_DIRNAME / TARGET_CLASS / OID / "montage.png"
 MANIFEST = PROJECT_ROOT / "data" / "manifest_benchmark_final.csv"
 
 OUT_ROOT = PROJECT_ROOT / "human_samples" / "tutorial_example"

@@ -6,7 +6,7 @@ venv/
 .idea/
 .vscode/
 *.fits
-stamps/
+stamps_original/
 stamps_llm/
 
 # LaTeX build artifacts (REPORT.tex)

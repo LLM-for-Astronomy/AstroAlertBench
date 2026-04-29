@@ -73,7 +73,7 @@ except ImportError as exc:  # pragma: no cover - import-time guard
         "Install it with:  pip install google-genai"
     ) from exc
 
-from prompts import SYSTEM_PROMPT, build_user_prompt, manifest_row_to_metadata
+from prompts import STAMPS_LLM_DIRNAME, SYSTEM_PROMPT, build_user_prompt, manifest_row_to_metadata
 
 DEFAULT_MODEL = os.environ.get("GOOGLE_MODEL", "gemini-2.5-pro")
 DEFAULT_REASONING_EFFORT = os.environ.get("GOOGLE_REASONING_EFFORT", "high")
@@ -141,7 +141,7 @@ def _allowed_levels_for_model(model_name: str) -> set[str]:
 
 def montage_path(target_class: str, oid: str, root: Path | None = None) -> Path:
     base = root or ROOT
-    return base / "stamps_llm" / target_class / oid / "montage.png"
+    return base / STAMPS_LLM_DIRNAME / target_class / oid / "montage.png"
 
 
 _client_cache: dict[str, Any] = {}

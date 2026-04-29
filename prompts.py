@@ -4,15 +4,21 @@ Used by api_tinker.py and run_tinker_benchmark.py.
 
 User messages show raw ZTF-style candidate field names (e.g. fid, isdiffpos) plus
 definitions in SYSTEM_PROMPT. Requires enriched manifest columns fid and isdiffpos.
+
+Also defines STAMPS_LLM_DIRNAME: subdirectory under the repo root for PNG montages
+(FITS triplets live in stamps_original/). Set ZTF_STAMPS_LLM_DIR to override (e.g. stamps_llm).
 """
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 import pandas as pd
 
 ZTF_SCHEMA_URL = "https://zwickytransientfacility.github.io/ztf-avro-alert/schema.html"
+
+STAMPS_LLM_DIRNAME = os.environ.get("ZTF_STAMPS_LLM_DIR", "stamps_llm_updated")
 
 # Field definitions for ztf.alert.candidate-aligned names (subset used in the user prompt).
 ZTF_FIELD_REFERENCE = f"""

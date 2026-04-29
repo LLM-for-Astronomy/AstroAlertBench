@@ -23,6 +23,6 @@ Selection rule: each OID must have a mappable 5-class label from Part C in **all
 python -m viz.build_llm_example_grading_zooniverse
 ```
 
-Requires the same `runs/.../run.jsonl` files and `stamps_llm/<class>/<OID>/montage.png` inputs as `viz/build_llm_example_grading.py`.
+Requires the same `runs/.../run.jsonl` files and `stamps_llm_updated/<class>/<OID>/montage.png` inputs (or set `ZTF_STAMPS_LLM_DIR=stamps_llm` for legacy) as `viz/build_llm_example_grading.py`.
 
 *Built by `viz/build_llm_example_grading_zooniverse.py`.*

@@ -3,6 +3,7 @@ Tinker API runner for ZTF/ALeRCE benchmark (vision-language, zero-shot).
 
 Pipeline (cf. AstroAlertBench Figure 2):
   (1) First-alert inputs: image triplet (here: one PNG montage = Science|Template|Difference) + metadata
+      (**default path:** ``<repo>/stamps_llm_updated/<class>/<oid>/montage.png``; override dirname via ``ZTF_STAMPS_LLM_DIR``)
   (2) Prompt construction: system + user from prompts.py
   (3) VLM response -> parse JSON (evaluate.py)
 
@@ -42,12 +43,12 @@ from tinker.types import SamplingParams
 
 DEFAULT_MODEL = os.environ.get("TINKER_MODEL", "moonshotai/Kimi-K2.5")
 
-from prompts import SYSTEM_PROMPT, build_user_prompt, manifest_row_to_metadata
+from prompts import STAMPS_LLM_DIRNAME, SYSTEM_PROMPT, build_user_prompt, manifest_row_to_metadata
 
 
 def montage_path(target_class: str, oid: str, root: Path | None = None) -> Path:
     base = root or ROOT
-    return base / "stamps_llm" / target_class / oid / "montage.png"
+    return base / STAMPS_LLM_DIRNAME / target_class / oid / "montage.png"
 
 
 def build_messages(

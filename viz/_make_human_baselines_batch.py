@@ -23,6 +23,10 @@ import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from prompts import STAMPS_LLM_DIRNAME
 
 MANIFEST = PROJECT_ROOT / "data" / "manifest_fewshot.csv"
 OUT_ROOT = PROJECT_ROOT / "human_samples" / "human_baselines"
@@ -237,7 +241,7 @@ def main() -> None:
             print(f"[SKIP] {oid}: not in {MANIFEST}", file=sys.stderr)
             continue
         row = df_by_oid[oid]
-        src_montage = PROJECT_ROOT / "stamps_llm" / target_class / oid / "montage.png"
+        src_montage = PROJECT_ROOT / STAMPS_LLM_DIRNAME / target_class / oid / "montage.png"
         if not src_montage.is_file():
             print(f"[SKIP] {oid}: missing {src_montage}", file=sys.stderr)
             continue

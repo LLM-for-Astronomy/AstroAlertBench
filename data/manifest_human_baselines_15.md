@@ -8,7 +8,7 @@
 
 **Gold `target_class` distribution:** AGN 5, VS 3, SN 2, bogus 3, asteroid 3 (15 total).
 
-**Montages for `run_tinker_benchmark` / `api_*`:** `stamps_llm/<target_class>/<oid>/montage.png` — verified present for all 15 rows.
+**Montages for `run_tinker_benchmark` / `api_*`:** `stamps_llm_updated/<target_class>/<oid>/montage.png` (default; see `prompts.STAMPS_LLM_DIRNAME` / `ZTF_STAMPS_LLM_DIR`) — verified present for all 15 rows.
 
 ---
 
