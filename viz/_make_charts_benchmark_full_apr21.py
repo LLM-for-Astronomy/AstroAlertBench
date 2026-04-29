@@ -69,6 +69,29 @@ def se_prop(p: float, n: int) -> float:
     return math.sqrt(p * (1.0 - p) / n)
 
 
+def ols_slope_stderr(x: list[float], y: list[float]) -> tuple[float, float]:
+    """Return (slope, stderr_slope) for y ~ a + b x (simple OLS, homoskedastic)."""
+    xa = np.asarray(x, dtype=float)
+    ya = np.asarray(y, dtype=float)
+    n = int(xa.size)
+    if n < 3:
+        return float("nan"), float("nan")
+    xm = float(xa.mean())
+    ym = float(ya.mean())
+    sxx = float(np.sum((xa - xm) ** 2))
+    if sxx <= 0:
+        return float("nan"), float("nan")
+    sxy = float(np.sum((xa - xm) * (ya - ym)))
+    m = sxy / sxx
+    b = ym - m * xm
+    resid = ya - (m * xa + b)
+    rss = float(np.sum(resid ** 2))
+    df = n - 2
+    mse = rss / df
+    se_m = math.sqrt(mse / sxx)
+    return m, se_m
+
+
 def load_all() -> list[dict]:
     out = []
     for label, path, color, family, reasoning in RUNS:
@@ -338,10 +361,11 @@ def chart_07_msrs_vs_accuracy(runs):
     ax.scatter(xs, ys, c=colors, s=120, edgecolor="black", linewidth=0.6, zorder=2)
 
     # Regression line for context (negative slope is the story).
-    m, b = np.polyfit(xs, ys, 1)
+    m, se_m = ols_slope_stderr(xs, ys)
+    b = float(np.mean(ys) - m * np.mean(xs))
     xr = np.linspace(min(xs) - 0.05, max(xs) + 0.05, 50)
     ax.plot(xr, m * xr + b, linestyle="--", color="#555555",
-            label=f"linear fit: slope = {m:.1f} pt / unit MSRS")
+            label=f"OLS: slope = {m:.1f} ± {se_m:.1f} (SE) pt / MSRS")
 
     for x, y, lab in zip(xs, ys, labels):
         ax.annotate(lab, (x, y), xytext=(6, 4),
