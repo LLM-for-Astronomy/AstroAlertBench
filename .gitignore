@@ -32,3 +32,7 @@ runs/
 
 # Files from other projects for reference
 
+# Temporary files
+llm-for-astronomy-classifications.csv
+llm-for-astronomy-classifications_expert_examples_correct_only.csv
+
