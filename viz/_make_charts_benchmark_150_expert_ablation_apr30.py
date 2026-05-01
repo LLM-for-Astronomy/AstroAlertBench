@@ -1,11 +1,7 @@
-"""Chart suite for human-baselines-15 comparison report.
+"""Generate chart suite for results_comparison/report/20260430_report_expert_example_ablation.md.
 
-Produces 9 PNGs in results_comparison/report/charts/human_baselines_15_apr29/ —
-same figure numbering as the full-benchmark report for side-by-side reading.
-
-Regenerate:
-
-    python -m viz._make_charts_human_baselines_15
+Seven runs × n=150 on manifest_benchmark_150.csv. Output:
+  results_comparison/report/charts/benchmark_150_expert_ablation_apr30/*.png
 """
 from __future__ import annotations
 
@@ -18,24 +14,18 @@ import matplotlib.ticker as mticker
 import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT_DIR = ROOT / "results_comparison" / "report" / "charts" / "human_baselines_15_apr29"
+OUT_DIR = ROOT / "results_comparison" / "report" / "charts" / "benchmark_150_expert_ablation_apr30"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
+# Ordered by descending absolute 5-class (approximate — charts re-sort anyway)
 RUNS = [
-    # (short_label, metrics_json_path, color, family, reasoning)
-    ("Opus 4.7 think",        "runs/20260428-2356-opus47-think-human-baselines-15/metrics.json",        "#5b3a91", "Opus47",   "think"),
-    ("gpt-5.4 high",          "runs/20260428-2358-gpt-5.4-high-human-baselines-15/metrics.json",        "#d62728", "gpt-5.4",  "think"),
-    ("Kimi K2.5 think",       "runs/20260428-2349-kimi-k25-human-baselines-15/metrics.json",            "#9467bd", "Kimi",     "think"),
-    ("Opus 4.7 nothink",      "runs/20260428-2357-opus47-nothink-human-baselines-15/metrics.json",      "#b894e0", "Opus47",   "nothink"),
-    ("Qwen3.5-397B think",    "runs/20260428-2348-qwen35-397b-a17b-human-baselines-15/metrics.json",    "#1f77b4", "Qwen397",  "think"),
-    ("gpt-5.4 none",          "runs/20260428-2359-gpt-5.4-none-human-baselines-15/metrics.json",        "#ff7f0e", "gpt-5.4",  "nothink"),
-    ("Gemini 2.5 Pro high",   "runs/20260428-2356-gemini25-pro-high-human-baselines-15/metrics.json",   "#0a9396", "GeminiPro","think"),
-    ("Gemini 2.5 Flash none", "runs/20260429-0042-gemini25-flash-none-human-baselines-15/metrics.json", "#94d2bd", "GeminiFl", "nothink"),
-    ("Qwen3.5-397B nothink",  "runs/20260428-2330-qwen35-397b-a17b-nothink-human-baselines-15/metrics.json","#2ca02c", "Qwen397", "nothink"),
-    ("Qwen3.5-35B think",     "runs/20260429-0019-qwen35-35b-a3b-human-baselines-15/metrics.json",      "#17becf", "Qwen35",   "think"),
-    ("Qwen3.5-35B nothink",   "runs/20260428-2357-qwen35-35b-a3b-nothink-human-baselines-15/metrics.json","#bcbd22", "Qwen35",   "nothink"),
-    ("Qwen3.5-4B nothink",    "runs/20260428-2356-qwen35-4b-nothink-human-baselines-15/metrics.json",   "#8c564b", "Qwen4",    "nothink"),
-    ("Qwen3.5-4B think",      "runs/20260429-0026-qwen35-4b-human-baselines-15/metrics.json",           "#e377c2", "Qwen4",    "think"),
+    ("Qwen3.5-397B think", "runs/20260429-2118-qwen35-397b-a17b-think-benchmark-150/metrics.json", "#1f77b4", "Qwen397", "think"),
+    ("Kimi K2.5 think", "runs/20260429-2037-kimi-k25-think-benchmark-150/metrics.json", "#9467bd", "Kimi", "think"),
+    ("Qwen3.5-397B nothink", "runs/20260429-2031-qwen35-397b-a17b-nothink-benchmark-150/metrics.json", "#2ca02c", "Qwen397", "nothink"),
+    ("Qwen3.5-4B nothink", "runs/20260429-2028-qwen35-4b-nothink-benchmark-150/metrics.json", "#8c564b", "Qwen4", "nothink"),
+    ("Qwen3.5-35B nothink", "runs/20260429-2017-qwen35-35b-a3b-nothink-benchmark-150/metrics.json", "#bcbd22", "Qwen35", "nothink"),
+    ("Qwen3.5-35B think", "runs/20260429-2145-qwen35-35b-a3b-think-benchmark-150/metrics.json", "#17becf", "Qwen35", "think"),
+    ("Qwen3.5-4B think", "runs/20260429-2145-qwen35-4b-think-benchmark-150/metrics.json", "#e377c2", "Qwen4", "think"),
 ]
 
 plt.rcParams.update({
@@ -62,7 +52,6 @@ def se_prop(p: float, n: int) -> float:
 
 
 def ols_slope_stderr(x: list[float], y: list[float]) -> tuple[float, float]:
-    """Return (slope, stderr_slope) for y ~ a + b x (simple OLS, homoskedastic)."""
     xa = np.asarray(x, dtype=float)
     ya = np.asarray(y, dtype=float)
     n = int(xa.size)
@@ -75,8 +64,7 @@ def ols_slope_stderr(x: list[float], y: list[float]) -> tuple[float, float]:
         return float("nan"), float("nan")
     sxy = float(np.sum((xa - xm) * (ya - ym)))
     m = sxy / sxx
-    b = ym - m * xm
-    resid = ya - (m * xa + b)
+    resid = ya - (m * xa + (ym - m * xm))
     rss = float(np.sum(resid ** 2))
     df = n - 2
     mse = rss / df
@@ -125,9 +113,6 @@ def load_all() -> list[dict]:
     return out
 
 
-# ----------------------------------------------------------------------------
-# 01. Absolute 5-class accuracy, ranked, with SE error bars
-# ----------------------------------------------------------------------------
 def chart_01_absolute_ranked(runs):
     ordered = sorted(runs, key=lambda r: r["p_abs"], reverse=True)
     labels = [r["label"] for r in ordered]
@@ -135,28 +120,22 @@ def chart_01_absolute_ranked(runs):
     errs = [r["se_abs"] * 100 for r in ordered]
     colors = [r["color"] for r in ordered]
 
-    fig, ax = plt.subplots(figsize=(9.5, 6.4))
+    fig, ax = plt.subplots(figsize=(9.0, 5.8))
     y = np.arange(len(labels))
-    bars = ax.barh(y, vals, xerr=errs, color=colors, edgecolor="black",
-                   linewidth=0.5, capsize=3, ecolor="#333333")
+    ax.barh(y, vals, xerr=errs, color=colors, edgecolor="black",
+            linewidth=0.5, capsize=3, ecolor="#333333")
     ax.set_yticks(y)
     ax.set_yticklabels(labels)
     ax.invert_yaxis()
-    ax.set_xlabel("Absolute 5-class accuracy over all manifest rows  (% ± 1σ SE)")
-    ax.set_title("Human baselines (n≈15): absolute 5-class accuracy, ranked")
+    ax.set_xlabel("Absolute 5-class accuracy over all 150 rows  (% ± 1σ SE)")
+    ax.set_title("Headline: absolute 5-class accuracy, ranked  (7 runs, n=150)")
     ax.xaxis.set_major_formatter(mticker.PercentFormatter(decimals=0))
-    ax.set_xlim(0, max(vals) * 1.22)
-    for bar, v, e in zip(bars, vals, errs):
-        ax.text(v + e + 0.6, bar.get_y() + bar.get_height() / 2,
-                f"{v:.2f} ± {e:.2f}%", va="center", fontsize=8.5)
+    ax.set_xlim(0, min(100, max(vals) * 1.28 + max(errs)))
     fig.tight_layout()
     fig.savefig(OUT_DIR / "01_absolute_5class_ranked.png")
     plt.close(fig)
 
 
-# ----------------------------------------------------------------------------
-# 02. Per-class accuracy heatmap (9 runs x 5 classes)
-# ----------------------------------------------------------------------------
 def chart_02_per_class_heatmap(runs):
     classes = ["SN", "AGN", "VS", "asteroid", "bogus"]
     ordered = sorted(runs, key=lambda r: r["p_abs"], reverse=True)
@@ -164,7 +143,7 @@ def chart_02_per_class_heatmap(runs):
                     for r in ordered])
     labels_row = [r["label"] for r in ordered]
 
-    fig, ax = plt.subplots(figsize=(8, 6.4))
+    fig, ax = plt.subplots(figsize=(8, 5.2))
     im = ax.imshow(mat, cmap="YlGnBu", vmin=0, vmax=100, aspect="auto")
     ax.set_xticks(range(len(classes)))
     ax.set_xticklabels(classes)
@@ -185,9 +164,6 @@ def chart_02_per_class_heatmap(runs):
     plt.close(fig)
 
 
-# ----------------------------------------------------------------------------
-# 03. Stage-wise cascade (grouped bars per run)
-# ----------------------------------------------------------------------------
 def chart_03_stagewise_cascade(runs):
     ordered = sorted(runs, key=lambda r: r["p_abs"], reverse=True)
     labels = [r["label"] for r in ordered]
@@ -198,15 +174,15 @@ def chart_03_stagewise_cascade(runs):
 
     x = np.arange(len(labels))
     width = 0.2
-    fig, ax = plt.subplots(figsize=(13, 5.5))
+    fig, ax = plt.subplots(figsize=(12.5, 5.2))
     ax.bar(x - 1.5*width, s1, width, label="Stage-1 (real/artifact)", color="#4c72b0")
-    ax.bar(x - 0.5*width, s2, width, label="Stage-2 (astro/solar)",   color="#55a868")
-    ax.bar(x + 0.5*width, s3, width, label="Stage-3 (subclass)",      color="#c44e52")
-    ax.bar(x + 1.5*width, s3c, width, label="Stage-3 conditional",    color="#8172b2")
+    ax.bar(x - 0.5*width, s2, width, label="Stage-2 (astro/solar)", color="#55a868")
+    ax.bar(x + 0.5*width, s3, width, label="Stage-3 (subclass)", color="#c44e52")
+    ax.bar(x + 1.5*width, s3c, width, label="Stage-3 conditional", color="#8172b2")
     ax.set_xticks(x)
-    ax.set_xticklabels(labels, rotation=30, ha="right")
+    ax.set_xticklabels(labels, rotation=28, ha="right")
     ax.set_ylabel("Accuracy (%, on n_parsed)")
-    ax.set_title("Stage-wise cascade accuracy (Part C)")
+    ax.set_title("Stage-wise cascade accuracy (Part C), n=150 benchmark")
     ax.yaxis.set_major_formatter(mticker.PercentFormatter(decimals=0))
     ax.set_ylim(0, 100)
     ax.legend(loc="upper right", framealpha=0.95)
@@ -215,13 +191,9 @@ def chart_03_stagewise_cascade(runs):
     plt.close(fig)
 
 
-# ----------------------------------------------------------------------------
-# 04. AGN-collapse pies: where true AGN rows land (top 4 absolute-accuracy runs)
-# ----------------------------------------------------------------------------
 def chart_04_agn_collapse_pie(runs):
     ordered = sorted(runs, key=lambda r: r["p_abs"], reverse=True)[:4]
-
-    fig, axes = plt.subplots(1, 4, figsize=(14, 4.8))
+    fig, axes = plt.subplots(1, 4, figsize=(13.5, 4.6))
     parts = ["AGN", "variable_star", "supernova", "N/A"]
     legend_labels = ["AGN (correct)", "variable_star", "supernova", "N/A / other"]
     colors = ["#55a868", "#c44e52", "#4c72b0", "#bbbbbb"]
@@ -231,11 +203,8 @@ def chart_04_agn_collapse_pie(runs):
         vals = [int(agn_row.get(p, 0)) for p in parts]
         total = sum(vals)
 
-        def autopct(p, total=total):
-            # Hide labels for slices < 3% to avoid overlapping text on
-            # tiny wedges.  Count is still visible in the legend block
-            # below each pie.
-            return f"{p:.1f}%" if p >= 3 else ""
+        def autopct(p):
+            return f"{p:.1f}%" if p >= 5 else ""
 
         ax.pie(
             vals, labels=None, colors=colors, autopct=autopct,
@@ -243,26 +212,17 @@ def chart_04_agn_collapse_pie(runs):
             wedgeprops={"edgecolor": "white", "linewidth": 1},
             textprops={"fontsize": 9, "color": "white", "fontweight": "bold"},
         )
-        # Footer beneath each pie with the tiny-slice counts explicitly.
-        counts_txt = "   ".join(
-            f"{legend_labels[i].split(' ')[0]}: {vals[i]}" for i in range(len(vals))
-        )
-        ax.text(0, -1.35, counts_txt, ha="center", va="top", fontsize=8.5,
-                transform=ax.transData)
-        ax.set_title(f"{r['label']}\n(n = {total} true AGN)", fontsize=10)
+        counts_txt = "   ".join(f"{legend_labels[i].split(' ')[0]}: {vals[i]}" for i in range(len(vals)))
+        ax.text(0, -1.35, counts_txt, ha="center", va="top", fontsize=8.5, transform=ax.transData)
+        ax.set_title(f"{r['label']}\n(n = {total} true AGN)", fontsize=9.5)
 
-    fig.legend(legend_labels, loc="lower center", ncol=4, frameon=False,
-               bbox_to_anchor=(0.5, -0.02))
-    fig.suptitle("True AGN rows: predicted-class distribution (top 4 runs)",
-                 y=1.01, fontsize=12)
+    fig.legend(legend_labels, loc="lower center", ncol=4, frameon=False, bbox_to_anchor=(0.5, -0.02))
+    fig.suptitle("True AGN rows: predicted-class distribution (top 4 runs by absolute 5-class)", y=1.02, fontsize=12)
     fig.tight_layout(rect=(0, 0.08, 1, 1))
     fig.savefig(OUT_DIR / "04_agn_collapse_pie.png")
     plt.close(fig)
 
 
-# ----------------------------------------------------------------------------
-# 05. Token economy: mean + p95 + max per run (horizontal bar)
-# ----------------------------------------------------------------------------
 def chart_05_token_economy(runs):
     ordered = sorted(runs, key=lambda r: r["mean_out_tokens"])
     labels = [r["label"] for r in ordered]
@@ -270,29 +230,23 @@ def chart_05_token_economy(runs):
     p95 = [r["p95_out_tokens"] for r in ordered]
     max_ = [r["max_out_tokens"] for r in ordered]
 
-    fig, ax = plt.subplots(figsize=(9.5, 6.6))
+    fig, ax = plt.subplots(figsize=(9.0, 5.8))
     y = np.arange(len(labels))
     ax.barh(y, means, color="#4c72b0", label="Mean", edgecolor="black", linewidth=0.5)
-    ax.scatter(p95, y, color="#dd8452", s=60, label="p95", zorder=3, marker="D", edgecolor="black", linewidth=0.5)
-    ax.scatter(max_, y, color="#c44e52", s=60, label="Max", zorder=3, marker="s", edgecolor="black", linewidth=0.5)
-    ax.axvline(20000, color="black", linestyle="--", linewidth=0.8, alpha=0.6,
-               label="20 000-token budget cap")
+    ax.scatter(p95, y, color="#dd8452", s=56, label="p95", zorder=3, marker="D", edgecolor="black", linewidth=0.5)
+    ax.scatter(max_, y, color="#c44e52", s=56, label="Max", zorder=3, marker="s", edgecolor="black", linewidth=0.5)
+    ax.axvline(20000, color="black", linestyle="--", linewidth=0.8, alpha=0.6, label="20 000-token cap")
     ax.set_yticks(y)
     ax.set_yticklabels(labels)
     ax.invert_yaxis()
     ax.set_xlabel("Output tokens per row")
     ax.set_title("Token economy: mean / p95 / max output tokens")
     ax.legend(loc="lower right", framealpha=0.95)
-    for yi, mv in zip(y, means):
-        ax.text(mv + 200, yi, f"{int(mv):,}", va="center", fontsize=8.5)
     fig.tight_layout()
     fig.savefig(OUT_DIR / "05_token_economy.png")
     plt.close(fig)
 
 
-# ----------------------------------------------------------------------------
-# 06. Format error breakdown (stacked bar)
-# ----------------------------------------------------------------------------
 def chart_06_error_breakdown(runs):
     order = ["ok", "truncated_no_json", "truncated_partial_json",
              "parse_failed", "extra_text_around_json",
@@ -311,12 +265,13 @@ def chart_06_error_breakdown(runs):
 
     ordered = sorted(runs, key=lambda r: r["p_abs"], reverse=True)
     labels = [r["label"] for r in ordered]
+    ntot = ordered[0]["n_total"]
     mat = np.zeros((len(order), len(labels)))
     for j, r in enumerate(ordered):
         for i, k in enumerate(order):
             mat[i, j] = r["err"].get(k, 0)
 
-    fig, ax = plt.subplots(figsize=(13, 5.5))
+    fig, ax = plt.subplots(figsize=(12.5, 5.0))
     x = np.arange(len(labels))
     bottoms = np.zeros(len(labels))
     for i, k in enumerate(order):
@@ -327,20 +282,16 @@ def chart_06_error_breakdown(runs):
                edgecolor="white", linewidth=0.5)
         bottoms += vals
     ax.set_xticks(x)
-    ax.set_xticklabels(labels, rotation=30, ha="right")
-    nmax = max(r["n_total"] for r in ordered)
-    ax.set_ylabel(f"Row count (max {nmax} per run)")
-    ax.set_title("Format error breakdown per run (stacked)")
-    ax.set_ylim(0, max(15, int(nmax * 1.15)))
+    ax.set_xticklabels(labels, rotation=28, ha="right")
+    ax.set_ylabel(f"Row count (out of {ntot})")
+    ax.set_title("Format / transport breakdown per run (stacked)")
+    ax.set_ylim(0, ntot)
     ax.legend(loc="lower right", framealpha=0.95, ncol=2)
     fig.tight_layout()
     fig.savefig(OUT_DIR / "06_error_breakdown_stacked.png")
     plt.close(fig)
 
 
-# ----------------------------------------------------------------------------
-# 07. MSRS (self-score) vs absolute 5-class accuracy scatter
-# ----------------------------------------------------------------------------
 def chart_07_msrs_vs_accuracy(runs):
     xs = [r["msrs"] for r in runs]
     ys = [r["p_abs"] * 100 for r in runs]
@@ -348,25 +299,22 @@ def chart_07_msrs_vs_accuracy(runs):
     colors = [r["color"] for r in runs]
     labels = [r["label"] for r in runs]
 
-    fig, ax = plt.subplots(figsize=(8.5, 5.2))
-    ax.errorbar(xs, ys, yerr=errs, fmt="none", ecolor="#aaaaaa",
-                capsize=3, linewidth=0.8, zorder=1)
-    ax.scatter(xs, ys, c=colors, s=120, edgecolor="black", linewidth=0.6, zorder=2)
+    fig, ax = plt.subplots(figsize=(8.2, 5.0))
+    ax.errorbar(xs, ys, yerr=errs, fmt="none", ecolor="#aaaaaa", capsize=3, linewidth=0.8, zorder=1)
+    ax.scatter(xs, ys, c=colors, s=110, edgecolor="black", linewidth=0.6, zorder=2)
 
-    # Regression line for context (negative slope is the story).
     m, se_m = ols_slope_stderr(xs, ys)
     b = float(np.mean(ys) - m * np.mean(xs))
-    xr = np.linspace(min(xs) - 0.05, max(xs) + 0.05, 50)
+    xr = np.linspace(min(xs) - 0.06, max(xs) + 0.06, 50)
     ax.plot(xr, m * xr + b, linestyle="--", color="#555555",
             label=f"OLS: slope = {m:.1f} ± {se_m:.1f} (SE) pt / MSRS")
 
     for x, y, lab in zip(xs, ys, labels):
-        ax.annotate(lab, (x, y), xytext=(6, 4),
-                    textcoords="offset points", fontsize=8)
+        ax.annotate(lab, (x, y), xytext=(5, 3), textcoords="offset points", fontsize=7.5)
 
-    ax.set_xlabel("MSRS  (model's own mean self-reasoning score, 1-5)")
+    ax.set_xlabel("MSRS (Part B mean self-rating, 1–5)")
     ax.set_ylabel("Absolute 5-class accuracy (%)")
-    ax.set_title("Part-B self-score is inversely correlated with true accuracy")
+    ax.set_title("MSRS vs absolute 5-class accuracy (n=150 sweep)")
     ax.yaxis.set_major_formatter(mticker.PercentFormatter(decimals=0))
     ax.legend(loc="upper right", framealpha=0.95)
     fig.tight_layout()
@@ -374,18 +322,13 @@ def chart_07_msrs_vs_accuracy(runs):
     plt.close(fig)
 
 
-# ----------------------------------------------------------------------------
-# 08. Think vs nothink paired bars (4 families)
-# ----------------------------------------------------------------------------
-def chart_08_think_vs_nothink(runs):
+def chart_08_think_vs_nothink_qwen_only(runs):
     pairs = [
-        ("Qwen3.5-4B",     "Qwen4"),
-        ("Qwen3.5-35B",    "Qwen35"),
-        ("Qwen3.5-397B",   "Qwen397"),
-        ("gpt-5.4",        "gpt-5.4"),
-        ("Claude Opus 4.7","Opus47"),
+        ("Qwen3.5-4B", "Qwen4"),
+        ("Qwen3.5-35B-A3B", "Qwen35"),
+        ("Qwen3.5-397B-A17B", "Qwen397"),
     ]
-    by_family = {}
+    by_family: dict[str, dict[str, dict]] = {}
     for r in runs:
         by_family.setdefault(r["family"], {})[r["reasoning"]] = r
 
@@ -397,27 +340,26 @@ def chart_08_think_vs_nothink(runs):
 
     x = np.arange(len(labels))
     w = 0.35
-    fig, ax = plt.subplots(figsize=(11, 5.5))
+    fig, ax = plt.subplots(figsize=(9.5, 5.0))
     ax.bar(x - w/2, think, w, yerr=th_err, capsize=3, color="#4c72b0",
            edgecolor="black", linewidth=0.5, label="think / reasoning enabled")
     ax.bar(x + w/2, nothink, w, yerr=no_err, capsize=3, color="#dd8452",
-           edgecolor="black", linewidth=0.5, label="nothink / none")
+           edgecolor="black", linewidth=0.5, label="nothink / disabled")
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
     ax.set_ylabel("Absolute 5-class accuracy (% ± 1σ)")
-    ax.set_title("The reasoning dial: think vs nothink per family (human baselines n≈15)")
+    ax.set_title("Think vs nothink: Qwen3.5 family only (n = 150 each)")
     ax.yaxis.set_major_formatter(mticker.PercentFormatter(decimals=0))
-    ax.set_ylim(0, 65)
+    ax.set_ylim(0, 52)
     ax.legend(loc="upper left", framealpha=0.95)
 
-    # Annotate delta and z
-    for i, (lab, key) in enumerate(pairs):
+    for i, (_, key) in enumerate(pairs):
         t = by_family[key]["think"]
         n = by_family[key]["nothink"]
         delta = (t["p_abs"] - n["p_abs"]) * 100
-        se_d = math.sqrt(t["se_abs"]**2 + n["se_abs"]**2) * 100
+        se_d = math.sqrt(t["se_abs"] ** 2 + n["se_abs"] ** 2) * 100
         z = abs(delta) / se_d if se_d else float("nan")
-        top = max(think[i] + th_err[i], nothink[i] + no_err[i]) + 3
+        top = max(think[i] + th_err[i], nothink[i] + no_err[i]) + 2
         sign = "+" if delta >= 0 else "−"
         stars = "***" if z >= 3 else ("**" if z >= 2 else ("*" if z >= 1 else "n.s."))
         ax.text(i, top, f"Δ = {sign}{abs(delta):.2f} pt\n(z = {z:.2f}, {stars})",
@@ -427,9 +369,6 @@ def chart_08_think_vs_nothink(runs):
     plt.close(fig)
 
 
-# ----------------------------------------------------------------------------
-# 09. Compute efficiency Pareto: abs 5-class vs mean output tokens (log x)
-# ----------------------------------------------------------------------------
 def chart_09_compute_pareto(runs):
     xs = [r["mean_out_tokens"] for r in runs]
     ys = [r["p_abs"] * 100 for r in runs]
@@ -437,34 +376,28 @@ def chart_09_compute_pareto(runs):
     colors = [r["color"] for r in runs]
     labels = [r["label"] for r in runs]
 
-    # Pareto frontier (maximize y given x): sort by x ascending, keep
-    # monotonically non-decreasing y.
     idx_sorted = sorted(range(len(xs)), key=lambda i: xs[i])
     frontier = []
-    best_y = -1
+    best_y = -1.0
     for i in idx_sorted:
         if ys[i] > best_y:
             frontier.append(i)
             best_y = ys[i]
 
-    fig, ax = plt.subplots(figsize=(9, 5.3))
-    ax.errorbar(xs, ys, yerr=errs, fmt="none", ecolor="#aaaaaa",
-                capsize=3, linewidth=0.8, zorder=1)
-    ax.scatter(xs, ys, c=colors, s=130, edgecolor="black", linewidth=0.6, zorder=2)
-
-    # Draw Pareto line
+    fig, ax = plt.subplots(figsize=(8.8, 5.0))
+    ax.errorbar(xs, ys, yerr=errs, fmt="none", ecolor="#aaaaaa", capsize=3, linewidth=0.8, zorder=1)
+    ax.scatter(xs, ys, c=colors, s=120, edgecolor="black", linewidth=0.6, zorder=2)
     fx = [xs[i] for i in frontier]
     fy = [ys[i] for i in frontier]
     ax.plot(fx, fy, "--", color="#555555", linewidth=1.2, zorder=1, label="Pareto frontier")
 
     for x, y, lab in zip(xs, ys, labels):
-        ax.annotate(lab, (x, y), xytext=(6, 4),
-                    textcoords="offset points", fontsize=8)
+        ax.annotate(lab, (x, y), xytext=(5, 3), textcoords="offset points", fontsize=7.5)
 
     ax.set_xscale("log")
     ax.set_xlabel("Mean output tokens per row (log scale)")
     ax.set_ylabel("Absolute 5-class accuracy (%)")
-    ax.set_title("Compute-accuracy Pareto: closer to top-left = better bang/token")
+    ax.set_title("Compute-accuracy trade-off (150-row benchmark)")
     ax.yaxis.set_major_formatter(mticker.PercentFormatter(decimals=0))
     ax.xaxis.set_major_formatter(mticker.ScalarFormatter())
     ax.xaxis.get_major_formatter().set_scientific(False)
@@ -484,7 +417,7 @@ def main() -> None:
     chart_05_token_economy(runs)
     chart_06_error_breakdown(runs)
     chart_07_msrs_vs_accuracy(runs)
-    chart_08_think_vs_nothink(runs)
+    chart_08_think_vs_nothink_qwen_only(runs)
     chart_09_compute_pareto(runs)
     for p in sorted(OUT_DIR.glob("*.png")):
         print(f"  wrote {p.relative_to(ROOT)}  ({p.stat().st_size:,} B)")

@@ -50,7 +50,7 @@ def main() -> None:
         "OLS slope SE on MSRS vs accuracy (Fig 7) is the usual regression standard error (homoskedastic), **n = 13** points.\n\n"
     )
     lines.append(
-        "**Figures.** Nine charts in `charts/human_baselines_15/`, same numbering as the full-benchmark report. Regenerate with `python -m viz._make_charts_human_baselines_15`.\n\n"
+        "**Figures.** Nine charts in `charts/human_baselines_15_apr29/`, same numbering as the full-benchmark report. Regenerate with `python -m viz._make_charts_human_baselines_15`.\n\n"
     )
     lines.append("| Fig | Section | What it shows |\n|---:|---|---|\n")
     lines.append("| 1 | §1 | Absolute 5-class accuracy ranked (± 1σ SE) |\n")
@@ -112,7 +112,7 @@ def main() -> None:
         rank += 1
 
     lines.append(
-        "\n![Fig 1](charts/human_baselines_15/01_absolute_5class_ranked.png)\n\n"
+        "\n![Fig 1](charts/human_baselines_15_apr29/01_absolute_5class_ranked.png)\n\n"
         f"*Fig 1. Ranked absolute 5-class on the human-baseline slice. **{runs[0]['label']}** leads at "
         f"{runs[0]['p_abs'] * 100:.1f} ± {runs[0]['se_abs'] * 100:.1f} %, but error bars overlap most of the mid-pack — "
         "this is expected at n ≈ 15.*\n\n"
@@ -144,7 +144,7 @@ def main() -> None:
         lines.append(f"| {r['label']} | " + " | ".join(cells) + " |\n")
 
     lines.append(
-        "\n![Fig 2](charts/human_baselines_15/02_per_class_heatmap.png)\n\n"
+        "\n![Fig 2](charts/human_baselines_15_apr29/02_per_class_heatmap.png)\n\n"
         "*Fig 2. Heatmap (same layout as full-benchmark report). Sparse denominators make individual cells noisy.*\n\n"
     )
 
@@ -165,7 +165,7 @@ def main() -> None:
         )
 
     lines.append(
-        "\n![Fig 3](charts/human_baselines_15/03_stagewise_cascade.png)\n\n"
+        "\n![Fig 3](charts/human_baselines_15_apr29/03_stagewise_cascade.png)\n\n"
         "*Fig 3. Cascade bars. Stage definitions match `evaluate.py`.*\n\n"
     )
 
@@ -174,7 +174,7 @@ def main() -> None:
         "Mirroring the full report, Fig 4 shows where **true AGN gold** rows land in predicted stage-3 labels for the **top four** runs by absolute accuracy. "
         "Counts come from `part_c_stage3_confusion_matrix['AGN']`.\n\n"
     )
-    lines.append("![Fig 4](charts/human_baselines_15/04_agn_collapse_pie.png)\n\n*Fig 4. AGN → predicted (top 4).* \n\n")
+    lines.append("![Fig 4](charts/human_baselines_15_apr29/04_agn_collapse_pie.png)\n\n*Fig 4. AGN → predicted (top 4).* \n\n")
 
     top4 = runs[:4]
     for r in top4:
@@ -197,7 +197,7 @@ def main() -> None:
             f"| {r['label']} | {r['mean_out_tokens']:.0f} | {r['p95_out_tokens']:.0f} | {r['max_out_tokens']:.0f} |\n"
         )
     lines.append(
-        "\n![Fig 5](charts/human_baselines_15/05_token_economy.png)\n\n"
+        "\n![Fig 5](charts/human_baselines_15_apr29/05_token_economy.png)\n\n"
         "### 6.1 Wall-clock (run folder)\n\n"
         "| Run | Wall-clock |\n|---|:---|\n"
     )
@@ -207,7 +207,7 @@ def main() -> None:
         lines.append(f"| {r['label']} | {wh} |\n")
 
     lines.append("\n---\n\n## 7. Format error breakdown\n\n")
-    lines.append("![Fig 6](charts/human_baselines_15/06_error_breakdown_stacked.png)\n\n")
+    lines.append("![Fig 6](charts/human_baselines_15_apr29/06_error_breakdown_stacked.png)\n\n")
     lines.append(
         "*Fig 6. Stacked `error_breakdown.format` counts. Qwen3.5-4B (think) is almost entirely **truncated_no_json** on this slice.*\n\n"
     )
@@ -230,11 +230,11 @@ def main() -> None:
         spr = float(m["part_b_self_pass_rate"])
         lines.append(f"| {r['label']} | {r['msrs']:.4f} | {pct(spr, se_prop(spr, ne))} |\n")
     lines.append(
-        "\n![Fig 7](charts/human_baselines_15/07_msrs_vs_accuracy.png)\n\n*Fig 7. MSRS vs accuracy with OLS line.*\n\n"
+        "\n![Fig 7](charts/human_baselines_15_apr29/07_msrs_vs_accuracy.png)\n\n*Fig 7. MSRS vs accuracy with OLS line.*\n\n"
     )
 
     lines.append("---\n\n## 10. Think vs nothink (paired)\n\n")
-    lines.append("![Fig 8](charts/human_baselines_15/08_think_vs_nothink.png)\n\n")
+    lines.append("![Fig 8](charts/human_baselines_15_apr29/08_think_vs_nothink.png)\n\n")
     lines.append(
         "*Fig 8. Same five families as the full-benchmark report (Qwen 4B / 35B / 397B, GPT-5.4, Opus 4.7). "
         "Δ and z are **not** interpreted at n ≈ 15 — shown for visual parity only.*\n\n"
@@ -247,7 +247,7 @@ def main() -> None:
     )
 
     lines.append("---\n\n## 12. Compute efficiency (Pareto)\n\n")
-    lines.append("![Fig 9](charts/human_baselines_15/09_compute_pareto.png)\n\n")
+    lines.append("![Fig 9](charts/human_baselines_15_apr29/09_compute_pareto.png)\n\n")
     lines.append(
         "*Fig 9. Mean output tokens (log x) vs absolute accuracy. Frontier is illustrative only at n ≈ 15.*\n\n"
     )

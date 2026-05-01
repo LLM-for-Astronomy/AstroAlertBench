@@ -6,7 +6,7 @@ Cross-run comparison of the **same 13 model configurations** as [`20260421_repor
 
 **Standard error convention:** same as the full-benchmark report: `SE = √(p·(1−p)/n)` for proportions; **1σ** bars in figures and tables. OLS slope SE on MSRS vs accuracy (Fig 7) is the usual regression standard error (homoskedastic), **n = 13** points.
 
-**Figures.** Nine charts in `charts/human_baselines_15/`, same numbering as the full-benchmark report. Regenerate with `python -m viz._make_charts_human_baselines_15`.
+**Figures.** Nine charts in `charts/human_baselines_15_apr29/`, same numbering as the full-benchmark report. Regenerate with `python -m viz._make_charts_human_baselines_15`.
 
 | Fig | Section | What it shows |
 |---:|---|---|
@@ -62,7 +62,7 @@ Absolute 5-class accuracy = **parse_rate × part_c_final_5class_accuracy** over 
 | 12 | Qwen3.5-35B think | 15.38 ± 10.01 % (n=13) | 86.67 ± 8.78 % | 13.33 % | **13.33 ± 8.78 %** (n=15) | 0.0952 | 4.69 |
 | 13 | Qwen3.5-4B think | 33.33 ± 27.22 % (n=3) | 20.00 ± 10.33 % | 86.67 % | **6.67 ± 6.44 %** (n=15) | 0.2222 | 4.78 |
 
-![Fig 1](charts/human_baselines_15/01_absolute_5class_ranked.png)
+![Fig 1](charts/human_baselines_15_apr29/01_absolute_5class_ranked.png)
 
 *Fig 1. Ranked absolute 5-class on the human-baseline slice. **Opus 4.7 think** leads at 53.3 ± 12.9 %, but error bars overlap most of the mid-pack — this is expected at n ≈ 15.*
 
@@ -90,7 +90,7 @@ Cells: `correct/total ± SE` with binomial SE on that cell’s `total`. Gold cou
 | Qwen3.5-35B think | 0/1 (0.00 ± 0.00 %) | 0/3 (0.00 ± 0.00 %) | 1/3 (33.33 ± 27.22 %) | 0/3 (0.00 ± 0.00 %) | 1/3 (33.33 ± 27.22 %) |
 | Qwen3.5-4B think | — | 0/1 (0.00 ± 0.00 %) | 1/1 (100.00 ± 0.00 %) | — | 0/1 (0.00 ± 0.00 %) |
 
-![Fig 2](charts/human_baselines_15/02_per_class_heatmap.png)
+![Fig 2](charts/human_baselines_15_apr29/02_per_class_heatmap.png)
 
 *Fig 2. Heatmap (same layout as full-benchmark report). Sparse denominators make individual cells noisy.*
 
@@ -114,7 +114,7 @@ Cells: `correct/total ± SE` with binomial SE on that cell’s `total`. Gold cou
 | Qwen3.5-35B think | 13 | 53.85 ± 13.83 % | 38.46 ± 13.49 % | 23.08 ± 11.69 % | 14.29 ± 9.71 % | 15.38 ± 10.01 % |
 | Qwen3.5-4B think | 3 | 66.67 ± 27.22 % | 66.67 ± 27.22 % | 33.33 ± 27.22 % | 50.00 ± 28.87 % | 33.33 ± 27.22 % |
 
-![Fig 3](charts/human_baselines_15/03_stagewise_cascade.png)
+![Fig 3](charts/human_baselines_15_apr29/03_stagewise_cascade.png)
 
 *Fig 3. Cascade bars. Stage definitions match `evaluate.py`.*
 
@@ -124,7 +124,7 @@ Cells: `correct/total ± SE` with binomial SE on that cell’s `total`. Gold cou
 
 Mirroring the full report, Fig 4 shows where **true AGN gold** rows land in predicted stage-3 labels for the **top four** runs by absolute accuracy. Counts come from `part_c_stage3_confusion_matrix['AGN']`.
 
-![Fig 4](charts/human_baselines_15/04_agn_collapse_pie.png)
+![Fig 4](charts/human_baselines_15_apr29/04_agn_collapse_pie.png)
 
 *Fig 4. AGN → predicted (top 4).* 
 
@@ -178,7 +178,7 @@ Mirroring the full report, Fig 4 shows where **true AGN gold** rows land in pred
 | Qwen3.5-35B think | 10229 | 20000 | 20000 |
 | Qwen3.5-4B think | 17839 | 20000 | 20000 |
 
-![Fig 5](charts/human_baselines_15/05_token_economy.png)
+![Fig 5](charts/human_baselines_15_apr29/05_token_economy.png)
 
 ### 6.1 Wall-clock (run folder)
 
@@ -202,7 +202,7 @@ Mirroring the full report, Fig 4 shows where **true AGN gold** rows land in pred
 
 ## 7. Format error breakdown
 
-![Fig 6](charts/human_baselines_15/06_error_breakdown_stacked.png)
+![Fig 6](charts/human_baselines_15_apr29/06_error_breakdown_stacked.png)
 
 *Fig 6. Stacked `error_breakdown.format` counts. Qwen3.5-4B (think) is almost entirely **truncated_no_json** on this slice.*
 
@@ -234,7 +234,7 @@ MSRS and **self_pass_rate** (pass = row mean of three Part B self-ratings **≥ 
 | Opus 4.7 nothink | 4.0667 | 73.33 ± 11.42 % |
 | Opus 4.7 think | 4.0000 | 60.00 ± 12.65 % |
 
-![Fig 7](charts/human_baselines_15/07_msrs_vs_accuracy.png)
+![Fig 7](charts/human_baselines_15_apr29/07_msrs_vs_accuracy.png)
 
 *Fig 7. MSRS vs accuracy with OLS line.*
 
@@ -242,7 +242,7 @@ MSRS and **self_pass_rate** (pass = row mean of three Part B self-ratings **≥ 
 
 ## 10. Think vs nothink (paired)
 
-![Fig 8](charts/human_baselines_15/08_think_vs_nothink.png)
+![Fig 8](charts/human_baselines_15_apr29/08_think_vs_nothink.png)
 
 *Fig 8. Same five families as the full-benchmark report (Qwen 4B / 35B / 397B, GPT-5.4, Opus 4.7). Δ and z are **not** interpreted at n ≈ 15 — shown for visual parity only.*
 
@@ -256,7 +256,7 @@ On this slice, **Opus**, **GPT-5.4**, and **Gemini** runs sit mid-pack together 
 
 ## 12. Compute efficiency (Pareto)
 
-![Fig 9](charts/human_baselines_15/09_compute_pareto.png)
+![Fig 9](charts/human_baselines_15_apr29/09_compute_pareto.png)
 
 *Fig 9. Mean output tokens (log x) vs absolute accuracy. Frontier is illustrative only at n ≈ 15.*
 
