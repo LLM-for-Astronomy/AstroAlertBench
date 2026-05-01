@@ -20,53 +20,27 @@ This note summarizes **character-level** use of the three highlight colors in:
 
 **Regenerate numbers:** `python -m viz._analyze_llm_grading_docx_highlights` (implementation: `viz/_analyze_llm_grading_docx_highlights.py`).
 
-**Regenerate figures:** `python -m viz._make_charts_llm_grading_docx_highlights` → `charts/llm_grading_docx_highlights_apr30/`.
-
-| Fig | What it shows |
-|---:|---|
-| 1 | 100% stacked — highlight mix for **Q2+Q3** combined, **per alert** |
-| 2 | Pie — **both alerts combined** (counts match §2) |
-| 3 | 100% stacked — **Q2 vs Q3** for each alert |
-| 4 | Grouped bars — **raw character counts** by color per alert |
-| 5 | 100% stacked — **pooled** correct vs **incorrect** LLM class vs gold (Q2+Q3) |
-| 6 | Grouped bars — **pooled** raw counts by color × correctness |
-| 7 | 100% stacked — **per alert**, correct vs incorrect columns |
-
----
-
-## Figures
-
-![Fig 1](charts/llm_grading_docx_highlights_apr30/01_stacked_pct_per_alert.png)
-
-*Fig 1. Share of reasoning characters by highlight color (Q2+Q3 pooled), **per alert**.*
-
-![Fig 2](charts/llm_grading_docx_highlights_apr30/02_pie_combined_both_alerts.png)
-
-*Fig 2. **Both alerts combined** — fraction of all counted reasoning characters (same totals as §2; **25,858** chars after ZTF26 correction).*
-
-![Fig 3](charts/llm_grading_docx_highlights_apr30/03_stacked_q2_q3_per_alert.png)
-
-*Fig 3. **Q2 vs Q3** within each alert — 100% stacked columns (see §4 narrative).*
-
-![Fig 4](charts/llm_grading_docx_highlights_apr30/04_grouped_char_counts_per_alert.png)
-
-*Fig 4. **Absolute** character counts by color per alert (Q2+Q3), for comparison with Fig 1.*
-
-![Fig 5](charts/llm_grading_docx_highlights_apr30/05_stacked_correct_vs_incorrect_pooled.png)
-
-*Fig 5. **Pooled** over both alerts: highlight mix in reasoning text for blocks where `LLM's Classification` **matches** `Correct Class` vs where it does **not** (see §3).*
-
-![Fig 6](charts/llm_grading_docx_highlights_apr30/06_grouped_counts_correct_vs_incorrect_pooled.png)
-
-*Fig 6. Same split as Fig 5 — **raw** character counts (not row-normalized).*
-
-![Fig 7](charts/llm_grading_docx_highlights_apr30/07_stacked_correct_vs_incorrect_per_alert.png)
-
-*Fig 7. **Per alert** — four columns: correct-answer blocks vs incorrect-answer blocks (percent of chars in each color).*
+**Regenerate figures:** `python -m viz._make_charts_llm_grading_docx_highlights` → `charts/llm_grading_docx_highlights_apr30/`. Figures below appear **in context** in §§1–3.
 
 ---
 
 ## 1. Per alert (each datapoint / each `.docx`)
+
+The two hand-picked alerts are **not** interchangeable in expert markup: one skews **green** on average; the other carries more **yellow** and especially **red**. The figures here use **only** Part B reasoning text (Q2 + Q3); percentages are shares of characters within that scope.
+
+![Fig 1](charts/llm_grading_docx_highlights_apr30/01_stacked_pct_per_alert.png)
+
+*Fig 1. **Composition** — share of reasoning characters by highlight color (Q2+Q3 pooled), **one column per `.docx`**. ZTF19 is green-heavy overall; ZTF26 shows a smaller green slice and much larger yellow and red.*
+
+![Fig 4](charts/llm_grading_docx_highlights_apr30/04_grouped_char_counts_per_alert.png)
+
+*Fig 4. **Scale** — same data as Fig 1 but **raw character counts** (not row-normalized). ZTF26 contributes more total Q2+Q3 text in aggregate, and most of the red ink across the two files.*
+
+![Fig 3](charts/llm_grading_docx_highlights_apr30/03_stacked_q2_q3_per_alert.png)
+
+*Fig 3. **Q2 vs Q3** — four 100% stacked columns (each alert × leading interpretation vs alternative analysis). On ZTF26, Q3 is visibly greener than Q2; Q2 carries more yellow and red, consistent with the expert treating the “alternative” paragraph as stronger once it exists.*
+
+Tabulated breakdowns (same scope as the figures):
 
 ### ZTF19abfqvbg — 13 model blocks
 
@@ -102,6 +76,12 @@ This note summarizes **character-level** use of the three highlight colors in:
 
 ## 2. Both alerts combined (26 model blocks)
 
+Pooling both files answers “how much of *all* graded reasoning text falls in each color?” — useful when you care about **inventory** of expert attention rather than per-alert contrast.
+
+![Fig 2](charts/llm_grading_docx_highlights_apr30/02_pie_combined_both_alerts.png)
+
+*Fig 2. **Pooled inventory** — fraction of all counted Q2+Q3 characters (**25,858** after the ZTF26 correction). Green remains the largest single bucket; yellow second; red third but non-trivial.*
+
 | Color | Character count | % of all reasoning chars (both alerts, both fields) |
 |---:|---:|---:|
 | Green | 10,784 | 41.70% |
@@ -127,6 +107,20 @@ This note summarizes **character-level** use of the three highlight colors in:
 ## 3. Split by LLM classification vs gold (correct vs incorrect)
 
 For each of the 13 model blocks in a file, we compare the text on **`LLM's Classification:`** to **`Correct Class:`** (case-insensitive, normalized whitespace). All Q2+Q3 characters for that block are then accumulated into either a **correct** or **incorrect** pool. This is **independent** of the 0–5 reasoning score; it only reflects whether the model’s **stated** class label matched the key you provided as gold.
+
+The next three figures are **one story**: Fig 5 shows **row-normalized** pools (percent of characters); Fig 6 shows the same split with **raw counts** (directly comparable to Table columns); Fig 7 resolves **per alert** whether the pattern holds when you do not pool ZTF19 with ZTF26.
+
+![Fig 5](charts/llm_grading_docx_highlights_apr30/05_stacked_correct_vs_incorrect_pooled.png)
+
+*Fig 5. **Pooled, percentages** — highlight mix in reasoning text when the LLM label **matches** gold vs when it **does not**. Green dominates the correct column; incorrect columns shift toward yellow and red.*
+
+![Fig 6](charts/llm_grading_docx_highlights_apr30/06_grouped_counts_correct_vs_incorrect_pooled.png)
+
+*Fig 6. **Pooled, counts** — same contrast as Fig 5 without normalizing to 100%. Incorrect blocks contribute more total characters in this sample, so raw red and yellow masses grow in absolute terms as well as in share.*
+
+![Fig 7](charts/llm_grading_docx_highlights_apr30/07_stacked_correct_vs_incorrect_per_alert.png)
+
+*Fig 7. **Per alert** — four columns (each alert × correct vs incorrect), still **percent of characters** within each column. ZTF19 shows **no red** in correct blocks in this split; ZTF26 carries red even when correct, but incorrect blocks are redder.*
 
 ### ZTF19abfqvbg
 
@@ -180,8 +174,8 @@ On this alert, **no red** highlight appears in any **correct**-prediction block;
 
 The numeric **0–5** grades stored next to each answer are separate from the trichotomous highlight legend; this report only quantifies the **three colors** in the body text.
 
-1. **Coverage:** Experts colored **most** of the reasoning text (≈ **88–94%** highlighted across the four section summaries above); remaining characters are often markup-adjacent runs left white.
-2. **Quality vs alert:** On **ZTF19abfqvbg**, **green** is largest (~51% of Q2+Q3 chars). On **ZTF26aargnnp**, **yellow** is still the largest single bucket (~38%), **green** is second (~34%), and **red** remains much higher than on ZTF19 (~21% vs ~6%), consistent with more disputed or weaker reasoning on that cutout overall.
-3. **Q2 vs Q3:** For ZTF19, green share is similar across the two fields. For ZTF26, **alternative_analysis** has a clearly higher **green** share than **leading_interpretation** (44% vs 23%), while **leading_interpretation** carries more **yellow** and **red** — the expert marked the second prose block as comparatively stronger once models stated an alternative.
+1. **Coverage:** Experts colored **most** of the reasoning text (≈ **88–94%** highlighted across the per-alert summaries in §1); remaining characters are often markup-adjacent runs left white.
+2. **Quality vs alert:** On **ZTF19abfqvbg**, **green** is largest (~51% of Q2+Q3 chars), visible as the dominant bottom band in Fig 1. On **ZTF26aargnnp**, **yellow** is still the largest single bucket (~38%), **green** is second (~34%), and **red** remains much higher than on ZTF19 (~21% vs ~6%) — Fig 4 shows this is true in **absolute** counts as well, not only as percentages.
+3. **Q2 vs Q3:** For ZTF19, green share is similar across the two fields. For ZTF26, **alternative_analysis** has a clearly higher **green** share than **leading_interpretation** (44% vs 23%), while **leading_interpretation** carries more **yellow** and **red** — Fig 3 makes the within-alert contrast visible column-by-column.
 
-4. **Correct vs incorrect classification:** When the LLM’s label matches gold (§3), **green** dominates and **red** is negligible across the pooled sample; when it does not match, **yellow** and especially **red** account for a much larger share — consistent with expert markup tracking disputed or flawed prose more heavily on wrong-final-label answers.
+4. **Correct vs incorrect classification:** When the LLM’s label matches gold (§3), **green** dominates and **red** is negligible in the **pooled** stack (Fig 5); when it does not match, **yellow** and especially **red** account for a much larger share. Fig 7 shows the split is not uniform across alerts (ZTF19 has no red in correct blocks in this sample).
