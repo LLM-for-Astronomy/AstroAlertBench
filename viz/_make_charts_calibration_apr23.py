@@ -296,28 +296,82 @@ def chart_pearson_r_bar(rows: list[RunRow]) -> None:
 
 def chart_gap_vs_r_scatter(rows: list[RunRow]) -> None:
     """C3 — Calibration gap (x) vs Pearson r (y) scatter."""
-    fig, ax = plt.subplots(figsize=(9.5, 6.5))
+    fig, ax = plt.subplots(figsize=(10.0, 6.8))
     for r in rows:
-        ax.scatter(r.calibration_gap, r.pearson_r,
-                   s=110, color=r.color, marker=r.marker, edgecolor="black",
-                   linewidth=0.6, alpha=0.9)
-        ax.annotate(r.label, (r.calibration_gap, r.pearson_r),
-                    xytext=(6, 4), textcoords="offset points", fontsize=8)
-    ax.axhline(0.0, color="gray", linewidth=0.6)
-    ax.axvline(0.0, color="gray", linewidth=0.6)
+        ax.scatter(
+            r.calibration_gap,
+            r.pearson_r,
+            s=110,
+            color=r.color,
+            marker=r.marker,
+            edgecolor="black",
+            linewidth=0.6,
+            alpha=0.9,
+            label=r.label,
+            zorder=3,
+        )
+    ax.axhline(0.0, color="gray", linewidth=0.6, zorder=1)
+    ax.axvline(0.0, color="gray", linewidth=0.6, zorder=1)
+
+    xg = [r.calibration_gap for r in rows]
+    yg = [r.pearson_r for r in rows]
+    xr = max(xg) - min(xg)
+    yr = max(yg) - min(yg)
+    pad_x = max(0.03, xr * 0.14)
+    pad_y = max(0.05, yr * 0.14)
+    # Extra margin so dense clusters sit away from corner annotations / axes
+    x0 = min(min(xg) - pad_x, -0.028)
+    x1 = max(xg) + pad_x
+    y0 = min(min(yg) - pad_y, -0.055)
+    y1 = max(yg) + pad_y
+    ax.set_xlim(x0, x1)
+    ax.set_ylim(y0, y1)
+
     ax.set_xlabel("Calibration gap (correct conf − incorrect conf)")
     ax.set_ylabel("Pearson r (confidence vs correctness)")
-    ax.set_title("C3 — Calibration gap vs Pearson r\n"
-                 "Top-right = honestly confident; bottom-left = miscalibrated AND uninformative.")
-    ax.grid(linestyle=":", alpha=0.4)
-    # Quadrant annotations
-    xmin, xmax = ax.get_xlim()
-    ymin, ymax = ax.get_ylim()
-    ax.text(xmax * 0.97, ymax * 0.97, "honest +\ninformative", ha="right", va="top",
-            color="darkgreen", fontsize=9, alpha=0.7)
-    ax.text(xmin * 0.97 if xmin < 0 else 0.001, ymin * 0.97 if ymin < 0 else 0.001,
-            "miscalibrated +\nuninformative", ha="left", va="bottom",
-            color="darkred", fontsize=9, alpha=0.7)
+    ax.set_title(
+        "C3 — Calibration gap vs Pearson r\n"
+        "Top-right = honestly confident; bottom-left = miscalibrated AND uninformative."
+    )
+    ax.grid(linestyle=":", alpha=0.4, zorder=0)
+    # Quadrant hints in axes coordinates (avoid overlap with data min/max)
+    ax.text(
+        0.98,
+        0.98,
+        "honest +\ninformative",
+        transform=ax.transAxes,
+        ha="right",
+        va="top",
+        color="darkgreen",
+        fontsize=9,
+        alpha=0.72,
+        zorder=2,
+    )
+    ax.text(
+        0.008,
+        0.05,
+        "miscalibrated +\nuninformative",
+        transform=ax.transAxes,
+        ha="left",
+        va="bottom",
+        color="darkred",
+        fontsize=9,
+        alpha=0.72,
+        zorder=2,
+    )
+    ax.legend(
+        loc="upper left",
+        bbox_to_anchor=(0.0, 1.0),
+        fontsize=7,
+        framealpha=0.94,
+        ncol=2,
+        columnspacing=1.35,
+        handlelength=1.85,
+        handletextpad=0.95,
+        labelspacing=0.78,
+        borderaxespad=0.55,
+    ).set_zorder(6)
+
     fig.tight_layout()
     out = OUT_DIR / "C3_gap_vs_pearson_scatter.png"
     fig.savefig(out, dpi=140)
@@ -390,8 +444,6 @@ def _chart_conf_bin_pairs(rows: list[RunRow], threshold: float, out_name: str,
     labels = [r.label for r in rows_s]
     high = [b[0] for b in binned_s]
     low = [b[2] for b in binned_s]
-    n_high = [b[1] for b in binned_s]
-    n_low = [b[3] for b in binned_s]
 
     tlabel = _fmt_thresh(threshold)
     x = np.arange(len(rows_s))
@@ -401,11 +453,11 @@ def _chart_conf_bin_pairs(rows: list[RunRow], threshold: float, out_name: str,
            color="tab:green", alpha=0.8, edgecolor="black", linewidth=0.4)
     ax.bar(x + width/2, low, width, label=f"acc | low conf (< {tlabel})",
            color="tab:gray", alpha=0.8, edgecolor="black", linewidth=0.4)
-    for i, (h, l, nh, nl) in enumerate(zip(high, low, n_high, n_low)):
+    for i, (h, l) in enumerate(zip(high, low)):
         if not math.isnan(h):
-            ax.text(i - width/2, h + 0.01, f"{h:.2f}\n(n={nh})", ha="center", va="bottom", fontsize=7)
+            ax.text(i - width/2, h + 0.01, f"{h:.2f}", ha="center", va="bottom", fontsize=7)
         if not math.isnan(l):
-            ax.text(i + width/2, l + 0.01, f"{l:.2f}\n(n={nl})", ha="center", va="bottom", fontsize=7)
+            ax.text(i + width/2, l + 0.01, f"{l:.2f}", ha="center", va="bottom", fontsize=7)
     ax.set_xticks(x)
     ax.set_xticklabels(labels, rotation=35, ha="right", fontsize=9)
     ax.set_ylabel("5-class accuracy on the bin")
@@ -459,9 +511,9 @@ def chart_conf_bin_distribution(rows: list[RunRow]) -> None:
     fig, ax = plt.subplots(figsize=(12, 5.4))
     ax.bar(x, high_pct, label="high conf (≥4)", color="tab:green", alpha=0.85, edgecolor="black", linewidth=0.4)
     ax.bar(x, low_pct, bottom=high_pct, label="low conf (<4)", color="tab:gray", alpha=0.85, edgecolor="black", linewidth=0.4)
-    for i, (hp, lp, h, l) in enumerate(zip(high_pct, low_pct, high, low)):
-        ax.text(i, hp / 2, f"{hp*100:.1f}%\nn={h}", ha="center", va="center", fontsize=7, color="white")
-        ax.text(i, hp + lp / 2, f"{lp*100:.1f}%\nn={l}", ha="center", va="center", fontsize=7)
+    for i, (hp, lp) in enumerate(zip(high_pct, low_pct)):
+        ax.text(i, hp / 2, f"{hp*100:.1f}%", ha="center", va="center", fontsize=7, color="white")
+        ax.text(i, hp + lp / 2, f"{lp*100:.1f}%", ha="center", va="center", fontsize=7)
     ax.set_xticks(x)
     ax.set_xticklabels(labels, rotation=35, ha="right", fontsize=9)
     ax.set_ylim(0, 1.05)

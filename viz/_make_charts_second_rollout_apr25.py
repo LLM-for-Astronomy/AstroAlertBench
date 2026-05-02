@@ -168,25 +168,26 @@ def main() -> None:
     ax.axhline(-np.log10(0.05), color="r", linestyle="--", linewidth=1, label="p=0.05")
     ax.set_xticks(x)
     ax.set_xticklabels(labels, rotation=18, ha="right")
-    ax.set_ylabel("-log10(p)  (McNemar exact two-sided; capped at 5 for display)")
+    ax.set_ylabel(
+        r"$-\log_{10}(p)$" + "\n(McNemar exact, two-sided; height capped at 5)"
+    )
     for i, p in enumerate(ps):
         h_bar = min(neglog[i], 5)
         mcp = (rows[i][2].get("mcnemar_discordant_pairs") or {})
         w_c = int(mcp.get("wrong_to_correct", 0))
         c_w = int(mcp.get("correct_to_wrong", 0))
-        d_tot = w_c + c_w
         ax.text(
             x[i],
             h_bar + 0.1,
-            f"p={p:.3g}\nW→C′={w_c}, C→W={c_w}\n(n={d_tot} disc.)",
+            f"p={p:.3g}\nW→C′={w_c}, C→W={c_w}",
             ha="center",
             fontsize=6.5,
             linespacing=1.12,
         )
     ax.legend(loc="upper right")
     ax.set_title("Paired significance of accuracy change (discordant pairs only)")
-    # Room for 3-line annotation above bar (capped at −log10 p = 5)
-    ax.set_ylim(0, 6.3)
+    # Room for 2-line annotation above bar (capped at −log10 p = 5)
+    ax.set_ylim(0, 5.9)
     fig.tight_layout()
     fig.savefig(CHART_DIR / "03_mcnemar_neglog10p.png", dpi=150)
     plt.close(fig)
