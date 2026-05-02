@@ -136,14 +136,14 @@ def main() -> None:
     a1 = [r[2]["accuracy_first"] for r in rows]
     a2 = [r[2]["accuracy_second"] for r in rows]
     fig, ax = plt.subplots(figsize=(11, 5))
-    b_a1 = ax.bar(x - 0.2, a1, 0.4, label="First pass (subset)", color="#aec7e8")
+    b_a1 = ax.bar(x - 0.2, a1, 0.4, label="First pass", color="#aec7e8")
     b_a2 = ax.bar(x + 0.2, a2, 0.4, label="Second pass", color="#1f77b4")
     _bar_top_labels(ax, b_a1, [f"{v * 100:.1f}%" for v in a1], y_pad=0.012, fs=6)
     _bar_top_labels(ax, b_a2, [f"{v * 100:.1f}%" for v in a2], y_pad=0.012, fs=6)
     for i, r in enumerate(rows):
         dpp = float(r[2]["net_accuracy_delta"]) * 100.0
         ax.annotate(
-            f"Δ{dpp:+.1f} pp",
+            f"Δ{dpp:+.1f} %",
             (x[i], max(a1[i], a2[i]) + 0.045),
             ha="center",
             fontsize=8,
@@ -151,7 +151,7 @@ def main() -> None:
         )
     ax.set_xticks(x)
     ax.set_xticklabels(labels, rotation=18, ha="right")
-    ax.set_ylabel("5-class accuracy (same 35 OIDs)")
+    ax.set_ylabel("5-class accuracy")
     ax.set_ylim(0, 1.1)
     ax.legend()
     ax.set_title("First vs second pass accuracy on the stratified low-confidence cohort")
