@@ -109,6 +109,139 @@ def _labels_equivalent(a: str, b: str) -> bool:
     return " ".join(a.lower().split()) == " ".join(b.lower().split())
 
 
+def per_model_merged_fills_in_doc_order(path: Path) -> list[dict[str, int]]:
+    """Return one Q2+Q3 fill tally per model block, in document order (typ. 13 blocks)."""
+    d = Document(path)
+    q2_c: dict[str, int] | None = None
+    q3_c: dict[str, int] | None = None
+    pred: str | None = None
+    blocks: list[dict[str, int]] = []
+    for para in d.paragraphs:
+        t = para.text
+        s = t.strip()
+        if not s:
+            continue
+        if s.startswith('"leading_interpretation'):
+            q2_c = _count_runs_fills_in_paragraph(para)
+            continue
+        if s.startswith('"alternative_analysis'):
+            q3_c = _count_runs_fills_in_paragraph(para)
+            continue
+        if s.startswith("LLM's Classification"):
+            pred = _parse_colon_field(t, "LLM's Classification")
+            continue
+        if s.startswith("Correct Class"):
+            if q2_c is not None and q3_c is not None:
+                blocks.append(_merge_fill_counts(q2_c, q3_c))
+            q2_c = q3_c = None
+            pred = None
+            continue
+    return blocks
+
+
+def _para_runs_to_color_segments(para) -> list[tuple[str, str]]:
+    """Adjacent runs with the same fill merged; categories match ``FILLS`` + unhighlighted."""
+    segments: list[tuple[str, str]] = []
+    for run in para.runs:
+        text = run.text
+        if not text:
+            continue
+        fill = _run_fill_hex(run)
+        if fill in (None, FILL_WHITE):
+            cat = "unhighlighted"
+        elif fill in FILLS:
+            cat = FILLS[fill]
+        else:
+            cat = "unhighlighted"
+        if segments and segments[-1][1] == cat:
+            segments[-1] = (segments[-1][0] + text, cat)
+        else:
+            segments.append((text, cat))
+    return segments
+
+
+def _trim_segment_prefix(segments: list[tuple[str, str]], prefix: str) -> list[tuple[str, str]]:
+    """Drop ``prefix`` from the start of concatenated segments (Word copies JSON key lines)."""
+    if not prefix or not segments:
+        return segments
+    full = "".join(t for t, _ in segments)
+    if not full.startswith(prefix):
+        return segments
+    rem = len(prefix)
+    out: list[tuple[str, str]] = []
+    for text, cat in segments:
+        if rem <= 0:
+            out.append((text, cat))
+            continue
+        if len(text) <= rem:
+            rem -= len(text)
+            continue
+        out.append((text[rem:], cat))
+        rem = 0
+    return out
+
+
+def _trim_segment_suffix_quote(segments: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    """Remove a single trailing ASCII ``"`` when Word closes the JSON string in the paragraph."""
+    if not segments:
+        return segments
+    text, cat = segments[-1]
+    if text.endswith('"') and len(text) >= 1:
+        segments = segments[:-1] + [(text[:-1], cat)]
+    return segments
+
+
+def per_model_reasoning_color_segments_in_doc_order(
+    path: Path,
+) -> list[dict[str, list[tuple[str, str]]]]:
+    """Per model block: colored segments for Part B Q2/Q3 only (doc paragraph order)."""
+    d = Document(path)
+    blocks: list[dict[str, list[tuple[str, str]]]] = []
+    q2_seg: list[tuple[str, str]] | None = None
+    q3_seg: list[tuple[str, str]] | None = None
+    for para in d.paragraphs:
+        t = para.text
+        s = t.strip()
+        if not s:
+            continue
+        if s.startswith('"leading_interpretation'):
+            q2_seg = _para_runs_to_color_segments(para)
+            continue
+        if s.startswith('"alternative_analysis'):
+            q3_seg = _para_runs_to_color_segments(para)
+            continue
+        if s.startswith("Correct Class"):
+            if q2_seg is not None and q3_seg is not None:
+                q2_trim = _trim_segment_suffix_quote(
+                    _trim_segment_prefix(
+                        q2_seg, '"leading_interpretation_and_support": "'
+                    )
+                )
+                q3_trim = _trim_segment_suffix_quote(
+                    _trim_segment_prefix(q3_seg, '"alternative_analysis": "')
+                )
+                blocks.append(
+                    {
+                        "leading_interpretation_and_support": q2_trim,
+                        "alternative_analysis": q3_trim,
+                    }
+                )
+            q2_seg = q3_seg = None
+            continue
+    return blocks
+
+
+def dominant_reasoning_fill(merged: dict[str, int]) -> str:
+    """Highlight bucket with the most characters in Q2+Q3 (ties favor green, then yellow, red, unhighlighted)."""
+    keys = ("green", "yellow", "red", "unhighlighted")
+    counts = {k: merged.get(k, 0) for k in keys}
+    for k, v in merged.items():
+        if k.startswith("other_fill_"):
+            counts["unhighlighted"] += v
+    tie_break = {"green": 3, "yellow": 2, "red": 1, "unhighlighted": 0}
+    return max(keys, key=lambda k: (counts[k], tie_break[k]))
+
+
 def analyze_docx_by_correctness(path: Path) -> dict:
     """Per model block, merge Q2+Q3 fill counts; split by (LLM pred == gold)."""
     d = Document(path)

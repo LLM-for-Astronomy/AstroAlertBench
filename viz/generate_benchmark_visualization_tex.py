@@ -12,12 +12,16 @@ to the general prompt listing. Only the second-trial addendum and user message
 Literal two-character sequences ``\\n`` / ``\\r`` in that listing are still
 unescaped to real newlines before writing the TeX.
 
+``rawouttxt`` listings use ``escapeinside={«}{»}`` so Part B reasoning fields match expert
+\texttt{.docx} highlight segments (\texttt{FF0000}, \texttt{FFFF00}, \texttt{00FF00}; black for unshaded).
+
   python -m viz.generate_benchmark_visualization_tex
 
-Writes (repo root): ``benchmark_visualization.tex`` only.
+Writes ``temporary_files/benchmark_visualization.tex`` (gitignored dir).
 """
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -30,10 +34,13 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import prompts as prompts_mod  # noqa: E402
 
+from viz._analyze_llm_grading_docx_highlights import (  # noqa: E402
+    per_model_reasoning_color_segments_in_doc_order,
+)
 from viz.build_run_folder import _load_jsonl, _reconstruct_prompts  # noqa: E402
 from viz.build_visualization_bundle import MANIFEST_PATH, OID_TARGET, RUNS  # noqa: E402
 
-TEX_PATH = PROJECT_ROOT / "benchmark_visualization.tex"
+TEX_PATH = PROJECT_ROOT / "temporary_files" / "benchmark_visualization.tex"
 
 LST_END = r"\end{lstlisting}"
 
@@ -95,6 +102,151 @@ def _embed_lstlisting(text: str, style: str = "prompttxt") -> str:
     return f"\\begin{{lstlisting}}[style={style}]\n{body}\n{LST_END}"
 
 
+_PL_LEAD = "<<<VIZDOCX_PL_LEAD>>>"
+_PL_ALT = "<<<VIZDOCX_PL_ALT>>>"
+
+_TEX_CAT = {
+    "red": "hlred",
+    "yellow": "hlyellow",
+    "green": "hlgreen",
+    "unhighlighted": "black",
+}
+
+
+def _tex_escape_listings_escape(s: str) -> str:
+    """Escape TeX specials inside lstlisting ``escapeinside`` regions."""
+    out: list[str] = []
+    for ch in s:
+        if ch == "\\":
+            out.append("\\textbackslash{}")
+        elif ch == "{":
+            out.append("\\{")
+        elif ch == "}":
+            out.append("\\}")
+        elif ch == "%":
+            out.append("\\%")
+        elif ch == "#":
+            out.append("\\#")
+        elif ch == "$":
+            out.append("\\$")
+        elif ch == "^":
+            out.append("\\textasciicircum{}")
+        elif ch == "_":
+            out.append("\\_")
+        elif ch == "&":
+            out.append("\\&")
+        elif ch == "~":
+            out.append("\\textasciitilde{}")
+        else:
+            out.append(ch)
+    return "".join(out)
+
+
+def _segments_to_colored_tex(segments: list[tuple[str, str]]) -> str:
+    parts: list[str] = []
+    for text, cat in segments:
+        norm = text.replace("\r\n", "\n").replace("\r", "\n")
+        esc = _tex_escape_listings_escape(norm)
+        esc = esc.replace("\n", "\\newline\n")
+        col = _TEX_CAT.get(cat, "black")
+        parts.append(f"\\textcolor{{{col}}}{{{esc}}}")
+    return "".join(parts)
+
+
+def _brace_match_end(s: str, start: int) -> int | None:
+    """Matching ``}`` for JSON object starting at ``start`` (respects quoted strings)."""
+    if start >= len(s) or s[start] != "{":
+        return None
+    depth = 0
+    in_string = False
+    escape = False
+    j = start
+    while j < len(s):
+        c = s[j]
+        if in_string:
+            if escape:
+                escape = False
+            elif c == "\\":
+                escape = True
+            elif c == '"':
+                in_string = False
+        else:
+            if c == '"':
+                in_string = True
+            elif c == "{":
+                depth += 1
+            elif c == "}":
+                depth -= 1
+                if depth == 0:
+                    return j
+        j += 1
+    return None
+
+
+def _find_json_object_span(body: str) -> tuple[int, int] | None:
+    """Locate the benchmark JSON object (contains ``\"Part A\"``) anywhere in CoT / fenced text."""
+    for m in re.finditer(r'\{\s*"Part A"\s*:', body):
+        start = m.start()
+        end = _brace_match_end(body, start)
+        if end is None:
+            continue
+        try:
+            json.loads(body[start : end + 1])
+            return start, end
+        except json.JSONDecodeError:
+            continue
+    return None
+
+
+def _dump_obj_with_part_b_highlights(obj: dict, seg: dict) -> str:
+    """Pretty-print JSON with Part B reasoning placeholders replaced by colored TeX."""
+    obj = json.loads(json.dumps(obj))
+    pb = obj.get("Part B")
+    if not isinstance(pb, dict):
+        return json.dumps(obj, indent=2, ensure_ascii=False)
+    if (
+        "leading_interpretation_and_support" not in pb
+        or "alternative_analysis" not in pb
+    ):
+        return json.dumps(obj, indent=2, ensure_ascii=False)
+    lead_tex = _segments_to_colored_tex(seg.get("leading_interpretation_and_support") or [])
+    alt_tex = _segments_to_colored_tex(seg.get("alternative_analysis") or [])
+    pb["leading_interpretation_and_support"] = _PL_LEAD
+    pb["alternative_analysis"] = _PL_ALT
+    dumped = json.dumps(obj, indent=2, ensure_ascii=False)
+    dumped = dumped.replace(json.dumps(_PL_LEAD), "«" + lead_tex + "»")
+    dumped = dumped.replace(json.dumps(_PL_ALT), "«" + alt_tex + "»")
+    return dumped
+
+
+def _inject_reasoning_into_raw_body(body: str, seg: dict | None) -> str:
+    """Inject expert-colored Part B strings; supports bare JSON, ```json fences, and leading CoT."""
+    if not seg:
+        return body
+    span = _find_json_object_span(body)
+    if span:
+        s, e = span
+        chunk = body[s : e + 1]
+        try:
+            obj = json.loads(chunk)
+        except json.JSONDecodeError:
+            return body
+        return body[:s] + _dump_obj_with_part_b_highlights(obj, seg) + body[e + 1 :]
+    try:
+        obj = json.loads(body.strip())
+    except json.JSONDecodeError:
+        return body
+    return _dump_obj_with_part_b_highlights(obj, seg)
+
+
+def _split_meta_body(combined: str) -> tuple[str, str]:
+    sep = "\n\n"
+    idx = combined.find(sep)
+    if idx != -1 and combined.startswith("(model="):
+        return combined[: idx + len(sep)], combined[idx + len(sep) :]
+    return "", combined
+
+
 def main() -> None:
     manifest = pd.read_csv(MANIFEST_PATH, low_memory=False)
     mby = manifest.set_index("oid")
@@ -130,10 +282,6 @@ def main() -> None:
         sys_s = mod.SYSTEM_PROMPT
         meta = mod.manifest_row_to_metadata(row_ab)
         usr_s = mod.build_user_prompt(ex_oid, meta)
-        note = (
-            f"(Example OID `{ex_oid}` - priors not bundled for `{OID_TARGET}` in-repo; "
-            "same prompt recipe as full second-rollout ablation.)\n\n"
-        )
         base_sys = prompts_mod.SYSTEM_PROMPT.strip()
         use_placeholder = (
             sys_s.startswith(base_sys)
@@ -141,15 +289,11 @@ def main() -> None:
         )
         if use_placeholder:
             listing_only = (
-                note
-                + mod.SECOND_ROLL_ADDENDUM
-                + "\n\n=== USER ===\n\n"
-                + usr_s
+                mod.SECOND_ROLL_ADDENDUM + "\n\n=== USER ===\n\n" + usr_s
             )
         else:
             listing_only = (
-                note
-                + "=== SYSTEM ===\n\n"
+                "=== SYSTEM ===\n\n"
                 + sys_s
                 + "\n\n=== USER ===\n\n"
                 + usr_s
@@ -197,12 +341,33 @@ def main() -> None:
         )
         raw_by_prefix[prefix] = _replace_unicode_dashes(meta_line + raw)
 
+    grading_docx = (
+        PROJECT_ROOT / "temporary_files" / "LLM Answer Grading ZTF26aargnnp.docx"
+    )
+    if not grading_docx.is_file():
+        grading_docx = PROJECT_ROOT / "LLM Answer Grading ZTF26aargnnp.docx"
+
+    reasoning_segments: list[dict[str, list[tuple[str, str]]] | None] = [
+        None
+    ] * len(RUNS)
+    if grading_docx.is_file():
+        try:
+            seg_blocks = per_model_reasoning_color_segments_in_doc_order(grading_docx)
+            for i in range(len(RUNS)):
+                reasoning_segments[i] = seg_blocks[i] if i < len(seg_blocks) else None
+        except (OSError, ValueError, KeyError, RuntimeError):
+            reasoning_segments = [None] * len(RUNS)
+
     lines: list[str] = [
         r"\documentclass[11pt]{article}",
         r"\usepackage[utf8]{inputenc}",
         r"\usepackage[T1]{fontenc}",
         r"\usepackage[a4paper,margin=0.85in]{geometry}",
+        r"\usepackage{graphicx}",
         r"\usepackage{xcolor}",
+        r"\definecolor{hlred}{HTML}{FF0000}",
+        r"\definecolor{hlyellow}{HTML}{DAA520}",
+        r"\definecolor{hlgreen}{HTML}{00FF00}",
         r"\usepackage{listings}",
         r"\usepackage{titlesec}",
         r"\titleformat{\section}{\normalfont\Large\bfseries\color{teal!70!black}}{\thesection}{0.6em}{}",
@@ -219,6 +384,16 @@ def main() -> None:
         r"  columns=fullflexible,",
         r"  keepspaces=true,",
         r"  frame=none,",
+        r"}",
+        "",
+        r"\lstdefinestyle{rawouttxt}{",
+        r"  basicstyle=\ttfamily\footnotesize,",
+        r"  breaklines=true,",
+        r"  breakatwhitespace=false,",
+        r"  columns=fullflexible,",
+        r"  keepspaces=true,",
+        r"  frame=none,",
+        r"  escapeinside={«}{»},",
         r"}",
         "",
         r"\tcbset{",
@@ -262,7 +437,7 @@ def main() -> None:
         r"\makesavenoteenv{chatmsg}",
         "",
         r"\title{\textbf{Benchmark prompts \& model outputs (single datapoint)}}",
-        r"\author{\texttt{ZTF26aargnnp} \quad (generated by \texttt{viz.generate\_benchmark\_visualization\_tex})}",
+        r"\author{(generated by \texttt{viz.generate\_benchmark\_visualization\_tex})}",
         r"\date{}",
         "",
         r"\begin{document}",
@@ -276,7 +451,7 @@ def main() -> None:
         "",
         r"\section{Prompts}",
         "",
-        rf"\begin{{chatmsg}}[grey]{{General benchmark prompt (\texttt{{prompts.py}}) --- \texttt{{{OID_TARGET}}}}}[breakable]",
+        r"\begin{chatmsg}[grey]{General benchmark prompt (\texttt{prompts.py})}[breakable]",
         _embed_lstlisting(prompt_general, "prompttxt"),
         r"\end{chatmsg}",
         "",
@@ -287,24 +462,40 @@ def main() -> None:
         "",
         r"\clearpage",
         r"\section{Raw model outputs (\texttt{raw\_text} from each run's \texttt{run.jsonl})}",
+        r"\noindent\small\textit{Part B reasoning fields \texttt{leading\_interpretation\_and\_support} and "
+        r"\texttt{alternative\_analysis} use expert highlights from \texttt{LLM Answer Grading ZTF26aargnnp.docx} "
+        r"(OOXML fills \texttt{FF0000}, \texttt{FFFF00}, \texttt{00FF00}; unshaded runs render black). "
+        r"Same block order as this section.}",
+        "",
+        r"\begin{figure}[htbp]",
+        r"\centering",
+        rf"\includegraphics[width=0.88\textwidth]{{figure/{OID_TARGET}.png}}",
+        rf"\caption{{Science--Reference--Difference montage for \texttt{{{OID_TARGET}}} (Overleaf: \texttt{{figure/{OID_TARGET}.png}}).}}",
+        r"\end{figure}",
         "",
     ]
 
-    colors = ["blue", "green"]
     for i, (label, _) in enumerate(RUNS):
         slug = _slug_label(label)
         prefix = f"{i + 1:02d}_{slug}"
-        col = colors[i % 2]
+        col = "blue" if i % 2 == 0 else "green"
         safe_title = label.replace("&", r"\&")
-        body_txt = raw_by_prefix[prefix]
+        combined = raw_by_prefix[prefix]
+        meta, body = _split_meta_body(combined)
+        seg = reasoning_segments[i]
+        if meta:
+            body_txt = meta + _inject_reasoning_into_raw_body(body, seg)
+        else:
+            body_txt = _inject_reasoning_into_raw_body(combined, seg)
         lines.append(rf"\begin{{chatmsg}}[{col}]{{{safe_title} --- raw output}}[breakable]")
-        lines.append(_embed_lstlisting(body_txt, "prompttxt"))
+        lines.append(_embed_lstlisting(body_txt, "rawouttxt"))
         lines.append(r"\end{chatmsg}")
         lines.append("")
         if (i + 1) % 3 == 0:
             lines.append(r"\clearpage")
 
     lines.append(r"\end{document}")
+    TEX_PATH.parent.mkdir(parents=True, exist_ok=True)
     TEX_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     print(f"Wrote {TEX_PATH.relative_to(PROJECT_ROOT)} (single file; second-rollout: literal \\\\n → newline)")
