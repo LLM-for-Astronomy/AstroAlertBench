@@ -138,21 +138,25 @@ def main() -> None:
     fig, ax = plt.subplots(figsize=(11, 5))
     b_a1 = ax.bar(x - 0.2, a1, 0.4, label="First pass", color="#aec7e8")
     b_a2 = ax.bar(x + 0.2, a2, 0.4, label="Second pass", color="#1f77b4")
-    _bar_top_labels(ax, b_a1, [f"{v * 100:.1f}%" for v in a1], y_pad=0.012, fs=6)
-    _bar_top_labels(ax, b_a2, [f"{v * 100:.1f}%" for v in a2], y_pad=0.012, fs=6)
+    _pct_fs = 11
+    _bar_top_labels(ax, b_a1, [f"{v * 100:.1f}%" for v in a1], y_pad=0.014, fs=_pct_fs)
+    _bar_top_labels(ax, b_a2, [f"{v * 100:.1f}%" for v in a2], y_pad=0.014, fs=_pct_fs)
     for i, r in enumerate(rows):
         dpp = float(r[2]["net_accuracy_delta"]) * 100.0
+        # Above both bar-top % labels (_bar_top_labels uses va=bottom at h + y_pad).
+        y_delta_base = max(a1[i], a2[i]) + 0.014 + 0.055 + 0.014
         ax.annotate(
             f"Δ{dpp:+.1f} %",
-            (x[i], max(a1[i], a2[i]) + 0.045),
+            (x[i], y_delta_base),
             ha="center",
-            fontsize=8,
+            va="bottom",
+            fontsize=10,
             fontweight="bold",
         )
     ax.set_xticks(x)
     ax.set_xticklabels(labels, rotation=18, ha="right")
     ax.set_ylabel("5-class accuracy")
-    ax.set_ylim(0, 1.1)
+    ax.set_ylim(0, 1.12)
     ax.legend()
     ax.set_title("First vs second pass accuracy on the stratified low-confidence cohort")
     fig.tight_layout()

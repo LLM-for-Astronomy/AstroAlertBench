@@ -29,8 +29,10 @@ results/
 
 # Results (regenerate with evaluate.py & skill log-experiment)
 runs/
+visualization/
 
 # Files from other projects for reference
+
 
 # Temporary files
 temporary_files/
