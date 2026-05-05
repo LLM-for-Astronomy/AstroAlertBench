@@ -162,8 +162,12 @@ def _part_b_scores(parsed: dict) -> tuple[float | None, float | None, float | No
     return k, l_, a
 
 
+# OIDs for benchmark `run.jsonl` feature rows: §2 panel plus ZTF26 (§1 Part C C/W column).
+FEAT_OIDS: list[str] = list(dict.fromkeys([*SECTION2_OIDS, "ZTF26aargnnp"]))
+
+
 def build_run_features() -> pd.DataFrame:
-    oids = list(SECTION2_OIDS)
+    oids = list(FEAT_OIDS)
     manifest = pd.read_csv(MANIFEST_PATH, dtype=str)
     gold = manifest.set_index("oid")["target_class"].to_dict()
 
@@ -349,7 +353,30 @@ def fig_per_oid_profile_by_model(
     plt.close(fig)
 
 
-def z26_full_scores_markdown(z26: pd.DataFrame) -> list[str]:
+def z26_part_c_cw_labels(feats: pd.DataFrame) -> dict[int, str]:
+    """Per model index on ZTF26aargnnp: C/W vs manifest gold (asteroid)."""
+    sub = feats[feats["oid"] == "ZTF26aargnnp"]
+    out: dict[int, str] = {}
+    for _, row in sub.iterrows():
+        ri = int(row["run_idx"])
+        pred = row["pred_final"]
+        if pred is None or (isinstance(pred, float) and pd.isna(pred)) or str(pred).strip() == "":
+            out[ri] = "—"
+            continue
+        ic = row["is_correct"]
+        if pd.isna(ic):
+            out[ri] = "—"
+        else:
+            out[ri] = "C" if bool(ic) else "W"
+    for i in range(1, 14):
+        out.setdefault(i, "—")
+    return out
+
+
+def z26_full_scores_markdown(
+    z26: pd.DataFrame,
+    part_c_by_run: dict[int, str] | None = None,
+) -> list[str]:
     wide = z26.pivot_table(
         index="run_idx", columns="rater_label", values="human_grade", aggfunc="first"
     ).reindex(range(1, 14))
@@ -359,17 +386,23 @@ def z26_full_scores_markdown(z26: pd.DataFrame) -> list[str]:
     wide = wide[cols].copy()
     wide["Mean"] = wide.mean(axis=1)
     wide["SD"] = wide.std(axis=1, ddof=1)
+    pc = part_c_by_run if part_c_by_run is not None else {}
     lines = [
-        "| Idx | Model | " + " | ".join(cols) + " | Mean | SD |",
-        "| ---: | :--- | " + " | ".join(["---:"] * len(cols)) + " | ---: | ---: |",
+        "| Idx | Model | "
+        + " | ".join(cols)
+        + " | Mean | SD | Part C |",
+        "| ---: | :--- | "
+        + " | ".join(["---:"] * len(cols))
+        + " | ---: | ---: | :---: |",
     ]
     for i in range(1, 14):
         row = wide.loc[i]
         cells = [str(int(row[c])) if pd.notna(row[c]) else "—" for c in cols]
+        cw = pc.get(i, "—")
         lines.append(
             f"| {i} | {MODEL_DISPLAY[i - 1]} | "
             + " | ".join(cells)
-            + f" | {row['Mean']:.2f} | {row['SD']:.2f} |"
+            + f" | {row['Mean']:.2f} | {row['SD']:.2f} | {cw} |"
         )
     return lines
 
@@ -884,7 +917,8 @@ def main() -> None:
                 pair_bits_list.append(f"{cols26[i]} vs {cols26[j]} **{r_ij:.2f}**")
     pair_bits = "; ".join(pair_bits_list)
 
-    z26_table_lines = z26_full_scores_markdown(z26)
+    z26_pc = z26_part_c_cw_labels(feats)
+    z26_table_lines = z26_full_scores_markdown(z26, z26_pc)
 
     p1 = CHARTS_DIR / "20260503_01_ztf26_rater_heatmap.png"
     p2 = CHARTS_DIR / "20260503_02_ztf26_mean_sd_by_model.png"
@@ -1078,7 +1112,8 @@ def main() -> None:
         "",
         "### 1.1 13 models × five graders",
         "",
-        "**(D)** excluded. **Mean** / **SD** = unweighted over the five columns below.",
+        "**(D)** excluded from this matrix (counts only workflow **(X)** + Matthew). "
+        "**Part C:** **C** = 5-way final class matches gold **asteroid**; **W** = mismatch; **—** = no parseable Part C in `run.jsonl`. **Mean** / **SD** = unweighted over the five grader columns.",
         "",
         *z26_table_lines,
         "",

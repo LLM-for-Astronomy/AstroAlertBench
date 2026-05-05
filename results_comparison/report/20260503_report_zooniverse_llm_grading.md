@@ -28,23 +28,23 @@ R/Y/G markup: [`20260430_report_llm_grading_docx_highlights.md`](20260430_report
 
 ### 1.1 13 models × five graders
 
-**(D)** excluded. **Mean** / **SD** = unweighted over the five columns below.
+**(D)** excluded from this matrix (counts only workflow **(X)** + Matthew). **Part C:** **C** = 5-way final class matches gold **asteroid**; **W** = mismatch; **—** = no parseable Part C in `run.jsonl`. **Mean** / **SD** = unweighted over the five grader columns.
 
-| Idx | Model | libai_astro | lukehandley | RickyN | theodlz | Matthew (expert .docx) | Mean | SD |
-| ---: | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | Gemini 2.5 Pro high | 2 | 2 | 0 | 3 | 4 | 2.20 | 1.33 |
-| 2 | Gemini 2.5 Flash none | 2 | 3 | 1 | 2 | 3 | 2.20 | 0.75 |
-| 3 | GPT-5.4 high | 5 | 5 | 4 | 5 | 4 | 4.60 | 0.49 |
-| 4 | GPT-5.4 none | 4 | 5 | 4 | 4 | 4 | 4.20 | 0.40 |
-| 5 | Opus 4.7 think | 4 | 5 | 5 | 5 | 4 | 4.60 | 0.49 |
-| 6 | Opus 4.7 nothink | 3 | 2 | 0 | 0 | 1 | 1.20 | 1.17 |
-| 7 | Kimi K2.5 think | 5 | 4 | 3 | 4 | 4 | 4.00 | 0.63 |
-| 8 | Qwen3.5-4B think | 3 | 3 | 0 | 3 | 2 | 2.20 | 1.17 |
-| 9 | Qwen3.5-4B nothink | 3 | 3 | 1 | 3 | 1 | 2.20 | 0.98 |
-| 10 | Qwen3.5-35B think | 4 | 5 | 3 | 1 | 3 | 3.20 | 1.33 |
-| 11 | Qwen3.5-35B nothink | 5 | 4 | 1 | 1 | 3 | 2.80 | 1.60 |
-| 12 | Qwen3.5-397B think | 4 | 4 | 4 | 5 | 4 | 4.20 | 0.40 |
-| 13 | Qwen3.5-397B nothink | 3 | 4 | 2 | 1 | 4 | 2.80 | 1.17 |
+| Idx | Model | libai_astro | lukehandley | RickyN | theodlz | Matthew (expert .docx) | Mean | SD | Part C |
+| ---: | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | :---: |
+| 1 | Gemini 2.5 Pro high | 2 | 2 | 0 | 3 | 4 | 2.20 | 1.33 | W |
+| 2 | Gemini 2.5 Flash none | 2 | 3 | 1 | 2 | 3 | 2.20 | 0.75 | W |
+| 3 | GPT-5.4 high | 5 | 5 | 4 | 5 | 4 | 4.60 | 0.49 | C |
+| 4 | GPT-5.4 none | 4 | 5 | 4 | 4 | 4 | 4.20 | 0.40 | C |
+| 5 | Opus 4.7 think | 4 | 5 | 5 | 5 | 4 | 4.60 | 0.49 | C |
+| 6 | Opus 4.7 nothink | 3 | 2 | 0 | 0 | 1 | 1.20 | 1.17 | W |
+| 7 | Kimi K2.5 think | 5 | 4 | 3 | 4 | 4 | 4.00 | 0.63 | C |
+| 8 | Qwen3.5-4B think | 3 | 3 | 0 | 3 | 2 | 2.20 | 1.17 | W |
+| 9 | Qwen3.5-4B nothink | 3 | 3 | 1 | 3 | 1 | 2.20 | 0.98 | W |
+| 10 | Qwen3.5-35B think | 4 | 5 | 3 | 1 | 3 | 3.20 | 1.33 | C |
+| 11 | Qwen3.5-35B nothink | 5 | 4 | 1 | 1 | 3 | 2.80 | 1.60 | W |
+| 12 | Qwen3.5-397B think | 4 | 4 | 4 | 5 | 4 | 4.20 | 0.40 | C |
+| 13 | Qwen3.5-397B nothink | 3 | 4 | 2 | 1 | 4 | 2.80 | 1.17 | W |
 
 ### 1.2 Reliability
 
