@@ -1,5 +1,11 @@
 """Figures for results_comparison/report/20260430_report_llm_grading_docx_highlights.md.
 
+Looks for ``LLM Answer Grading *.docx`` in the **repo root** or **temporary_files/**.
+
+Outputs include ``07_stacked_correct_vs_incorrect_per_alert_ztf26_only.png`` (ZTF26 columns only).
+
+Run::
+
     python -m viz._make_charts_llm_grading_docx_highlights
 """
 
@@ -16,10 +22,19 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "results_comparison" / "report" / "charts" / "llm_grading_docx_highlights_apr30"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-DOCS = [
-    ("ZTF19abfqvbg", ROOT / "LLM Answer Grading ZTF19abfqvbg.docx"),
-    ("ZTF26aargnnp", ROOT / "LLM Answer Grading ZTF26aargnnp.docx"),
-]
+# Basenames only — resolved under repo root and under ``temporary_files/`` (same layout as grading report).
+_DOC_ENTRIES: tuple[tuple[str, str], ...] = (
+    ("ZTF19abfqvbg", "LLM Answer Grading ZTF19abfqvbg.docx"),
+    ("ZTF26aargnnp", "LLM Answer Grading ZTF26aargnnp.docx"),
+)
+
+
+def _resolve_grading_docx(filename: str) -> Path | None:
+    for d in (ROOT, ROOT / "temporary_files"):
+        p = d / filename
+        if p.is_file():
+            return p
+    return None
 
 # Stacking order: bottom → top
 STACK_KEYS = ["green", "yellow", "red", "unhighlighted"]
@@ -262,9 +277,16 @@ def fig06_grouped_counts_correct_vs_incorrect_pooled(results: list[dict]) -> Non
     plt.close(fig)
 
 
-def fig07_stacked_correct_vs_incorrect_per_alert(results: list[dict]) -> None:
-    """Two alerts × (correct / incorrect) → up to 4 columns if both splits exist."""
-    fig, ax = plt.subplots(figsize=(8.0, 4.2))
+def _fig07_stacked_correct_vs_incorrect_per_alert_core(
+    results: list[dict],
+    out_filename: str,
+    title: str,
+    figsize: tuple[float, float],
+    *,
+    legend_outside_right: bool = False,
+) -> None:
+    """Build stacked bars: one docx → up to 2 columns (correct / incorrect)."""
+    fig, ax = plt.subplots(figsize=figsize)
     cols: list[str] = []
     series: list[dict[str, int]] = []
     for r in results:
@@ -293,18 +315,59 @@ def fig07_stacked_correct_vs_incorrect_per_alert(results: list[dict]) -> None:
         bottom += np.array(heights)
     ax.set_xticks(x, cols, fontsize=8)
     ax.set_ylabel("Share of characters (%)")
-    ax.set_title("Per-alert — highlight mix for correct vs incorrect predictions")
+    ax.set_title(title)
     ax.set_ylim(0, 100)
-    ax.legend(loc="upper right", fontsize=8, ncol=2)
-    fig.savefig(OUT_DIR / "07_stacked_correct_vs_incorrect_per_alert.png")
+    if legend_outside_right:
+        ax.legend(
+            loc="upper left",
+            bbox_to_anchor=(1.02, 1.0),
+            borderaxespad=0.0,
+            fontsize=8,
+            ncol=1,
+            framealpha=0.95,
+        )
+        fig.subplots_adjust(right=0.68)
+    else:
+        ax.legend(loc="upper right", fontsize=8, ncol=2)
+    fig.savefig(OUT_DIR / out_filename)
     plt.close(fig)
+
+
+def fig07_stacked_correct_vs_incorrect_per_alert(results: list[dict]) -> None:
+    """Two alerts × (correct / incorrect) → up to 4 columns if both splits exist."""
+    _fig07_stacked_correct_vs_incorrect_per_alert_core(
+        results,
+        "07_stacked_correct_vs_incorrect_per_alert.png",
+        "Per-alert — highlight mix for correct vs incorrect predictions",
+        figsize=(8.0, 4.2),
+    )
+
+
+def fig07b_stacked_correct_vs_incorrect_ztf26_only(results: list[dict]) -> None:
+    """ZTF26aargnnp docx only: correct vs incorrect (two columns)."""
+    z26 = [r for r in results if "ZTF26aargnnp" in r["path"]]
+    if not z26:
+        print(
+            "[WARN] Skipped 07_stacked_correct_vs_incorrect_per_alert_ztf26_only.png — "
+            "no ZTF26aargnnp docx was loaded (place file in repo root or temporary_files/).",
+            flush=True,
+        )
+        return
+    _fig07_stacked_correct_vs_incorrect_per_alert_core(
+        z26,
+        "07_stacked_correct_vs_incorrect_per_alert_ztf26_only.png",
+        "ZTF26aargnnp — highlight mix for correct vs incorrect predictions",
+        figsize=(5.2, 4.2),
+        legend_outside_right=True,
+    )
 
 
 def main() -> None:
     results: list[dict] = []
-    for _slug, p in DOCS:
-        if not p.is_file():
-            print("skip missing", p)
+    for _slug, fn in _DOC_ENTRIES:
+        p = _resolve_grading_docx(fn)
+        if p is None:
+            print("skip missing", fn, "(tried repo root and temporary_files/)")
             continue
         results.append(analyze_docx(p))
     if not results:
@@ -322,6 +385,7 @@ def main() -> None:
     fig05_stacked_correct_vs_incorrect_pooled(results)
     fig06_grouped_counts_correct_vs_incorrect_pooled(results)
     fig07_stacked_correct_vs_incorrect_per_alert(results)
+    fig07b_stacked_correct_vs_incorrect_ztf26_only(results)
     print("Wrote PNGs to", OUT_DIR)
 
 

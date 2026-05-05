@@ -591,7 +591,7 @@ def fig_z26_human_mean_vs_self_grouped(
     )
     for i in range(13):
         if np.isnan(hvals[i]):
-            ax.annotate("—", (x[i] - w / 2, 0.05), ha="center", fontsize=8, color="#4C72B0")
+            ax.annotate("—", (x[i] - w / 2, 0.05), ha="center", fontsize=10, color="#4C72B0")
         else:
             ax.text(
                 x[i] - w / 2,
@@ -599,11 +599,12 @@ def fig_z26_human_mean_vs_self_grouped(
                 f"{hvals[i]:.2f}",
                 ha="center",
                 va="bottom",
-                fontsize=6,
+                fontsize=8.5,
+                fontweight="semibold",
                 color="#1a3a5c",
             )
         if np.isnan(svals[i]):
-            ax.annotate("—", (x[i] + w / 2, 0.05), ha="center", fontsize=8, color="#a0522d")
+            ax.annotate("—", (x[i] + w / 2, 0.05), ha="center", fontsize=10, color="#a0522d")
         else:
             ax.text(
                 x[i] + w / 2,
@@ -611,13 +612,14 @@ def fig_z26_human_mean_vs_self_grouped(
                 f"{svals[i]:.2f}",
                 ha="center",
                 va="bottom",
-                fontsize=6,
+                fontsize=8.5,
+                fontweight="semibold",
                 color="#7a3e1a",
             )
 
     xtick_lbls = list(MODEL_DISPLAY)
     ax.set_xticks(x)
-    ax.set_xticklabels(xtick_lbls, rotation=58, ha="right", fontsize=7)
+    ax.set_xticklabels(xtick_lbls, rotation=58, ha="right", fontsize=8.5)
     ax.set_xlabel("Model / system")
     ax.set_ylabel("Score (0–5 rubric)")
     ax.set_title(
@@ -627,7 +629,7 @@ def fig_z26_human_mean_vs_self_grouped(
     ax.legend(loc="upper left", fontsize=8, ncol=1)
     ax.axhline(2.5, color="gray", ls=":", lw=0.7, alpha=0.6)
     fig.tight_layout()
-    fig.subplots_adjust(bottom=0.3)
+    fig.subplots_adjust(bottom=0.32)
     fig.savefig(path, dpi=160)
     plt.close(fig)
 
@@ -797,7 +799,8 @@ def fig_z26_self_minus_human_bias(
     ax.set_yticks(y)
     ax.set_yticklabels(labels, fontsize=8)
     ax.set_xlabel(
-        "Mean self-score (lead + alt) − §1 human mean  (positive ⇒ model rates itself higher than humans)"
+        "Mean self-score − human mean "
+        "(positive ⇒ model self-rating higher than human mean)"
     )
     ax.set_title("ZTF26aargnnp — self-rating bias (lead + alt) vs blended human grade (sorted)")
     m = max(0.55, float(np.nanmax(np.abs(vals))) * 1.12)
