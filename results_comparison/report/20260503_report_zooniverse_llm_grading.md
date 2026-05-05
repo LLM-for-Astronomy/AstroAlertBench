@@ -105,8 +105,26 @@ R/Y/G markup: [`20260430_report_llm_grading_docx_highlights.md`](20260430_report
 
 ## 3. Self-scores vs human grades (pooled and per-alert)
 
-(OID, model) rows join Part B self-scores to **`human_mean`** from §2. **ZTF25aaxmsns** comes from workflow **(D)** only. **ZTF26aargnnp** appears only in §1 (X + Matthew). **ZTF19abfqvbg** = expert `.docx`; **(A–C)** = Zooniverse.
+(OID, model) rows join Part B self-scores to **`human_mean`** from §2. **ZTF25aaxmsns** comes from workflow **(D)** only. **ZTF26aargnnp** appears only in §1 (X + Matthew); the figure below pairs that §1 human blend with ZTF26 self-scores from the same benchmark `run.jsonl`. **ZTF19abfqvbg** = expert `.docx`; **(A–C)** = Zooniverse.
 
+
+### 3.0 ZTF26aargnnp only — human mean vs self-score (13 models)
+
+- **Pearson r** (n = 12): §1 mean human (5 raters) vs mean Part B self (**leading + alternative** only) → **r = -0.023**, p = 9.43e-01
+
+*On ZTF26, mean self-score (lead + alt) is missing for: idx **13** (Qwen3.5-397B nothink) (incomplete `parsed` Part B fields). Fig 14 omits the orange bar for that column; Pearson **r** uses n = 12.*
+
+![ZTF26 human vs self by model](charts/zooniverse_llm_grading_May03/20260503_14_ztf26_human_vs_self_by_model.png)
+
+*Fig 14. One column per model (names on the axis, same order as §1.1); blue = §1 blended human grade (same **Mean** as §1.1); orange = mean of **Part B** `self_score_leading_interpretation_and_support` and `self_score_alternative_analysis` only.*
+
+![ZTF26 calibration scatter](charts/zooniverse_llm_grading_May03/20260503_15_ztf26_calibration_scatter.png)
+
+*Fig 15. **Calibration view:** most points show the §1 **index centered in the marker**; overlapping clusters use one offset label (**8/1/9** and **3/5** on this ZTF26 panel). **y** = mean self (lead + alt). Near **y = x** = self-rating close to human blend. **Key** = index → full name. Marker fill: **green** Part C correct, **red** incorrect, **gray** no parseable Part C.*
+
+![ZTF26 self minus human bias](charts/zooniverse_llm_grading_May03/20260503_16_ztf26_self_minus_human_bias.png)
+
+*Fig 16. **Bias view:** mean self (lead + alt) − §1 human mean, sorted. Positive = model’s self-scores more generous than humans on average; **blue** = self stricter than humans. Models without both lead and alt self-scores are omitted (same as Fig 14 / **r**).*
 
 ### 3.1 Pooled linear and ordinal summaries
 

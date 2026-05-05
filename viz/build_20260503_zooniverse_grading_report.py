@@ -125,6 +125,12 @@ MODEL_DISPLAY = [
     "Qwen3.5-397B nothink",
 ]
 
+# Fig 15: merged on-plot labels for indices that coincide (see calibration scatter).
+Z26_CALIB_MERGED_INDEX_GROUPS_ORDERED: tuple[tuple[int, ...], ...] = (
+    (8, 1, 9),
+    (3, 5),
+)
+
 
 def _final_class_from_parsed(parsed: dict) -> str | None:
     if not isinstance(parsed, dict):
@@ -538,6 +544,279 @@ def fig_pairwise_raters(z26: pd.DataFrame, path: Path) -> None:
     plt.close(fig)
 
 
+def _z26_blended_human_and_self(
+    z26: pd.DataFrame, feats: pd.DataFrame
+) -> tuple[pd.Series, pd.Series]:
+    """§1 human mean across five raters and mean Part B self (leading + alternative only); index 1..13."""
+    oid = "ZTF26aargnnp"
+    human = z26.groupby("run_idx")["human_grade"].mean().reindex(range(1, 14))
+    fsub = feats[feats["oid"] == oid].drop_duplicates(subset=["run_idx"]).set_index("run_idx")
+    self_s = fsub["mean_self_q23"].reindex(range(1, 14))
+    return human, self_s
+
+
+def fig_z26_human_mean_vs_self_grouped(
+    z26: pd.DataFrame,
+    feats: pd.DataFrame,
+    path: Path,
+) -> tuple[float | None, float | None, int]:
+    """Side-by-side bars: §1 human mean (5 raters) vs mean Part B self-score; 13 model columns."""
+    human, self_s = _z26_blended_human_and_self(z26, feats)
+
+    hvals = human.to_numpy(dtype=float)
+    svals = self_s.to_numpy(dtype=float)
+
+    x = np.arange(13)
+    w = 0.36
+    fig, ax = plt.subplots(figsize=(14, 5.0))
+    mh = ~np.isnan(hvals)
+    ms = ~np.isnan(svals)
+    ax.bar(
+        x[mh] - w / 2,
+        hvals[mh],
+        width=w,
+        label="§1 human mean (5 raters)",
+        color="#4C72B0",
+        edgecolor="k",
+        linewidth=0.25,
+    )
+    ax.bar(
+        x[ms] + w / 2,
+        svals[ms],
+        width=w,
+        label="Mean self-score (Part B lead + alt)",
+        color="#DD8452",
+        edgecolor="k",
+        linewidth=0.25,
+    )
+    for i in range(13):
+        if np.isnan(hvals[i]):
+            ax.annotate("—", (x[i] - w / 2, 0.05), ha="center", fontsize=8, color="#4C72B0")
+        else:
+            ax.text(
+                x[i] - w / 2,
+                min(5.35, hvals[i] + 0.06),
+                f"{hvals[i]:.2f}",
+                ha="center",
+                va="bottom",
+                fontsize=6,
+                color="#1a3a5c",
+            )
+        if np.isnan(svals[i]):
+            ax.annotate("—", (x[i] + w / 2, 0.05), ha="center", fontsize=8, color="#a0522d")
+        else:
+            ax.text(
+                x[i] + w / 2,
+                min(5.35, svals[i] + 0.06),
+                f"{svals[i]:.2f}",
+                ha="center",
+                va="bottom",
+                fontsize=6,
+                color="#7a3e1a",
+            )
+
+    xtick_lbls = list(MODEL_DISPLAY)
+    ax.set_xticks(x)
+    ax.set_xticklabels(xtick_lbls, rotation=58, ha="right", fontsize=7)
+    ax.set_xlabel("Model / system")
+    ax.set_ylabel("Score (0–5 rubric)")
+    ax.set_title(
+        "ZTF26aargnnp — §1 blended human grade vs mean self (Part B lead + alt)"
+    )
+    ax.set_ylim(0, 5.55)
+    ax.legend(loc="upper left", fontsize=8, ncol=1)
+    ax.axhline(2.5, color="gray", ls=":", lw=0.7, alpha=0.6)
+    fig.tight_layout()
+    fig.subplots_adjust(bottom=0.3)
+    fig.savefig(path, dpi=160)
+    plt.close(fig)
+
+    pair = pd.DataFrame({"h": human.to_numpy(), "s": self_s.to_numpy()}).dropna()
+    if len(pair) > 2:
+        r, p = stats.pearsonr(pair["h"].to_numpy(dtype=float), pair["s"].to_numpy(dtype=float))
+        return float(r), float(p), int(len(pair))
+    return None, None, int(len(pair))
+
+
+def fig_z26_calibration_scatter(
+    z26: pd.DataFrame,
+    feats: pd.DataFrame,
+    part_c_by_run: dict[int, str],
+    path: Path,
+) -> None:
+    """Human (x) vs self (y) with identity line; point color = Part C on ZTF26 (C / W / —)."""
+    human, self_s = _z26_blended_human_and_self(z26, feats)
+    fig, ax = plt.subplots(figsize=(7.8, 6.9))
+
+    lim = (-0.25, 5.5)
+    ax.plot(
+        lim,
+        lim,
+        "k--",
+        lw=1.1,
+        alpha=0.55,
+        label="y = x (perfect calibration)",
+        zorder=1,
+    )
+
+    pos: dict[int, tuple[float, float]] = {}
+    for i in range(1, 14):
+        h = human.loc[i]
+        s = self_s.loc[i]
+        if pd.isna(h) or pd.isna(s):
+            continue
+        pos[i] = (float(h), float(s))
+
+    def marker_style(run_idx: int) -> tuple[str, str]:
+        cw = part_c_by_run.get(run_idx, "—")
+        if cw == "C":
+            return "#98df8a", "#1a5c1a"
+        if cw == "W":
+            return "#ff9896", "#8b0000"
+        return "#c7c7c7", "#333333"
+
+    _pt_kw = {"fontsize": 8, "fontweight": "bold", "color": "#111"}
+    merged_used: set[int] = set()
+
+    for group_order in Z26_CALIB_MERGED_INDEX_GROUPS_ORDERED:
+        present = [j for j in group_order if j in pos]
+        if len(present) < 2:
+            continue
+        for j in present:
+            hf, sf = pos[j]
+            face, edge = marker_style(j)
+            ax.scatter(
+                [hf],
+                [sf],
+                s=100,
+                c=face,
+                edgecolors=edge,
+                linewidths=1.15,
+                zorder=3,
+            )
+        mh = float(np.mean([pos[j][0] for j in present]))
+        ms = float(np.mean([pos[j][1] for j in present]))
+        ax.annotate(
+            "/".join(str(j) for j in present),
+            (mh, ms),
+            xytext=(11, 5),
+            textcoords="offset points",
+            ha="left",
+            va="bottom",
+            zorder=4,
+            clip_on=False,
+            **_pt_kw,
+        )
+        merged_used.update(present)
+
+    for i, (hf, sf) in pos.items():
+        if i in merged_used:
+            continue
+        face, edge = marker_style(i)
+        ax.scatter(
+            [hf],
+            [sf],
+            s=100,
+            c=face,
+            edgecolors=edge,
+            linewidths=1.15,
+            zorder=3,
+        )
+        ax.annotate(
+            str(i),
+            (hf, sf),
+            ha="center",
+            va="center",
+            zorder=4,
+            **_pt_kw,
+        )
+
+    ax.set_xlim(lim)
+    ax.set_ylim(lim)
+    ax.set_aspect("equal", adjustable="box")
+    ax.set_xlabel("§1 human mean (5 raters)")
+    ax.set_ylabel("Mean Part B self-score (lead + alt only)")
+    ax.set_title(
+        "ZTF26aargnnp — per-LLM calibration\n"
+        "(near the dashed line: self-rating matches humans)",
+        fontsize=10,
+        pad=10,
+    )
+    ax.legend(loc="upper left", fontsize=8, framealpha=0.92)
+
+    key_lines = [f"{i} — {MODEL_DISPLAY[i - 1]}" for i in range(1, 14)]
+    key_text = "Index → model\n" + "\n".join(key_lines)
+    ax.text(
+        0.99,
+        0.01,
+        key_text,
+        transform=ax.transAxes,
+        fontsize=5.6,
+        verticalalignment="bottom",
+        horizontalalignment="right",
+        family="monospace",
+        bbox={
+            "boxstyle": "round,pad=0.35",
+            "facecolor": "white",
+            "edgecolor": "#888",
+            "alpha": 0.92,
+        },
+        zorder=5,
+    )
+
+    fig.tight_layout()
+    fig.savefig(path, dpi=160, bbox_inches="tight", pad_inches=0.22)
+    plt.close(fig)
+
+
+def fig_z26_self_minus_human_bias(
+    z26: pd.DataFrame,
+    feats: pd.DataFrame,
+    path: Path,
+) -> None:
+    """Sorted horizontal bars: self − human (generous self-rating vs humans if positive)."""
+    human, self_s = _z26_blended_human_and_self(z26, feats)
+    delta = (self_s - human).dropna()
+    if delta.empty:
+        return
+    order = delta.sort_values().index.to_numpy()
+    labels = [f"{i}: {MODEL_DISPLAY[i - 1]}" for i in order]
+    vals = delta.reindex(order).to_numpy(dtype=float)
+    y = np.arange(len(order))
+    colors = []
+    for v in vals:
+        if v > 0.08:
+            colors.append("#d62728")
+        elif v < -0.08:
+            colors.append("#1f77b4")
+        else:
+            colors.append("#7f7f7f")
+    fig, ax = plt.subplots(figsize=(9.0, 5.4))
+    ax.barh(y, vals, color=colors, edgecolor="k", linewidth=0.35, height=0.72)
+    ax.axvline(0.0, color="black", lw=1.0)
+    ax.set_yticks(y)
+    ax.set_yticklabels(labels, fontsize=8)
+    ax.set_xlabel(
+        "Mean self-score (lead + alt) − §1 human mean  (positive ⇒ model rates itself higher than humans)"
+    )
+    ax.set_title("ZTF26aargnnp — self-rating bias (lead + alt) vs blended human grade (sorted)")
+    m = max(0.55, float(np.nanmax(np.abs(vals))) * 1.12)
+    ax.set_xlim(-m, m)
+    for yi, v in zip(y, vals):
+        ax.text(
+            v + 0.02 * m if v >= 0 else v - 0.02 * m,
+            yi,
+            f"{v:+.2f}",
+            va="center",
+            ha="left" if v >= 0 else "right",
+            fontsize=7,
+            color="#222",
+        )
+    fig.tight_layout()
+    fig.savefig(path, dpi=160)
+    plt.close(fig)
+
+
 def fig_scatter_self_human(merged: pd.DataFrame, ycol: str, title: str, path: Path) -> None:
     fig, ax = plt.subplots(figsize=(6.5, 5))
     colors = {
@@ -933,6 +1212,9 @@ def main() -> None:
     p11 = CHARTS_DIR / "20260503_11_correctness_row_counts.png"
     p12 = CHARTS_DIR / "20260503_12_per_oid_pearson_self_vs_human.png"
     p13 = CHARTS_DIR / "20260503_13_per_model_profile_four_oid_means.png"
+    p14 = CHARTS_DIR / "20260503_14_ztf26_human_vs_self_by_model.png"
+    p15 = CHARTS_DIR / "20260503_15_ztf26_calibration_scatter.png"
+    p16 = CHARTS_DIR / "20260503_16_ztf26_self_minus_human_bias.png"
 
     fig_rater_heatmap(z26, p1)
     fig_mean_sd_bars(z26, p2)
@@ -946,6 +1228,10 @@ def main() -> None:
     else:
         # Placeholder so markdown can skip broken image links
         pass
+
+    z26_r_self, z26_p_self, z26_n_self = fig_z26_human_mean_vs_self_grouped(z26, feats, p14)
+    fig_z26_calibration_scatter(z26, feats, z26_pc, p15)
+    fig_z26_self_minus_human_bias(z26, feats, p16)
 
     fig_scatter_self_human(
         merged,
@@ -1013,6 +1299,19 @@ def main() -> None:
         )
     else:
         skip_note = ""
+
+    miss_z26_self = feats[(feats["oid"] == "ZTF26aargnnp") & feats["mean_self_q23"].isna()]
+    z26_self_miss_lines: list[str] = []
+    if not miss_z26_self.empty:
+        bits = ", ".join(
+            f"idx **{int(r['run_idx'])}** ({r['model_label']})"
+            for r in miss_z26_self[["run_idx", "model_label"]].to_dict("records")
+        )
+        z26_self_miss_lines = [
+            "",
+            f"*On ZTF26, mean self-score (lead + alt) is missing for: {bits} (incomplete `parsed` Part B fields). "
+            f"Fig 14 omits the orange bar for that column; Pearson **r** uses n = {z26_n_self}.*",
+        ]
 
     n_rows = len(human_csv)
     zoo_users = sorted(z26_zoo["user_name"].unique())
@@ -1179,9 +1478,32 @@ def main() -> None:
         "## 3. Self-scores vs human grades (pooled and per-alert)",
         "",
         "(OID, model) rows join Part B self-scores to **`human_mean`** from §2. "
-        "**ZTF25aaxmsns** comes from workflow **(D)** only. **ZTF26aargnnp** appears only in §1 (X + Matthew). "
+        "**ZTF25aaxmsns** comes from workflow **(D)** only. **ZTF26aargnnp** appears only in §1 (X + Matthew); "
+        "the figure below pairs that §1 human blend with ZTF26 self-scores from the same benchmark `run.jsonl`. "
         "**ZTF19abfqvbg** = expert `.docx`; **(A–C)** = Zooniverse.",
         skip_note,
+        "",
+        "### 3.0 ZTF26aargnnp only — human mean vs self-score (13 models)",
+        "",
+        (
+            f"- **Pearson r** (n = {z26_n_self}): §1 mean human (5 raters) vs mean Part B self (**leading + alternative** only) → "
+            f"**r = {z26_r_self:.3f}**, p = {z26_p_self:.2e}"
+            if z26_r_self is not None and z26_p_self is not None
+            else f"- **Pearson r**: (undefined — fewer than three complete pairs; n = {z26_n_self})"
+        ),
+        *z26_self_miss_lines,
+        "",
+        f"![ZTF26 human vs self by model]({CHART_MD_PREFIX}/20260503_14_ztf26_human_vs_self_by_model.png)",
+        "",
+        "*Fig 14. One column per model (names on the axis, same order as §1.1); blue = §1 blended human grade (same **Mean** as §1.1); orange = mean of **Part B** `self_score_leading_interpretation_and_support` and `self_score_alternative_analysis` only.*",
+        "",
+        f"![ZTF26 calibration scatter]({CHART_MD_PREFIX}/20260503_15_ztf26_calibration_scatter.png)",
+        "",
+        "*Fig 15. **Calibration view:** most points show the §1 **index centered in the marker**; overlapping clusters use one offset label (**8/1/9** and **3/5** on this ZTF26 panel). **y** = mean self (lead + alt). Near **y = x** = self-rating close to human blend. **Key** = index → full name. Marker fill: **green** Part C correct, **red** incorrect, **gray** no parseable Part C.*",
+        "",
+        f"![ZTF26 self minus human bias]({CHART_MD_PREFIX}/20260503_16_ztf26_self_minus_human_bias.png)",
+        "",
+        "*Fig 16. **Bias view:** mean self (lead + alt) − §1 human mean, sorted. Positive = model’s self-scores more generous than humans on average; **blue** = self stricter than humans. Models without both lead and alt self-scores are omitted (same as Fig 14 / **r**).*",
         "",
         "### 3.1 Pooled linear and ordinal summaries",
         "",
