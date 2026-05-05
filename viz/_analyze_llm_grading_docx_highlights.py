@@ -11,6 +11,7 @@ Run:
 from __future__ import annotations
 
 import json
+import re
 from collections import defaultdict
 from pathlib import Path
 
@@ -93,6 +94,22 @@ def _merge_fill_counts(a: dict[str, int], b: dict[str, int]) -> dict[str, int]:
         for k, v in d.items():
             out[k] += v
     return dict(out)
+
+
+def per_model_your_grading_0_5(path: Path) -> list[int | None]:
+    """Parse `Your Grading: __N___` lines per model block, in document order (expect 13)."""
+    out: list[int | None] = []
+    for para in Document(path).paragraphs:
+        t = para.text.strip()
+        if not t.startswith("Your Grading"):
+            continue
+        m = re.search(r"(\d+)", t)
+        if not m:
+            out.append(None)
+            continue
+        v = int(m.group(1))
+        out.append(v if 0 <= v <= 5 else None)
+    return out
 
 
 def _parse_colon_field(text: str, prefix: str) -> str:

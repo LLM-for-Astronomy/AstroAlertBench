@@ -1,0 +1,29 @@
+/**
+ * Sidebar-heavy doc look inspired by Farama / Gymnasium docs:
+ * clear nav, high contrast, restrained accent.
+ */
+:root {
+  --vp-c-brand-1: #0d7a5c;
+  --vp-c-brand-2: #0a956e;
+  --vp-c-brand-3: #0b6b50;
+  --vp-c-brand-soft: rgba(13, 122, 92, 0.14);
+  --vp-layout-max-width: 1280px;
+}
+
+.dark {
+  --vp-c-brand-1: #3dd4a6;
+  --vp-c-brand-2: #2fb88c;
+  --vp-c-brand-3: #5ae6b8;
+  --vp-c-brand-soft: rgba(61, 212, 166, 0.16);
+}
+
+.VPSidebar {
+  border-right: 1px solid var(--vp-c-divider);
+}
+
+.VPSidebarGroup .title {
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+}

@@ -59,6 +59,10 @@ python evaluate.py --predictions results/run1.jsonl --manifest data/manifest_enr
 | `stamps_original/`, `stamps_llm/` | Large binaries — **not** tracked (FITS + optional legacy montages); regenerate or copy locally |
 | `stamps_llm_updated/` | Default PNG montages for VLMs — **can be tracked** in git if you want the repo self-contained |
 
+## Documentation website (sidebar, Gymnasium-style)
+
+A VitePress site with a left-hand nav lives under **`website/`**. From that directory: `npm install`, then `npm run dev` (local) or `npm run build` (static output in `website/.vitepress/dist/` for GitHub Pages or any static host). See `website/README.md`.
+
 ## GitHub
 
 Repository: [github.com/Cruuusade/LLM_FOR_ASTRONOMY](https://github.com/Cruuusade/LLM_FOR_ASTRONOMY)

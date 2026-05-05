@@ -36,3 +36,6 @@ visualization/
 
 # Temporary files
 temporary_files/
+
+# Local Node deps for docs site
+website/node_modules/

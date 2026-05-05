@@ -1,60 +1,83 @@
-# Zooniverse LLM response grading — benchmark self-scores, correctness, four human views on ZTF26 (3 May 2026)
+# Zooniverse LLM response grading — ZTF26 §1 (X + Matthew); §2 includes **(D)** on ZTF25aaxmsns (3 May 2026)
 
-Source export: `temporary_files/llm-for-astronomy-classifications (4).csv`. Gold OIDs and PNG bundle are documented in `human_samples/llm_example_grading_zooniverse/README.md`.
+**Exports:** `temporary_files/llm-for-astronomy-classifications (4).csv` and `(5).csv`, concatenated and **deduplicated by `classification_id`**. **LLM Response Grading (D)** maps to **`ZTF25aaxmsns` (SN)**, not ZTF26. **(D)** is **excluded from §1** and **included in §2** (see table). Gold OIDs / PNG bundle: `human_samples/llm_example_grading_zooniverse/README.md`.
 
-| Workflow | OID | `target_class` (manifest) |
+| Workflow | OID | Role in this report |
 |---|---|---|
-| LLM Response Grading (X) | ZTF26aargnnp | asteroid |
-| LLM Response Grading (A) | ZTF19aayhwvd | VS |
-| LLM Response Grading (B) | ZTF19abkdsaw | AGN |
-| LLM Response Grading (C) | ZTF25aahvsli | bogus |
+| LLM Response Grading **(X)** | ZTF26aargnnp | **§1:** four Zooniverse raters (libai_astro, lukehandley, RickyN, theodlz). |
+| Expert `.docx` | ZTF26aargnnp | **§1:** **Matthew** **Your Grading:** 0–5 per model (**equal** weight). |
+| LLM Response Grading **(D)** | **ZTF25aaxmsns** (SN) | **§2** — Zooniverse grading lane (e.g. **theodlz**); **not** used in §1. |
+| **(A)** | ZTF19aayhwvd (VS) | **§2** pooled (Zooniverse). |
+| **(B)** | ZTF19abkdsaw (AGN) | **§2** pooled (Zooniverse). |
+| **(C)** | ZTF25aahvsli (bogus) | **§2** pooled (Zooniverse). |
+| Expert `.docx` | **ZTF19abfqvbg** (AGN) | **§2** pooled — **Matthew** **Your Grading** (not workflow **(X)**). |
 
-## Annotators (from export)
+## Annotators
 
-**3** Zooniverse users each grade **all 13 model snapshots** on **ZTF26aargnnp** (workflow X). Each also grades **one** of the other workflows (A/B/C) on its OID. Total **78** grading rows with a numeric 0–5 in annotations.
+**§1** uses **five** numeric lanes on **ZTF26aargnnp**: four on workflow **(X)** plus **Matthew** from `LLM Answer Grading ZTF26aargnnp.docx`. **(D)** is unrelated (SN alert **ZTF25aaxmsns**) and is excluded from §1. **§2** pools **five OIDs** (`ZTF19abfqvbg, ZTF19aayhwvd, ZTF19abkdsaw, ZTF25aahvsli, ZTF25aaxmsns`): expert **ZTF19abfqvbg** + Zooniverse **(A,B,C)** + **ZTF25aaxmsns** via **(D)**. Total **104** CSV rows with Zooniverse 0–5 scores (expert rows for §1/§2 are injected from `.docx`).
 
 - **RickyN** also completed `LLM Response Grading (C)` → `ZTF25aahvsli`.
 - **libai_astro** also completed `LLM Response Grading (B)` → `ZTF19abkdsaw`.
 - **lukehandley** also completed `LLM Response Grading (A)` → `ZTF19aayhwvd`.
 
-Overall mean grade on ZTF26 (0–5) by rater: **RickyN** μ=2.15, **libai_astro** μ=3.62, **lukehandley** μ=3.77.
+**Mean on ZTF26 (§1)** by rater: **libai_astro** μ=3.62, **lukehandley** μ=3.77, **RickyN** μ=2.15, **theodlz** μ=2.85, **Matthew (expert .docx)** μ=3.15.
 
-A **fourth** perspective on ZTF26aargnnp is the expert-highlighted Word file (`temporary_files/LLM Answer Grading ZTF26aargnnp.docx` if present). It is not a fourth 0–5 Likert column, but §1.3 links highlight-derived tone to the mean Zooniverse score. Full highlight methodology and ZTF19 tables: [`20260430_report_llm_grading_docx_highlights.md`](20260430_report_llm_grading_docx_highlights.md) (`LLM Answer Grading ZTF19abfqvbg.docx` — separate AGN example **ZTF19abfqvbg**, not in the A/B/C/X Zooniverse set).
+R/Y/G markup: [`20260430_report_llm_grading_docx_highlights.md`](20260430_report_llm_grading_docx_highlights.md).
 
-## 1. ZTF26aargnnp — four perspectives (three raters + expert markup)
+## 1. ZTF26aargnnp — Zooniverse **(X)** + Matthew `.docx`
 
-### 1.1 Reliability and pairwise agreement (Zooniverse)
+### 1.1 13 models × five graders
 
-- **Cronbach’s α** (13 models × 3 raters): **0.863**
+**(D)** excluded. **Mean** / **SD** = unweighted over the five columns below.
 
-- **Pairwise Pearson r** between raters: RickyN vs libai_astro **0.62**, RickyN vs lukehandley **0.88**, libai_astro vs lukehandley **0.72**.
+| Idx | Model | libai_astro | lukehandley | RickyN | theodlz | Matthew (expert .docx) | Mean | SD |
+| ---: | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | Gemini 2.5 Pro high | 2 | 2 | 0 | 3 | 4 | 2.20 | 1.33 |
+| 2 | Gemini 2.5 Flash none | 2 | 3 | 1 | 2 | 3 | 2.20 | 0.75 |
+| 3 | GPT-5.4 high | 5 | 5 | 4 | 5 | 4 | 4.60 | 0.49 |
+| 4 | GPT-5.4 none | 4 | 5 | 4 | 4 | 4 | 4.20 | 0.40 |
+| 5 | Opus 4.7 think | 4 | 5 | 5 | 5 | 4 | 4.60 | 0.49 |
+| 6 | Opus 4.7 nothink | 3 | 2 | 0 | 0 | 1 | 1.20 | 1.17 |
+| 7 | Kimi K2.5 think | 5 | 4 | 3 | 4 | 4 | 4.00 | 0.63 |
+| 8 | Qwen3.5-4B think | 3 | 3 | 0 | 3 | 2 | 2.20 | 1.17 |
+| 9 | Qwen3.5-4B nothink | 3 | 3 | 1 | 3 | 1 | 2.20 | 0.98 |
+| 10 | Qwen3.5-35B think | 4 | 5 | 3 | 1 | 3 | 3.20 | 1.33 |
+| 11 | Qwen3.5-35B nothink | 5 | 4 | 1 | 1 | 3 | 2.80 | 1.60 |
+| 12 | Qwen3.5-397B think | 4 | 4 | 4 | 5 | 4 | 4.20 | 0.40 |
+| 13 | Qwen3.5-397B nothink | 3 | 4 | 2 | 1 | 4 | 2.80 | 1.17 |
 
-![Heatmap](charts/20260503_01_ztf26_rater_heatmap.png)
+### 1.2 Reliability
 
-*Fig 1. Grades (0–5) for each rater (row) and model index (column). Numeric labels in cells. Order 1–13 matches `viz/build_llm_example_grading.py` `RUN_SPECS` and the Zooniverse README.*
+- **Cronbach’s α** (13 models × **5** columns): **0.856**
 
-![Mean ± SD](charts/20260503_02_ztf26_mean_sd_by_model.png)
+- **Pairwise Pearson r** between grader columns (same 13 model vectors): libai_astro vs lukehandley **0.72**; libai_astro vs RickyN **0.62**; libai_astro vs theodlz **0.33**; libai_astro vs Matthew (expert .docx) **0.33**; lukehandley vs RickyN **0.88**; lukehandley vs theodlz **0.42**; lukehandley vs Matthew (expert .docx) **0.56**; RickyN vs theodlz **0.66**; RickyN vs Matthew (expert .docx) **0.65**; theodlz vs Matthew (expert .docx) **0.52**.
 
-*Fig 2. Mean human score ±1 SD across raters; **each bar is labeled with the mean** (two decimals).*
+![Heatmap](charts/zooniverse_llm_grading_May03/20260503_01_ztf26_rater_heatmap.png)
 
-![Pairwise](charts/20260503_03_rater_pairwise_scatter.png)
+*Fig 1. Grades 0–5; rows = §1 raters; columns = model index.*
 
-*Fig 3. Pairwise scatter (13 models per panel); dashed line y = x.*
+![Mean ± SD](charts/zooniverse_llm_grading_May03/20260503_02_ztf26_mean_sd_by_model.png)
 
-### 1.2 Who disagrees how much? (mean absolute grade gap)
+*Fig 2. Mean ±1 SD across **five** §1 graders.*
 
-![Inter-rater MAE](charts/20260503_09_inter_rater_mae_heatmap.png)
+![Rater correlation matrix](charts/zooniverse_llm_grading_May03/20260503_03_rater_pairwise_scatter.png)
 
-*Fig 1b. Off-diagonal entries: mean |grade_i − grade_j| across the 13 models. Diagonal is 0.*
+*Fig 3. Pearson **r** matrix between grader columns (legacy filename).*
 
-### 1.3 Fourth perspective: expert highlight tone vs mean Zooniverse grade
-- **Expert .docx vs Zooniverse mean** (same 13 model order as the grading PNGs): Pearson r = **0.360**, p = 2.27e-01, n = 13. Tone = (green − red) / (R+Y+G) over Q2+Q3 highlight inventory (see Apr 30 highlight report for color semantics).
+### 1.3 Mean absolute pairwise disagreement
 
-![Docx vs Zooniverse](charts/20260503_10_docx_tone_vs_zooniverse_mean.png)
+![Inter-rater MAE](charts/zooniverse_llm_grading_May03/20260503_09_inter_rater_mae_heatmap.png)
 
-*Fig 1c. One point per model index; point labels show index. Color encodes model index.*
+*Fig 1b. Off-diagonal mean |Δgrade|.*
 
-### 1.4 Model index ↔ system
+### 1.4 Highlight tone vs blended §1 mean
+- **Expert highlight tone vs blended §1 mean** (four Zooniverse **(X)** scores + **Matthew** `.docx` **Your Grading** per model, equal weight): Pearson r = **0.616**, p = 2.49e-02, n = 13. Tone = (green − red) / (R+Y+G) over Q2+Q3 highlight inventory (see Apr 30 highlight report for color semantics).
+
+![Docx tone vs §1 mean](charts/zooniverse_llm_grading_May03/20260503_10_docx_tone_vs_zooniverse_mean.png)
+
+*Fig 1c. **y** = §1 blended mean (4× Zoon **X** + Matthew `.docx` **Your Grading**).*
+
+### 1.5 Model index ↔ system
 
 | Idx | Model |
 |:---:|:---|
@@ -72,75 +95,82 @@ A **fourth** perspective on ZTF26aargnnp is the expert-highlighted Word file (`t
 | 12 | Qwen3.5-397B think |
 | 13 | Qwen3.5-397B nothink |
 
-## 2. Self-scores vs human grades (pooled and per-alert)
+## 2. Five-alerts §2 panel (workflow **(D)** → **ZTF25aaxmsns**)
 
-For each (OID, model) we join benchmark `run.jsonl` **Part B** numeric self-scores with the **mean human** grade (ZTF26: mean of three raters; other OIDs: single rater).
+**Streams:** expert **ZTF19abfqvbg** (`.docx`) plus Zooniverse **(A, B, C, D)**. **(X)** is **§1-only** on **ZTF26aargnnp**. **(D)** targets **`ZTF25aaxmsns` (SN)**, not ZTF26. Pooled plots use **five OIDs** × 13 models: `ZTF19abfqvbg, ZTF19aayhwvd, ZTF19abkdsaw, ZTF25aahvsli, ZTF25aaxmsns`.
 
-Incomplete Part B self-scores in some `run.jsonl` `parsed` blocks exclude 1 row(s) from the Pearson summaries & scatter fits: `ZTF26aargnnp` · model 13 (Qwen3.5-397B nothink).
+![Per-model profile](charts/zooniverse_llm_grading_May03/20260503_13_per_model_profile_four_oid_means.png)
+
+*Fig 13. Mean human grade on each §2 OID (**D** = SN **ZTF25aaxmsns**).*
+
+## 3. Self-scores vs human grades (pooled and per-alert)
+
+(OID, model) rows join Part B self-scores to **`human_mean`** from §2. **ZTF25aaxmsns** comes from workflow **(D)** only. **ZTF26aargnnp** appears only in §1 (X + Matthew). **ZTF19abfqvbg** = expert `.docx`; **(A–C)** = Zooniverse.
 
 
-### 2.1 Pooled linear and ordinal summaries
+### 3.1 Pooled linear and ordinal summaries
 
-- **Pooled Pearson r** (n = 51): mean self (**key + lead + alt**) vs human mean → **r = -0.086**, p = 5.50e-01
-- **Pooled Spearman ρ** (n = 51): **ρ = -0.096**, p = 5.04e-01
-- **Pooled Kendall τ** (n = 51): **τ = -0.080**, p = 4.92e-01
+- **Pooled Pearson r** (n = 65): mean self (**key + lead + alt**) vs human mean → **r = -0.211**, p = 9.11e-02
+- **Pooled Spearman ρ** (n = 65): **ρ = -0.212**, p = 9.00e-02
+- **Pooled Kendall τ** (n = 65): **τ = -0.172**, p = 9.83e-02
 
-- **Pooled Pearson r** (n = 51): mean self (**lead + alt only**) vs human mean → **r = -0.069**, p = 6.31e-01
-- **Pooled Spearman ρ** (n = 51): **ρ = -0.090**, p = 5.30e-01
-- **Pooled Kendall τ** (n = 51): **τ = -0.076**, p = 5.14e-01
+- **Pooled Pearson r** (n = 65): mean self (**lead + alt only**) vs human mean → **r = -0.189**, p = 1.31e-01
+- **Pooled Spearman ρ** (n = 65): **ρ = -0.205**, p = 1.01e-01
+- **Pooled Kendall τ** (n = 65): **τ = -0.164**, p = 1.16e-01
 
-Self-reported Part B scores are on the same 1–5 rubric as the human task, but **LLM self-judgment need not track external graders**; the weak pooled linear correlation can coexist with a strong correctness signal (§3).
+Self-reported Part B scores use the same 1–5 rubric as the human task, but need not track external graders; weak pooled linear correlation can coexist with a strong correctness signal (§4).
 
-![Scatter all self](charts/20260503_04_scatter_self_all_vs_human.png)
+![Scatter all self](charts/zooniverse_llm_grading_May03/20260503_04_scatter_self_all_vs_human.png)
 
-![Scatter q23](charts/20260503_05_scatter_self_q23_vs_human.png)
+![Scatter q23](charts/zooniverse_llm_grading_May03/20260503_05_scatter_self_q23_vs_human.png)
 
 *Fig 4–5. One point per (OID, model); colors = OID.*
 
-### 2.2 Per-model across-OID correlation (four points per bar)
+### 3.2 Per-model across-OID correlation (five OIDs per bar)
 
-![Per-model r](charts/20260503_08_bar_per_model_correlation.png)
+![Per-model r](charts/zooniverse_llm_grading_May03/20260503_08_bar_per_model_correlation.png)
 
-*Fig 6. Pearson r between mean self (3 fields) and human mean; **each bar labeled with r**.*
+*Fig 6. Pearson r between mean self (3 fields) and human mean; bars labeled.*
 
-### 2.3 Per-alert correlation (13 models per OID)
+### 3.3 Per-alert correlation (13 models per OID)
 
 | OID | n (models with complete self + human) | Pearson r (self all vs human) |
 |---|---:|---:|
+| ZTF19abfqvbg | 13 | -0.437 |
 | ZTF19aayhwvd | 13 | -0.012 |
 | ZTF19abkdsaw | 13 | -0.138 |
 | ZTF25aahvsli | 13 | -0.207 |
-| ZTF26aargnnp | 12 | -0.193 |
+| ZTF25aaxmsns | 13 | -0.479 |
 
-![Per-OID r](charts/20260503_12_per_oid_pearson_self_vs_human.png)
+![Per-OID r](charts/zooniverse_llm_grading_May03/20260503_12_per_oid_pearson_self_vs_human.png)
 
-*Fig 6b. Same numbers as the table; labels on bars.*
+*Fig 6b. Same numbers as the table.*
 
-## 3. Benchmark correctness vs human grades
+## 4. Benchmark correctness vs human grades
 
-- **Point-biserial r** (correctness × human mean): **r = 0.833**, p = 1.96e-14
-- **Pooled mean human grade** when Part C is **correct** (n = 27): **4.28**; when **incorrect** (n = 25): **2.03** (same rows as Fig 7a).
+- **Point-biserial r** (correctness × human mean): **r = 0.782**, p = 1.52e-14
+- **Pooled mean human grade** when Part C is **correct** (n = 35): **4.23**; when **incorrect** (n = 30): **2.07** (same rows as Fig 7a).
 
-![Row counts](charts/20260503_11_correctness_row_counts.png)
+![Row counts](charts/zooniverse_llm_grading_May03/20260503_11_correctness_row_counts.png)
 
-*Fig 7a. Pooled row counts (OID × model) with Part C correct vs incorrect; **n printed on each bar**.*
+*Fig 7a. Pooled row counts (OID × model) with Part C correct vs incorrect; **n** on each bar.*
 
-![Violin correctness](charts/20260503_06_violin_human_by_correctness.png)
+![Violin correctness](charts/zooniverse_llm_grading_May03/20260503_06_violin_human_by_correctness.png)
 
-![By model split](charts/20260503_07_bar_mean_human_correct_vs_wrong_by_model.png)
+![By model split](charts/zooniverse_llm_grading_May03/20260503_07_bar_mean_human_correct_vs_wrong_by_model.png)
 
-*Fig 7b–7c. Human grades are typically **lower** when Part C is incorrect; per-model paired bars show means with **numeric labels**.*
+*Fig 7b–7c. Human grades are typically lower when Part C is incorrect.*
 
-## 4. Expert highlight documents (qualitative)
+## 5. Expert highlight documents (qualitative)
 
-Red / yellow / green markup for Part B reasoning is summarized in [`20260430_report_llm_grading_docx_highlights.md`](20260430_report_llm_grading_docx_highlights.md). Use it alongside §1.3–1.4 here for ZTF26aargnnp and alongside the Zooniverse bundle README for context.
+Red / yellow / green markup for Part B reasoning is summarized in [`20260430_report_llm_grading_docx_highlights.md`](20260430_report_llm_grading_docx_highlights.md).
 
-## 5. Other angles worth extending
+## 6. Extensions
 
-- **ICC(2,1)** or full many-facet Rasch if more subjects and raters are added.
-- **Per-field human scores** if the UI later separates key vs lead vs alt.
-- **Alert difficulty**: separate calibration per `target_class` (bogus vs asteroid vs AGN vs VS).
-- **Joint model**: ordinal mixed-effects with rater random intercepts.
+- **ICC(2,1)** or many-facet Rasch if more subjects and raters are added.
+- **Per-field** human scores if the UI separates key vs lead vs alt.
+- **Alert difficulty**: separate calibration per `target_class`.
+- **Ordinal mixed-effects** with rater random intercepts.
 
 ---
 

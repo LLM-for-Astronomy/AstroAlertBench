@@ -174,8 +174,20 @@ def write_relabeled_montage(oid: str, src_montage: Path) -> Path:
     return out
 
 
-def build_combination_image(oid: str, row: pd.Series, src_montage: Path) -> Path:
-    """Montage (dark, top) + short-form metadata (white, bottom)."""
+def build_combination_image(
+    oid: str,
+    row: pd.Series,
+    src_montage: Path,
+    *,
+    metadata_title_pt: int = 28,
+    metadata_body_pt: int = 22,
+    metadata_pad_x: int = 30,
+) -> Path:
+    """Montage (dark, top) + short-form metadata (white, bottom).
+
+    Optional keyword arguments tune the white metadata strip only (defaults
+    match the previous fixed title/body sizes and padding).
+    """
     out = OUT_ROOT / "combination" / f"{oid}.png"
     out.parent.mkdir(parents=True, exist_ok=True)
 
@@ -204,8 +216,8 @@ def build_combination_image(oid: str, row: pd.Series, src_montage: Path) -> Path
         draw.text((tx, ty), label, fill=(230, 230, 230), font=header_font)
     top_panel.paste(mont_big, (x_left_strip, top_pad + header_h))
 
-    title_font = _load_mono_font(28)
-    text_font = _load_mono_font(22)
+    title_font = _load_mono_font(metadata_title_pt)
+    text_font = _load_mono_font(metadata_body_pt)
     short_lines: list[str] = [f"Metadata ({oid})"]
     for i, (label, col, fmt) in enumerate(FIELDS, 1):
         val = _fmt(col, fmt, _col(row, col))
@@ -214,7 +226,7 @@ def build_combination_image(oid: str, row: pd.Series, src_montage: Path) -> Path
     line_h = 30
     title_h = 46
     pad_y = 20
-    pad_x = 30
+    pad_x = metadata_pad_x
     body_h = pad_y + title_h + len(short_lines[1:]) * line_h + pad_y
 
     bottom_panel = Image.new("RGB", (CANVAS_W, body_h), (255, 255, 255))

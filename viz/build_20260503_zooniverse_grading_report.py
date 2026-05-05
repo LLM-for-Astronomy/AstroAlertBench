@@ -1,13 +1,22 @@
-"""Build figures + markdown report for Zooniverse LLM-response grading (workflows X/A/B/C).
+"""Build figures + markdown report for Zooniverse LLM-response grading.
 
-Reads `temporary_files/llm-for-astronomy-classifications (4).csv`, joins to benchmark
-`run.jsonl` via `viz.build_llm_example_grading.RUN_SPECS` (PNG index 1..13).
+Merges `temporary_files/llm-for-astronomy-classifications (4).csv` and `(5).csv`
+(deduplicated by `classification_id`), joins benchmark `run.jsonl` via
+`viz.build_llm_example_grading.RUN_SPECS` (PNG index 1..13).
+
+**§1 (ZTF26aargnnp):** Four Zooniverse lanes on workflow **(X)** plus **Matthew**’s 0–5
+scores from `LLM Answer Grading ZTF26aargnnp.docx` (equal weight). Workflow **(D)** is a
+separate alert (**ZTF25aaxmsns**, SN) and does not appear in §1.
+
+**§2–3 (pooled):** Five gold OID surfaces — **ZTF19abfqvbg** (expert `.docx`), Zooniverse
+**(A, B, C)**, and **ZTF25aaxmsns** from **LLM Response Grading (D)** (e.g. **theodlz**).
+Workflow **(X)** remains §1-only on **ZTF26aargnnp**.
 
 Run from repo root::
 
     python -m viz.build_20260503_zooniverse_grading_report
 
-Writes figures under ``results_comparison/report/charts/`` (names ``20260503_*.png``) and
+Writes figures under ``results_comparison/report/charts/<subdir>_May03/`` (PNG names ``20260503_*.png``) and
 ``results_comparison/report/20260503_report_zooniverse_llm_grading.md``.
 """
 from __future__ import annotations
@@ -35,24 +44,70 @@ from evaluate import (  # noqa: E402
 from viz.build_llm_example_grading import RUN_SPECS  # noqa: E402
 from viz._analyze_llm_grading_docx_highlights import (  # noqa: E402
     per_model_merged_fills_in_doc_order,
+    per_model_your_grading_0_5,
 )
 
 RESULTS_DIR = PROJECT_ROOT / "results_comparison"
-CHARTS_DIR = RESULTS_DIR / "report" / "charts"
+CHARTS_ROOT = RESULTS_DIR / "report" / "charts"
+# Subfolder under charts/; name ends with May03 per report convention.
+CHARTS_SUBDIR_NAME = "zooniverse_llm_grading_May03"
+CHARTS_DIR = CHARTS_ROOT / CHARTS_SUBDIR_NAME
+CHART_MD_PREFIX = f"charts/{CHARTS_SUBDIR_NAME}"
 REPORT_PATH = RESULTS_DIR / "report" / "20260503_report_zooniverse_llm_grading.md"
-CSV_PATH = PROJECT_ROOT / "temporary_files" / "llm-for-astronomy-classifications (4).csv"
+CSV_PATHS: list[Path] = [
+    PROJECT_ROOT / "temporary_files" / "llm-for-astronomy-classifications (4).csv",
+    PROJECT_ROOT / "temporary_files" / "llm-for-astronomy-classifications (5).csv",
+]
 MANIFEST_PATH = PROJECT_ROOT / "data" / "manifest_benchmark_final.csv"
 DOCX_Z26_CANDIDATES = [
     PROJECT_ROOT / "temporary_files" / "LLM Answer Grading ZTF26aargnnp.docx",
     PROJECT_ROOT / "LLM Answer Grading ZTF26aargnnp.docx",
 ]
+DOCX_Z19_CANDIDATES = [
+    PROJECT_ROOT / "temporary_files" / "LLM Answer Grading ZTF19abfqvbg.docx",
+    PROJECT_ROOT / "LLM Answer Grading ZTF19abfqvbg.docx",
+]
 
 WF_TO_OID = {
     "LLM Response Grading (X)": "ZTF26aargnnp",
+    "LLM Response Grading (D)": "ZTF25aaxmsns",
     "LLM Response Grading (A)": "ZTF19aayhwvd",
     "LLM Response Grading (B)": "ZTF19abkdsaw",
     "LLM Response Grading (C)": "ZTF25aahvsli",
 }
+
+# Pooled self-score / human joins: workflow (D) → ZTF25aaxmsns (SN), not ZTF26.
+SECTION2_OIDS: list[str] = [
+    "ZTF19abfqvbg",
+    "ZTF19aayhwvd",
+    "ZTF19abkdsaw",
+    "ZTF25aahvsli",
+    "ZTF25aaxmsns",
+]
+
+MATTHEW_RATER_LABEL = "Matthew (expert .docx)"
+
+Z26_RATER_ORDER = [
+    "libai_astro",
+    "lukehandley",
+    "RickyN",
+    "theodlz",
+    MATTHEW_RATER_LABEL,
+]
+
+Z26_ZOONIVERSE_WF = "LLM Response Grading (X)"
+SECTION2_D_WF = "LLM Response Grading (D)"
+SECTION2_ZOON_WFS = frozenset(
+    {"LLM Response Grading (A)", "LLM Response Grading (B)", "LLM Response Grading (C)"}
+)
+
+OID_PROFILE_LABELS = [
+    "ZTF19abfqvbg\n(expert .docx)",
+    "ZTF19aayhwvd\n(VS · Zoon. A)",
+    "ZTF19abkdsaw\n(AGN · Zoon. B)",
+    "ZTF25aahvsli\n(bogus · Zoon. C)",
+    "ZTF25aaxmsns\n(SN · Zoon. D)",
+]
 
 MODEL_DISPLAY = [
     "Gemini 2.5 Pro high",
@@ -108,7 +163,7 @@ def _part_b_scores(parsed: dict) -> tuple[float | None, float | None, float | No
 
 
 def build_run_features() -> pd.DataFrame:
-    oids = sorted(set(WF_TO_OID.values()))
+    oids = list(SECTION2_OIDS)
     manifest = pd.read_csv(MANIFEST_PATH, dtype=str)
     gold = manifest.set_index("oid")["target_class"].to_dict()
 
@@ -158,8 +213,28 @@ def build_run_features() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _rater_label(row: pd.Series) -> str:
+    """Single `theodlz` label on ZTF26 (workflow D is excluded from §1 tables)."""
+    oid = str(row.get("oid", ""))
+    user = str(row.get("user_name", ""))
+    if oid == "ZTF26aargnnp" and user == "theodlz":
+        return "theodlz"
+    return user
+
+
 def load_human_grades() -> pd.DataFrame:
-    df = pd.read_csv(CSV_PATH, dtype=str, keep_default_na=False)
+    frames: list[pd.DataFrame] = []
+    for p in CSV_PATHS:
+        if not p.is_file():
+            print(f"[WARN] missing {p.name}, skip", file=sys.stderr)
+            continue
+        frames.append(pd.read_csv(p, dtype=str, keep_default_na=False))
+    if not frames:
+        raise FileNotFoundError("no classification CSV found under temporary_files/")
+    df = pd.concat(frames, ignore_index=True)
+    df["classification_id"] = df["classification_id"].astype(str)
+    df = df.drop_duplicates(subset=["classification_id"], keep="first")
+
     sub = df[df["workflow_name"].isin(WF_TO_OID)].copy()
     sub["oid"] = sub["workflow_name"].map(WF_TO_OID)
 
@@ -189,11 +264,48 @@ def load_human_grades() -> pd.DataFrame:
     sub = sub.dropna(subset=["human_grade", "run_idx"])
     sub["human_grade"] = sub["human_grade"].astype(int)
     sub["run_idx"] = sub["run_idx"].astype(int)
+    sub["rater_label"] = sub.apply(_rater_label, axis=1)
     return sub
 
 
+def _parse_docx_grades_13(path: Path | None) -> list[int] | None:
+    if path is None or not path.is_file():
+        return None
+    raw = per_model_your_grading_0_5(path)
+    if len(raw) != 13 or any(x is None for x in raw):
+        print(
+            f"[WARN] expected 13 integer Your Grading lines in {path}, got {len(raw)} parses",
+            file=sys.stderr,
+        )
+        return None
+    return [int(x) for x in raw]
+
+
+def _expert_docx_grade_rows(
+    oid: str,
+    grades: list[int],
+    rater_label: str,
+    workflow_name: str,
+) -> pd.DataFrame:
+    rows: list[dict] = []
+    for i, g in enumerate(grades, start=1):
+        rows.append(
+            {
+                "classification_id": f"synthetic_docx_{oid}_{i}",
+                "workflow_name": workflow_name,
+                "user_name": "Matthew",
+                "oid": oid,
+                "human_grade": g,
+                "run_idx": i,
+                "model_slug": "",
+                "rater_label": rater_label,
+            }
+        )
+    return pd.DataFrame(rows)
+
+
 def cronbach_alpha(matrix: np.ndarray) -> float | None:
-    """matrix: n_subjects × k_items (e.g. 13 models × 3 raters)."""
+    """matrix: n_subjects × k_items (e.g. 13 models × k raters)."""
     if matrix.shape[1] < 2:
         return None
     item_vars = matrix.var(axis=0, ddof=1)
@@ -205,8 +317,72 @@ def cronbach_alpha(matrix: np.ndarray) -> float | None:
     return float((k / (k - 1)) * (1.0 - item_vars.sum() / total_var))
 
 
+def fig_per_oid_profile_by_model(
+    human: pd.DataFrame,
+    path: Path,
+    oids: list[str],
+    bar_labels: list[str],
+) -> None:
+    """Grouped bars: per model index, mean human grade on each pooled §2 OID (typically five)."""
+    g = human.groupby(["oid", "run_idx"], as_index=False)["human_grade"].mean()
+    fig, ax = plt.subplots(figsize=(14, 4.6))
+    x = np.arange(13)
+    n_b = len(oids)
+    w = min(0.18, 0.7 / max(n_b, 1))
+    off = (n_b - 1) / 2.0
+    for i, (oid, lab) in enumerate(zip(oids, bar_labels)):
+        sub = g[g["oid"] == oid].set_index("run_idx")["human_grade"].reindex(range(1, 14))
+        ax.bar(x + (i - off) * w, sub, width=w, label=lab, alpha=0.9, edgecolor="k", linewidth=0.2)
+    ax.set_xticks(x)
+    ax.set_xticklabels([str(i + 1) for i in range(13)])
+    ax.set_xlabel("Model index (1 = Gemini Pro high … 13 = Qwen 397B nothink)")
+    ax.set_ylabel("Mean human grade (0–5)")
+    ax.set_title(
+        "Per-model mean human grade by §2 alert "
+        "(abfqvbg = expert .docx; A/B/C = Zooniverse; D = ZTF25aaxmsns SN)"
+    )
+    ax.legend(fontsize=7, ncol=2, loc="upper right")
+    ax.set_ylim(0, 5.5)
+    ax.axhline(2.5, color="gray", ls=":", lw=0.7, alpha=0.6)
+    fig.tight_layout()
+    fig.savefig(path, dpi=160)
+    plt.close(fig)
+
+
+def z26_full_scores_markdown(z26: pd.DataFrame) -> list[str]:
+    wide = z26.pivot_table(
+        index="run_idx", columns="rater_label", values="human_grade", aggfunc="first"
+    ).reindex(range(1, 14))
+    cols = [c for c in Z26_RATER_ORDER if c in wide.columns]
+    if not cols:
+        return ["*(No rater columns matched `Z26_RATER_ORDER`.)*"]
+    wide = wide[cols].copy()
+    wide["Mean"] = wide.mean(axis=1)
+    wide["SD"] = wide.std(axis=1, ddof=1)
+    lines = [
+        "| Idx | Model | " + " | ".join(cols) + " | Mean | SD |",
+        "| ---: | :--- | " + " | ".join(["---:"] * len(cols)) + " | ---: | ---: |",
+    ]
+    for i in range(1, 14):
+        row = wide.loc[i]
+        cells = [str(int(row[c])) if pd.notna(row[c]) else "—" for c in cols]
+        lines.append(
+            f"| {i} | {MODEL_DISPLAY[i - 1]} | "
+            + " | ".join(cells)
+            + f" | {row['Mean']:.2f} | {row['SD']:.2f} |"
+        )
+    return lines
+
+
 def _find_ztf26_docx() -> Path | None:
     for p in DOCX_Z26_CANDIDATES:
+        if p.is_file():
+            return p
+    return None
+
+
+def _find_docx_z19() -> Path | None:
+    for p in DOCX_Z19_CANDIDATES:
         if p.is_file():
             return p
     return None
@@ -238,11 +414,12 @@ def _docx_rgb_tone_by_run_idx(docx_path: Path) -> pd.DataFrame | None:
 
 def fig_rater_heatmap(z26: pd.DataFrame, path: Path) -> None:
     pivot = z26.pivot_table(
-        index="user_name",
+        index="rater_label",
         columns="run_idx",
         values="human_grade",
         aggfunc="first",
     )
+    pivot = pivot.reindex(Z26_RATER_ORDER)
     pivot = pivot.reindex(columns=list(range(1, 14)))
     fig, ax = plt.subplots(figsize=(14, 3.2))
     arr = pivot.to_numpy(dtype=float)
@@ -252,8 +429,8 @@ def fig_rater_heatmap(z26: pd.DataFrame, path: Path) -> None:
     ax.set_yticks(np.arange(len(pivot)))
     ax.set_yticklabels(pivot.index, fontsize=9)
     ax.set_xlabel("Model index (see table: Gemini Pro … Qwen 397B nothink)")
-    ax.set_ylabel("Zooniverse user")
-    ax.set_title("ZTF26aargnnp — human grades (0–5) by rater × model")
+    ax.set_ylabel("Rater (4 Zooniverse X + Matthew .docx)")
+    ax.set_title("ZTF26aargnnp — human grades (0–5): five §1 graders × 13 models")
     for i in range(arr.shape[0]):
         for j in range(arr.shape[1]):
             ax.text(j, i, f"{arr[i, j]:.0f}", ha="center", va="center", color="w", fontsize=8)
@@ -281,36 +458,48 @@ def fig_mean_sd_bars(z26: pd.DataFrame, path: Path) -> None:
     )
     ax.set_xticks(x)
     ax.set_xticklabels([f"{i+1}\n{MODEL_DISPLAY[i][:10]}…" for i in range(13)], fontsize=7)
-    ax.set_ylabel("Mean human grade (±1 SD across 3 raters)")
+    ax.set_ylabel("Mean human grade (±1 SD across §1 graders)")
+    ax.set_title("ZTF26aargnnp — mean ± SD across five graders (values on bars = mean)")
     ax.set_ylim(0, 5.5)
     ax.axhline(2.5, color="gray", ls="--", lw=0.8, alpha=0.7)
-    ax.set_title("ZTF26aargnnp — consensus across three Zooniverse raters (values on bars = mean)")
     fig.tight_layout()
     fig.savefig(path, dpi=160)
     plt.close(fig)
 
 
 def fig_pairwise_raters(z26: pd.DataFrame, path: Path) -> None:
-    users = sorted(z26["user_name"].unique())
-    if len(users) != 3:
-        return
+    """Pearson r between every pair of graders (13 models each)."""
     wide = z26.pivot_table(
-        index="run_idx", columns="user_name", values="human_grade", aggfunc="first"
+        index="run_idx", columns="rater_label", values="human_grade", aggfunc="first"
     ).reindex(range(1, 14))
-    fig, axes = plt.subplots(1, 3, figsize=(11, 3.4), sharey=True)
-    pairs = [(users[0], users[1]), (users[0], users[2]), (users[1], users[2])]
-    for ax, (a, b) in zip(axes, pairs):
-        xa = wide[a].to_numpy()
-        xb = wide[b].to_numpy()
-        ax.scatter(xa, xb, s=40, alpha=0.85, edgecolors="k", linewidths=0.3)
-        ax.plot([0, 5], [0, 5], ls="--", color="gray", lw=0.9)
-        ax.set_xlabel(a)
-        ax.set_ylabel(b)
-        r, _p = stats.pearsonr(xa, xb)
-        ax.set_title(f"r = {r:.2f}")
-        ax.set_xlim(-0.3, 5.3)
-        ax.set_ylim(-0.3, 5.3)
-    fig.suptitle("ZTF26aargnnp — pairwise agreement (Pearson r)", y=1.02)
+    cols = [c for c in Z26_RATER_ORDER if c in wide.columns]
+    if len(cols) < 2:
+        return
+    wide = wide[cols]
+    k = len(cols)
+    R = np.eye(k)
+    for i in range(k):
+        for j in range(i + 1, k):
+            a = wide[cols[i]].to_numpy(dtype=float)
+            b = wide[cols[j]].to_numpy(dtype=float)
+            if np.nanstd(a) < 1e-9 or np.nanstd(b) < 1e-9:
+                r = np.nan
+            else:
+                r, _ = stats.pearsonr(a, b)
+            R[i, j] = R[j, i] = float(r) if not np.isnan(r) else np.nan
+    fig, ax = plt.subplots(figsize=(6.2, 5))
+    im = ax.imshow(R, vmin=-1, vmax=1, cmap="RdBu_r")
+    ax.set_xticks(np.arange(k))
+    ax.set_yticks(np.arange(k))
+    ax.set_xticklabels(cols, rotation=35, ha="right", fontsize=7)
+    ax.set_yticklabels(cols, fontsize=7)
+    for i in range(k):
+        for j in range(k):
+            v = R[i, j]
+            t = f"{v:.2f}" if not np.isnan(v) else "—"
+            ax.text(j, i, t, ha="center", va="center", color="black", fontsize=8)
+    ax.set_title("ZTF26aargnnp — Pearson r between graders (13 models)")
+    fig.colorbar(im, ax=ax, fraction=0.046, label="Pearson r")
     fig.tight_layout()
     fig.savefig(path, dpi=160)
     plt.close(fig)
@@ -318,15 +507,23 @@ def fig_pairwise_raters(z26: pd.DataFrame, path: Path) -> None:
 
 def fig_scatter_self_human(merged: pd.DataFrame, ycol: str, title: str, path: Path) -> None:
     fig, ax = plt.subplots(figsize=(6.5, 5))
-    colors = {"ZTF26aargnnp": "C0", "ZTF19aayhwvd": "C1", "ZTF19abkdsaw": "C2", "ZTF25aahvsli": "C3"}
-    for oid, sub in merged.groupby("oid"):
+    colors = {
+        "ZTF19abfqvbg": "C0",
+        "ZTF19aayhwvd": "C1",
+        "ZTF19abkdsaw": "C2",
+        "ZTF25aahvsli": "C3",
+        "ZTF25aaxmsns": "C4",
+    }
+    pal = [plt.cm.tab10(i / 10.0) for i in range(10)]
+    for i, (oid, sub) in enumerate(merged.groupby("oid")):
+        col = colors.get(oid, pal[i % len(pal)])
         ax.scatter(
             sub[ycol],
             sub["human_mean"],
             label=oid,
             s=45,
             alpha=0.8,
-            c=colors.get(oid, "k"),
+            color=col,
             edgecolors="k",
             linewidths=0.35,
         )
@@ -362,7 +559,7 @@ def fig_correctness_violin(merged: pd.DataFrame, path: Path) -> None:
     ax.set_xticks([0, 1])
     ax.set_xticklabels(["Part C correct", "Part C incorrect"])
     ax.set_ylabel("Human mean grade (0–5)")
-    ax.set_title("Human reasoning grades vs benchmark correctness (all OIDs, 13 models)")
+    ax.set_title("Human reasoning grades vs benchmark correctness (§2 OIDs × 13 models)")
     fig.tight_layout()
     fig.savefig(path, dpi=160)
     plt.close(fig)
@@ -399,7 +596,7 @@ def fig_correctness_by_model(merged: pd.DataFrame, path: Path) -> None:
     ax.set_xticklabels([str(i + 1) for i in range(13)], fontsize=9)
     ax.set_xlabel("Model index (1 = Gemini Pro high … 13 = Qwen 397B nothink)")
     ax.set_ylabel("Mean human grade")
-    ax.set_title("Mean human grade split by Part C correctness (4 OIDs × correct/incorrect subset)")
+    ax.set_title("Mean human grade split by Part C correctness (§2 OIDs × 13 models)")
     ax.legend()
     ax.set_ylim(0, 5.5)
     fig.tight_layout()
@@ -439,7 +636,7 @@ def fig_per_model_correlation(merged: pd.DataFrame, path: Path) -> None:
     ax.set_xticks(x)
     ax.set_xticklabels([str(i + 1) for i in range(13)])
     ax.set_xlabel("Model index")
-    ax.set_ylabel("Pearson r (4 OIDs: self_all vs human mean)")
+    ax.set_ylabel("Pearson r (§2 OIDs: self_all vs human mean)")
     ax.set_title("Per-model correlation: mean self-scores vs mean human grades (r on each bar)")
     ax.set_ylim(-1.05, 1.05)
     fig.tight_layout()
@@ -452,26 +649,26 @@ def fig_docx_tone_vs_zooniverse_mean(
     docx_path: Path,
     path: Path,
 ) -> tuple[float | None, float | None, int]:
-    """Expert (green−red)/highlight vs mean of three Zooniverse grades; same 13 model order as .docx."""
+    """Expert (green−red)/highlight vs mean Zooniverse grades; same 13 model order as .docx."""
     doc_df = _docx_rgb_tone_by_run_idx(docx_path)
     if doc_df is None or doc_df.empty:
         return None, None, 0
     zmean = z26.groupby("run_idx")["human_grade"].mean().reindex(range(1, 14))
     doc_df = doc_df[doc_df["run_idx"].between(1, 13)].copy()
-    doc_df["human_mean_3"] = doc_df["run_idx"].map(zmean.to_dict())
-    m = doc_df.dropna(subset=["tone_green_minus_red", "human_mean_3"])
+    doc_df["human_mean_z"] = doc_df["run_idx"].map(zmean.to_dict())
+    m = doc_df.dropna(subset=["tone_green_minus_red", "human_mean_z"])
     n = len(m)
     r = p = None
     if n > 2:
         r, p = stats.pearsonr(
             m["tone_green_minus_red"].to_numpy(dtype=float),
-            m["human_mean_3"].to_numpy(dtype=float),
+            m["human_mean_z"].to_numpy(dtype=float),
         )
         r, p = float(r), float(p)
     fig, ax = plt.subplots(figsize=(6.2, 4.8))
     sc = ax.scatter(
         m["tone_green_minus_red"],
-        m["human_mean_3"],
+        m["human_mean_z"],
         s=55,
         c=m["run_idx"],
         cmap="tab20",
@@ -483,21 +680,21 @@ def fig_docx_tone_vs_zooniverse_mean(
     for _, row in m.iterrows():
         ax.annotate(
             f"{int(row['run_idx'])}",
-            (row["tone_green_minus_red"], row["human_mean_3"]),
+            (row["tone_green_minus_red"], row["human_mean_z"]),
             textcoords="offset points",
             xytext=(3, 2),
             fontsize=7,
         )
     xs = m["tone_green_minus_red"].to_numpy(dtype=float)
-    ys = m["human_mean_3"].to_numpy(dtype=float)
+    ys = m["human_mean_z"].to_numpy(dtype=float)
     if n > 2 and np.nanstd(xs) > 1e-9:
         coef = np.polyfit(xs, ys, 1)
         xline = np.linspace(xs.min(), xs.max(), 40)
         ax.plot(xline, np.poly1d(coef)(xline), ls="--", color="gray", lw=1)
     ax.axhline(2.5, color="lightgray", ls=":", lw=0.8)
     ax.set_xlabel("Expert highlight tone: (green − red) / (green + yellow + red) in .docx Q2+Q3")
-    ax.set_ylabel("Mean Zooniverse grade (3 raters, 0–5)")
-    ttl = "ZTF26aargnnp — expert markup vs mean Zooniverse score (per model)"
+    ax.set_ylabel("Mean grade — 4 Zooniverse (X) + Matthew .docx (0–5)")
+    ttl = "ZTF26aargnnp — expert highlight tone vs blended §1 mean (per model)"
     if r is not None and p is not None:
         ttl += f"\nPearson r = {r:.2f}, p = {p:.2e}, n = {n}"
     ax.set_title(ttl, fontsize=10)
@@ -512,16 +709,17 @@ def fig_docx_tone_vs_zooniverse_mean(
 
 
 def fig_inter_rater_mae_heatmap(z26: pd.DataFrame, path: Path) -> None:
-    users = sorted(z26["user_name"].unique())
-    if len(users) < 2:
+    cols = [c for c in Z26_RATER_ORDER if c in z26["rater_label"].unique()]
+    if len(cols) < 2:
         return
     wide = z26.pivot_table(
-        index="run_idx", columns="user_name", values="human_grade", aggfunc="first"
+        index="run_idx", columns="rater_label", values="human_grade", aggfunc="first"
     ).reindex(range(1, 14))
-    k = len(users)
+    wide = wide[cols]
+    k = len(cols)
     mad = np.zeros((k, k))
-    for i, a in enumerate(users):
-        for j, b in enumerate(users):
+    for i, a in enumerate(cols):
+        for j, b in enumerate(cols):
             if i == j:
                 mad[i, j] = 0.0
             else:
@@ -530,9 +728,9 @@ def fig_inter_rater_mae_heatmap(z26: pd.DataFrame, path: Path) -> None:
     im = ax.imshow(mad, cmap="Oranges", vmin=0, vmax=max(2.5, mad.max() * 1.05))
     ax.set_xticks(np.arange(k))
     ax.set_yticks(np.arange(k))
-    ax.set_xticklabels(users, rotation=35, ha="right", fontsize=8)
-    ax.set_yticklabels(users, fontsize=8)
-    ax.set_title("Mean |grade_i − grade_j| across 13 models\n(ZTF26, Zooniverse only)")
+    ax.set_xticklabels(cols, rotation=35, ha="right", fontsize=8)
+    ax.set_yticklabels(cols, fontsize=8)
+    ax.set_title("Mean |grade_i − grade_j| across 13 models\n(ZTF26 — §1 graders)")
     for i in range(k):
         for j in range(k):
             ax.text(j, i, f"{mad[i, j]:.2f}", ha="center", va="center", color="black", fontsize=9)
@@ -551,7 +749,7 @@ def fig_correctness_counts(merged: pd.DataFrame, path: Path) -> None:
     ax.set_xticks([0, 1])
     ax.set_xticklabels(["Part C correct", "Part C incorrect"])
     ax.set_ylabel("Number of (OID × model) rows")
-    ax.set_title("Sample sizes: pooled 4 OIDs × 13 models (value on each bar = n)")
+    ax.set_title("Sample sizes: §2 panel — 5 OIDs × 13 models (value on each bar = n)")
     fig.tight_layout()
     fig.savefig(path, dpi=160)
     plt.close(fig)
@@ -559,7 +757,11 @@ def fig_correctness_counts(merged: pd.DataFrame, path: Path) -> None:
 
 def fig_per_oid_self_human_correlation(merged: pd.DataFrame, path: Path) -> list[str]:
     """Bar chart: Pearson r per OID (n=13 models); bar labels = r to 2 decimals."""
-    oids = sorted(merged["oid"].unique())
+    present = set(merged["oid"].astype(str).unique())
+    oids = [o for o in SECTION2_OIDS if o in present]
+    for o in sorted(present):
+        if o not in oids:
+            oids.append(o)
     rs: list[float] = []
     for oid in oids:
         sl = merged[(merged["oid"] == oid)].dropna(subset=["mean_self_all", "human_mean"])
@@ -595,13 +797,63 @@ def fig_per_oid_self_human_correlation(merged: pd.DataFrame, path: Path) -> list
 def main() -> None:
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     (RESULTS_DIR / "report").mkdir(parents=True, exist_ok=True)
+    CHARTS_ROOT.mkdir(parents=True, exist_ok=True)
     CHARTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    human = load_human_grades()
+    human_csv = load_human_grades()
     feats = build_run_features()
 
+    docx_path = _find_ztf26_docx()
+    docx_z19_path = _find_docx_z19()
+    gz26 = _parse_docx_grades_13(docx_path)
+    gz19 = _parse_docx_grades_13(docx_z19_path)
+
+    z26_zoo = human_csv[
+        (human_csv["oid"] == "ZTF26aargnnp")
+        & (human_csv["workflow_name"] == Z26_ZOONIVERSE_WF)
+    ].copy()
+    expert_z26_df = (
+        _expert_docx_grade_rows(
+            "ZTF26aargnnp",
+            gz26,
+            MATTHEW_RATER_LABEL,
+            "Expert LLM Answer Grading (.docx ZTF26)",
+        )
+        if gz26
+        else pd.DataFrame()
+    )
+    z26 = (
+        pd.concat([z26_zoo, expert_z26_df], ignore_index=True)
+        if not expert_z26_df.empty
+        else z26_zoo.copy()
+    )
+
+    human_s2_zoo = human_csv[human_csv["workflow_name"].isin(SECTION2_ZOON_WFS)].copy()
+    expert_ab_df = (
+        _expert_docx_grade_rows(
+            "ZTF19abfqvbg",
+            gz19,
+            MATTHEW_RATER_LABEL,
+            "Expert LLM Answer Grading (.docx ZTF19abfqvbg)",
+        )
+        if gz19
+        else pd.DataFrame()
+    )
+    human_s2_d = human_csv[human_csv["workflow_name"] == SECTION2_D_WF].copy()
+    if human_s2_d.empty:
+        print(
+            "[WARN] no LLM Response Grading (D) rows — §2 omits ZTF25aaxmsns from pooled joins",
+            file=sys.stderr,
+        )
+    parts: list[pd.DataFrame] = [human_s2_zoo]
+    if not expert_ab_df.empty:
+        parts.append(expert_ab_df)
+    if not human_s2_d.empty:
+        parts.append(human_s2_d)
+    human_s2 = pd.concat(parts, ignore_index=True)
+
     hm = (
-        human.groupby(["oid", "run_idx"])
+        human_s2.groupby(["oid", "run_idx"])
         .agg(
             human_mean=("human_grade", "mean"),
             human_sd=("human_grade", "std"),
@@ -611,20 +863,28 @@ def main() -> None:
     )
     merged = feats.merge(hm, on=["oid", "run_idx"], how="inner")
 
-    z26 = human[human["oid"] == "ZTF26aargnnp"].copy()
-    mat = z26.pivot_table(
-        index="run_idx", columns="user_name", values="human_grade", aggfunc="first"
+    wide26 = z26.pivot_table(
+        index="run_idx", columns="rater_label", values="human_grade", aggfunc="first"
     ).reindex(range(1, 14))
-    alpha = cronbach_alpha(mat.to_numpy(dtype=float))
+    cols26 = [c for c in Z26_RATER_ORDER if c in wide26.columns]
+    if len(cols26) < 2:
+        alpha = None
+    else:
+        alpha = cronbach_alpha(wide26[cols26].to_numpy(dtype=float))
 
-    r12 = r13 = r23 = None
-    users = sorted(z26["user_name"].unique())
-    if len(users) == 3:
-        w = mat.copy()
-        u1, u2, u3 = users
-        r12, _ = stats.pearsonr(w[u1], w[u2])
-        r13, _ = stats.pearsonr(w[u1], w[u3])
-        r23, _ = stats.pearsonr(w[u2], w[u3])
+    pair_bits_list: list[str] = []
+    if len(cols26) >= 2:
+        for i in range(len(cols26)):
+            for j in range(i + 1, len(cols26)):
+                a = wide26[cols26[i]].to_numpy(dtype=float)
+                b = wide26[cols26[j]].to_numpy(dtype=float)
+                if np.nanstd(a) < 1e-9 or np.nanstd(b) < 1e-9:
+                    continue
+                r_ij, _ = stats.pearsonr(a, b)
+                pair_bits_list.append(f"{cols26[i]} vs {cols26[j]} **{r_ij:.2f}**")
+    pair_bits = "; ".join(pair_bits_list)
+
+    z26_table_lines = z26_full_scores_markdown(z26)
 
     p1 = CHARTS_DIR / "20260503_01_ztf26_rater_heatmap.png"
     p2 = CHARTS_DIR / "20260503_02_ztf26_mean_sd_by_model.png"
@@ -638,13 +898,13 @@ def main() -> None:
     p10 = CHARTS_DIR / "20260503_10_docx_tone_vs_zooniverse_mean.png"
     p11 = CHARTS_DIR / "20260503_11_correctness_row_counts.png"
     p12 = CHARTS_DIR / "20260503_12_per_oid_pearson_self_vs_human.png"
+    p13 = CHARTS_DIR / "20260503_13_per_model_profile_four_oid_means.png"
 
     fig_rater_heatmap(z26, p1)
     fig_mean_sd_bars(z26, p2)
     fig_pairwise_raters(z26, p3)
     fig_inter_rater_mae_heatmap(z26, p9)
 
-    docx_path = _find_ztf26_docx()
     docx_r = docx_p = None
     docx_n = 0
     if docx_path is not None:
@@ -670,6 +930,12 @@ def main() -> None:
     fig_correctness_violin(merged, p6)
     fig_correctness_by_model(merged, p7)
     fig_correctness_counts(merged, p11)
+    fig_per_oid_profile_by_model(
+        human_s2,
+        p13,
+        list(SECTION2_OIDS),
+        list(OID_PROFILE_LABELS),
+    )
 
     # Pooled correlations
     m = merged.dropna(subset=["mean_self_all", "human_mean"])
@@ -714,18 +980,25 @@ def main() -> None:
     else:
         skip_note = ""
 
-    n_rows = len(human)
-    zoo_users = sorted(z26["user_name"].unique())
+    n_rows = len(human_csv)
+    zoo_users = sorted(z26_zoo["user_name"].unique())
+    z26_wf_exclude = {Z26_ZOONIVERSE_WF, "LLM Response Grading (D)"}
     per_user_extra: list[str] = []
     for u in zoo_users:
-        sub = human[(human["user_name"] == u) & (human["workflow_name"] != "LLM Response Grading (X)")]
+        sub = human_csv[
+            (human_csv["user_name"] == u) & (~human_csv["workflow_name"].isin(z26_wf_exclude))
+        ]
         if sub.empty:
             continue
         wf = str(sub.iloc[0]["workflow_name"])
         oid_x = str(sub.iloc[0]["oid"])
         per_user_extra.append(f"- **{u}** also completed `{wf}` → `{oid_x}`.")
-    rater_means = z26.groupby("user_name")["human_grade"].mean()
-    rater_mean_bits = ", ".join(f"**{u}** μ={rater_means[u]:.2f}" for u in sorted(rater_means.index))
+    rater_means = z26.groupby("rater_label")["human_grade"].mean()
+    rater_mean_bits = ", ".join(
+        f"**{lbl}** μ={rater_means[lbl]:.2f}"
+        for lbl in Z26_RATER_ORDER
+        if lbl in rater_means.index
+    )
 
     docx_md_lines: list[str] = []
     if docx_path is None:
@@ -735,13 +1008,20 @@ def main() -> None:
         ]
     elif docx_r is not None and docx_p is not None:
         docx_md_lines = [
-            f"- **Expert .docx vs Zooniverse mean** (same 13 model order as the grading PNGs): "
+            f"- **Expert highlight tone vs blended §1 mean** (four Zooniverse **(X)** scores + **Matthew** `.docx` **Your Grading** per model, equal weight): "
             f"Pearson r = **{docx_r:.3f}**, p = {docx_p:.2e}, n = {docx_n}. "
             "Tone = (green − red) / (R+Y+G) over Q2+Q3 highlight inventory (see Apr 30 highlight report for color semantics).",
         ]
     else:
         docx_md_lines = [
             "*Expert .docx present but overlap with Zooniverse rows was insufficient for correlation.*",
+        ]
+
+    pairwise_md: list[str] = []
+    if pair_bits:
+        pairwise_md = [
+            "",
+            f"- **Pairwise Pearson r** between grader columns (same 13 model vectors): {pair_bits}.",
         ]
 
     pooled_extra: list[str] = []
@@ -764,79 +1044,84 @@ def main() -> None:
         )
 
     md_lines = [
-        "# Zooniverse LLM response grading — benchmark self-scores, correctness, four human views on ZTF26 (3 May 2026)",
+        "# Zooniverse LLM response grading — ZTF26 §1 (X + Matthew); §2 includes **(D)** on ZTF25aaxmsns (3 May 2026)",
         "",
-        "Source export: `temporary_files/llm-for-astronomy-classifications (4).csv`. "
-        "Gold OIDs and PNG bundle are documented in `human_samples/llm_example_grading_zooniverse/README.md`.",
+        "**Exports:** `temporary_files/llm-for-astronomy-classifications (4).csv` and `(5).csv`, "
+        "concatenated and **deduplicated by `classification_id`**. "
+        "**LLM Response Grading (D)** maps to **`ZTF25aaxmsns` (SN)**, not ZTF26. **(D)** is **excluded from §1** and **included in §2** (see table). "
+        "Gold OIDs / PNG bundle: `human_samples/llm_example_grading_zooniverse/README.md`.",
         "",
-        "| Workflow | OID | `target_class` (manifest) |",
+        "| Workflow | OID | Role in this report |",
         "|---|---|---|",
-        "| LLM Response Grading (X) | ZTF26aargnnp | asteroid |",
-        "| LLM Response Grading (A) | ZTF19aayhwvd | VS |",
-        "| LLM Response Grading (B) | ZTF19abkdsaw | AGN |",
-        "| LLM Response Grading (C) | ZTF25aahvsli | bogus |",
+        "| LLM Response Grading **(X)** | ZTF26aargnnp | **§1:** four Zooniverse raters (libai_astro, lukehandley, RickyN, theodlz). |",
+        "| Expert `.docx` | ZTF26aargnnp | **§1:** **Matthew** **Your Grading:** 0–5 per model (**equal** weight). |",
+        "| LLM Response Grading **(D)** | **ZTF25aaxmsns** (SN) | **§2** — Zooniverse grading lane (e.g. **theodlz**); **not** used in §1. |",
+        "| **(A)** | ZTF19aayhwvd (VS) | **§2** pooled (Zooniverse). |",
+        "| **(B)** | ZTF19abkdsaw (AGN) | **§2** pooled (Zooniverse). |",
+        "| **(C)** | ZTF25aahvsli (bogus) | **§2** pooled (Zooniverse). |",
+        "| Expert `.docx` | **ZTF19abfqvbg** (AGN) | **§2** pooled — **Matthew** **Your Grading** (not workflow **(X)**). |",
         "",
-        "## Annotators (from export)",
+        "## Annotators",
         "",
-        f"**{len(zoo_users)}** Zooniverse users each grade **all 13 model snapshots** on **ZTF26aargnnp** (workflow X). "
-        f"Each also grades **one** of the other workflows (A/B/C) on its OID. Total **{n_rows}** grading rows with a numeric 0–5 in annotations.",
+        f"**§1** uses **five** numeric lanes on **ZTF26aargnnp**: four on workflow **(X)** plus **Matthew** from "
+        f"`LLM Answer Grading ZTF26aargnnp.docx`. **(D)** is unrelated (SN alert **ZTF25aaxmsns**) and is excluded from §1. "
+        f"**§2** pools **five OIDs** (`{', '.join(SECTION2_OIDS)}`): expert **ZTF19abfqvbg** + Zooniverse **(A,B,C)** + **ZTF25aaxmsns** via **(D)**. "
+        f"Total **{n_rows}** CSV rows with Zooniverse 0–5 scores (expert rows for §1/§2 are injected from `.docx`).",
         "",
         *per_user_extra,
         "",
-        f"Overall mean grade on ZTF26 (0–5) by rater: {rater_mean_bits}.",
+        f"**Mean on ZTF26 (§1)** by rater: {rater_mean_bits}.",
         "",
-        "A **fourth** perspective on ZTF26aargnnp is the expert-highlighted Word file "
-        "(`temporary_files/LLM Answer Grading ZTF26aargnnp.docx` if present). "
-        "It is not a fourth 0–5 Likert column, but §1.3 links highlight-derived tone to the mean Zooniverse score. "
-        "Full highlight methodology and ZTF19 tables: "
-        "[`20260430_report_llm_grading_docx_highlights.md`](20260430_report_llm_grading_docx_highlights.md) "
-        "(`LLM Answer Grading ZTF19abfqvbg.docx` — separate AGN example **ZTF19abfqvbg**, not in the A/B/C/X Zooniverse set).",
+        "R/Y/G markup: [`20260430_report_llm_grading_docx_highlights.md`](20260430_report_llm_grading_docx_highlights.md).",
         "",
-        "## 1. ZTF26aargnnp — four perspectives (three raters + expert markup)",
+        "## 1. ZTF26aargnnp — Zooniverse **(X)** + Matthew `.docx`",
         "",
-        "### 1.1 Reliability and pairwise agreement (Zooniverse)",
+        "### 1.1 13 models × five graders",
         "",
-        f"- **Cronbach’s α** (13 models × 3 raters): **{alpha:.3f}**" if alpha is not None else "- **Cronbach’s α**: (undefined)",
+        "**(D)** excluded. **Mean** / **SD** = unweighted over the five columns below.",
         "",
-    ]
-    if r12 is not None:
-        md_lines.append(
-            f"- **Pairwise Pearson r** between raters: {users[0]} vs {users[1]} **{r12:.2f}**, "
-            f"{users[0]} vs {users[2]} **{r13:.2f}**, {users[1]} vs {users[2]} **{r23:.2f}**."
-        )
-    md_lines += [
+        *z26_table_lines,
         "",
-        f"![Heatmap](charts/20260503_01_ztf26_rater_heatmap.png)",
+        "### 1.2 Reliability",
         "",
-        "*Fig 1. Grades (0–5) for each rater (row) and model index (column). Numeric labels in cells. Order 1–13 matches `viz/build_llm_example_grading.py` `RUN_SPECS` and the Zooniverse README.*",
+        (
+            f"- **Cronbach’s α** (13 models × **{len(cols26)}** columns): **{alpha:.3f}**"
+            if alpha is not None
+            else "- **Cronbach’s α**: (undefined — fewer than two rater columns)"
+        ),
+        *pairwise_md,
         "",
-        f"![Mean ± SD](charts/20260503_02_ztf26_mean_sd_by_model.png)",
+        f"![Heatmap]({CHART_MD_PREFIX}/20260503_01_ztf26_rater_heatmap.png)",
         "",
-        "*Fig 2. Mean human score ±1 SD across raters; **each bar is labeled with the mean** (two decimals).*",
+        "*Fig 1. Grades 0–5; rows = §1 raters; columns = model index.*",
         "",
-        f"![Pairwise](charts/20260503_03_rater_pairwise_scatter.png)",
+        f"![Mean ± SD]({CHART_MD_PREFIX}/20260503_02_ztf26_mean_sd_by_model.png)",
         "",
-        "*Fig 3. Pairwise scatter (13 models per panel); dashed line y = x.*",
+        "*Fig 2. Mean ±1 SD across **five** §1 graders.*",
         "",
-        "### 1.2 Who disagrees how much? (mean absolute grade gap)",
+        f"![Rater correlation matrix]({CHART_MD_PREFIX}/20260503_03_rater_pairwise_scatter.png)",
         "",
-        f"![Inter-rater MAE](charts/20260503_09_inter_rater_mae_heatmap.png)",
+        "*Fig 3. Pearson **r** matrix between grader columns (legacy filename).*",
         "",
-        "*Fig 1b. Off-diagonal entries: mean |grade_i − grade_j| across the 13 models. Diagonal is 0.*",
+        "### 1.3 Mean absolute pairwise disagreement",
         "",
-        "### 1.3 Fourth perspective: expert highlight tone vs mean Zooniverse grade",
+        f"![Inter-rater MAE]({CHART_MD_PREFIX}/20260503_09_inter_rater_mae_heatmap.png)",
+        "",
+        "*Fig 1b. Off-diagonal mean |Δgrade|.*",
+        "",
+        "### 1.4 Highlight tone vs blended §1 mean",
         *docx_md_lines,
     ]
     if docx_path is not None:
         md_lines += [
             "",
-            f"![Docx vs Zooniverse](charts/20260503_10_docx_tone_vs_zooniverse_mean.png)",
+            f"![Docx tone vs §1 mean]({CHART_MD_PREFIX}/20260503_10_docx_tone_vs_zooniverse_mean.png)",
             "",
-            "*Fig 1c. One point per model index; point labels show index. Color encodes model index.*",
+            "*Fig 1c. **y** = §1 blended mean (4× Zoon **X** + Matthew `.docx` **Your Grading**).*",
             "",
         ]
     md_lines += [
-        "### 1.4 Model index ↔ system",
+        "### 1.5 Model index ↔ system",
         "",
         "| Idx | Model |",
         "|:---:|:---|",
@@ -845,13 +1130,25 @@ def main() -> None:
         md_lines.append(f"| {i} | {name} |")
     md_lines += [
         "",
-        "## 2. Self-scores vs human grades (pooled and per-alert)",
+        "## 2. Five-alerts §2 panel (workflow **(D)** → **ZTF25aaxmsns**)",
         "",
-        "For each (OID, model) we join benchmark `run.jsonl` **Part B** numeric self-scores with the **mean human** grade "
-        "(ZTF26: mean of three raters; other OIDs: single rater).",
+        "**Streams:** expert **ZTF19abfqvbg** (`.docx`) plus Zooniverse **(A, B, C, D)**. "
+        "**(X)** is **§1-only** on **ZTF26aargnnp**. **(D)** targets **`ZTF25aaxmsns` (SN)**, not ZTF26. "
+        "Pooled plots use **five OIDs** × 13 models: "
+        f"`{', '.join(SECTION2_OIDS)}`.",
+        "",
+        f"![Per-model profile]({CHART_MD_PREFIX}/20260503_13_per_model_profile_four_oid_means.png)",
+        "",
+        "*Fig 13. Mean human grade on each §2 OID (**D** = SN **ZTF25aaxmsns**).*",
+        "",
+        "## 3. Self-scores vs human grades (pooled and per-alert)",
+        "",
+        "(OID, model) rows join Part B self-scores to **`human_mean`** from §2. "
+        "**ZTF25aaxmsns** comes from workflow **(D)** only. **ZTF26aargnnp** appears only in §1 (X + Matthew). "
+        "**ZTF19abfqvbg** = expert `.docx`; **(A–C)** = Zooniverse.",
         skip_note,
         "",
-        "### 2.1 Pooled linear and ordinal summaries",
+        "### 3.1 Pooled linear and ordinal summaries",
         "",
         f"- **Pooled Pearson r** (n = {len(m)}): mean self (**key + lead + alt**) vs human mean → **r = {r_all:.3f}**, p = {p_all:.2e}",
         *pooled_extra,
@@ -859,21 +1156,22 @@ def main() -> None:
         f"- **Pooled Pearson r** (n = {len(m2)}): mean self (**lead + alt only**) vs human mean → **r = {r_q23:.3f}**, p = {p_q23:.2e}",
         *pooled_q23,
         "",
-        "Self-reported Part B scores are on the same 1–5 rubric as the human task, but **LLM self-judgment need not track external graders**; the weak pooled linear correlation can coexist with a strong correctness signal (§3).",
+        "Self-reported Part B scores use the same 1–5 rubric as the human task, but need not track external graders; "
+        "weak pooled linear correlation can coexist with a strong correctness signal (§4).",
         "",
-        f"![Scatter all self](charts/20260503_04_scatter_self_all_vs_human.png)",
+        f"![Scatter all self]({CHART_MD_PREFIX}/20260503_04_scatter_self_all_vs_human.png)",
         "",
-        f"![Scatter q23](charts/20260503_05_scatter_self_q23_vs_human.png)",
+        f"![Scatter q23]({CHART_MD_PREFIX}/20260503_05_scatter_self_q23_vs_human.png)",
         "",
         "*Fig 4–5. One point per (OID, model); colors = OID.*",
         "",
-        "### 2.2 Per-model across-OID correlation (four points per bar)",
+        "### 3.2 Per-model across-OID correlation (five OIDs per bar)",
         "",
-        f"![Per-model r](charts/20260503_08_bar_per_model_correlation.png)",
+        f"![Per-model r]({CHART_MD_PREFIX}/20260503_08_bar_per_model_correlation.png)",
         "",
-        "*Fig 6. Pearson r between mean self (3 fields) and human mean; **each bar labeled with r**.*",
+        "*Fig 6. Pearson r between mean self (3 fields) and human mean; bars labeled.*",
         "",
-        "### 2.3 Per-alert correlation (13 models per OID)",
+        "### 3.3 Per-alert correlation (13 models per OID)",
         "",
         "| OID | n (models with complete self + human) | Pearson r (self all vs human) |",
         "|---|---:|---:|",
@@ -881,11 +1179,11 @@ def main() -> None:
     md_lines.extend(per_oid_table_rows)
     md_lines += [
         "",
-        f"![Per-OID r](charts/20260503_12_per_oid_pearson_self_vs_human.png)",
+        f"![Per-OID r]({CHART_MD_PREFIX}/20260503_12_per_oid_pearson_self_vs_human.png)",
         "",
-        "*Fig 6b. Same numbers as the table; labels on bars.*",
+        "*Fig 6b. Same numbers as the table.*",
         "",
-        "## 3. Benchmark correctness vs human grades",
+        "## 4. Benchmark correctness vs human grades",
         "",
         f"- **Point-biserial r** (correctness × human mean): **r = {pb_r:.3f}**, p = {pb_p:.2e}"
         if not np.isnan(pb_r)
@@ -893,28 +1191,27 @@ def main() -> None:
         f"- **Pooled mean human grade** when Part C is **correct** (n = {nc_pool}): **{mean_h_correct:.2f}**; "
         f"when **incorrect** (n = {nw_pool}): **{mean_h_wrong:.2f}** (same rows as Fig 7a).",
         "",
-        f"![Row counts](charts/20260503_11_correctness_row_counts.png)",
+        f"![Row counts]({CHART_MD_PREFIX}/20260503_11_correctness_row_counts.png)",
         "",
-        "*Fig 7a. Pooled row counts (OID × model) with Part C correct vs incorrect; **n printed on each bar**.*",
+        "*Fig 7a. Pooled row counts (OID × model) with Part C correct vs incorrect; **n** on each bar.*",
         "",
-        f"![Violin correctness](charts/20260503_06_violin_human_by_correctness.png)",
+        f"![Violin correctness]({CHART_MD_PREFIX}/20260503_06_violin_human_by_correctness.png)",
         "",
-        f"![By model split](charts/20260503_07_bar_mean_human_correct_vs_wrong_by_model.png)",
+        f"![By model split]({CHART_MD_PREFIX}/20260503_07_bar_mean_human_correct_vs_wrong_by_model.png)",
         "",
-        "*Fig 7b–7c. Human grades are typically **lower** when Part C is incorrect; per-model paired bars show means with **numeric labels**.*",
+        "*Fig 7b–7c. Human grades are typically lower when Part C is incorrect.*",
         "",
-        "## 4. Expert highlight documents (qualitative)",
+        "## 5. Expert highlight documents (qualitative)",
         "",
         "Red / yellow / green markup for Part B reasoning is summarized in "
-        "[`20260430_report_llm_grading_docx_highlights.md`](20260430_report_llm_grading_docx_highlights.md). "
-        "Use it alongside §1.3–1.4 here for ZTF26aargnnp and alongside the Zooniverse bundle README for context.",
+        "[`20260430_report_llm_grading_docx_highlights.md`](20260430_report_llm_grading_docx_highlights.md).",
         "",
-        "## 5. Other angles worth extending",
+        "## 6. Extensions",
         "",
-        "- **ICC(2,1)** or full many-facet Rasch if more subjects and raters are added.",
-        "- **Per-field human scores** if the UI later separates key vs lead vs alt.",
-        "- **Alert difficulty**: separate calibration per `target_class` (bogus vs asteroid vs AGN vs VS).",
-        "- **Joint model**: ordinal mixed-effects with rater random intercepts.",
+        "- **ICC(2,1)** or many-facet Rasch if more subjects and raters are added.",
+        "- **Per-field** human scores if the UI separates key vs lead vs alt.",
+        "- **Alert difficulty**: separate calibration per `target_class`.",
+        "- **Ordinal mixed-effects** with rater random intercepts.",
         "",
         "---",
         "",

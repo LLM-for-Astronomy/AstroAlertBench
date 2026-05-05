@@ -34,7 +34,10 @@ OUT_DIR = PROJECT_ROOT / "temporary_files"
 BENCHMARK_TEX = OUT_DIR / "benchmark_visualization.tex"
 OUT_TEX = OUT_DIR / "second_rollout_two_examples_visualization.tex"
 
-GEMINI_OID = "ZTF17aadbpuu"
+# Wrong→wrong Gemini 2.5 Flash (none). Constraints: gold != bogus; not bogus on
+# *both* trials (one bogus trial would be OK, but we pick a cleaner pattern: non-bogus
+# wrong labels on both passes). Prior OIDs dropped due to montage/production issues.
+GEMINI_OID = "ZTF24ablarbs"
 OPUS_OID = "ZTF21abculew"
 
 GEMINI_JSONL = PROJECT_ROOT / "results" / "second_rollout_gemini25_flash_none_n35.jsonl"
@@ -245,8 +248,7 @@ def _example_section(
         "\n\\centering\n"
         rf"\includegraphics[width=0.88\textwidth]{{{rel}}}"
         "\n"
-        rf"\caption{{Science--Reference--Difference montage for \texttt{{{oid}}}. "
-        rf"On Overleaf use \texttt{{{rel}}}.}}"
+        rf"\caption{{Science--Reference--Difference montage for \texttt{{{oid}}}.}}"
         "\n\\end{figure}\n\n"
     )
     blocks: list[str] = [
