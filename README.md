@@ -1,4 +1,4 @@
-# LLM for astronomy — ZTF / ALeRCE stamp benchmark
+# AstroAlertBench / LLM for astronomy benchmark
 
 ![AstroAlertBench pipeline: first-alert inputs → prompt construction → structured model response (Parts A–C)](assets/AstroAlertBench%20Pipeline.png)
 
