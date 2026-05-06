@@ -26,11 +26,11 @@ data/*_backup_*.csv
 
 # Model API outputs (regenerate with run_tinker_benchmark.py)
 results/
+runs/
 
 # Results (regenerate with evaluate.py & skill log-experiment)
-runs/
 visualization/
-runs_comparison/
+results_comparison/
 viz/
 
 # Files from other projects for reference
@@ -38,7 +38,6 @@ viz/
 
 # Temporary files
 temporary_files/
-gitignore/
 
 # Website
 website/
