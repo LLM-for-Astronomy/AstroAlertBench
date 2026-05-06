@@ -6,8 +6,10 @@ Pillow>=10.0
 
 # Tinker stack (imported by run/retry scripts even when using another --backend)
 tinker>=0.10
-tinker-cookbook>=0.1
-transformers>=4.40
+# 0.1.x pins transformers<5 (needs huggingface-hub 0.x). 0.3.x allows transformers 5.x ↔ hub 1.x.
+tinker-cookbook>=0.3.0
+# tinker-cookbook currently caps transformers<=5.3; keep within that until they relax the pin.
+transformers>=5.0,<=5.3.0
 torch
 
 # Other API backends (used when passing --backend openai|google|anthropic)

@@ -1,15 +1,23 @@
-# LLM for astronomy — ZTF / ALeRCE stamp benchmark
+# AstroAlertBench / LLM for astronomy benchmark
 
-Vision–language benchmark on **ZTF** alerts brokered by [ALeRCE](https://science.alerce.online/): tabular metadata plus a **single RGB stamp montage** per object (science, reference/template, difference). API reference: [api.alerce.online](https://api.alerce.online/ztf/v1).
+![AstroAlertBench pipeline: first-alert inputs → prompt construction → structured model response (Parts A–C)](assets/AstroAlertBench%20Pipeline.png)
 
-**What a `git clone` includes (tracked in this repo):**
+> **Codebase for the paper _AstroAlertBench: Evaluating the Accuracy, Reasoning, and Honesty of Multimodal LLMs in Astronomical Classification_.**
+> A multimodal benchmark of first-detection ZTF alerts evaluated on frontier closed-source and open-weight VLMs along a three-stage logical chain: metadata grounding (Part A), scientific rationale (Part B), and staged classification (Part C).
 
-- **`data/manifest_benchmark_final.csv`** — **1 500** rows (300 per class: SN, AGN, VS, asteroid, bogus), columns needed for Part A / Part C scoring.
-- **`stamps_llm_updated/<class>/<oid>/montage.png`** — montages aligned with that manifest (thousands of PNGs).
-- **`results_comparison/report/`** — Markdown reports and **`charts/`** PNGs referenced from those reports.
-- **`data_second_roll_out_ablation/`** — metadata, priors, and **`METRICS_SPEC.md`** for the second-pass ablation.
+Vision–language benchmark on publicly available [ZTF](https://www.ztf.caltech.edu/) alerts brokered by [ALeRCE](https://science.alerce.online/): tabular metadata plus a single RGB stamp montage per object (science, reference/template, difference). API reference: [api.alerce.online](https://api.alerce.online/ztf/v1).
 
-You can rerun models and scoring **without** downloading FITS again. Montage paths come from the **`prompts`** package (default dirname **`stamps_llm_updated`**) unless you set **`ZTF_STAMPS_LLM_DIR`**.
+## Benchmark data (Hugging Face)
+
+The public **primary benchmark assets** (1 500-row manifest, stamp montages, second-rollout ablation files, and Hub dataset card) are released on the Hugging Face Hub:
+
+[https://huggingface.co/datasets/AnonymousUser16384/AstroAlertBench](https://huggingface.co/datasets/AnonymousUser16384/AstroAlertBench)
+
+Clone or download that dataset, then point this codebase at the files (e.g. place montages under **`stamps_llm_updated/`** at the repo root, or set **`ZTF_STAMPS_LLM_DIR`** to the directory that contains the class/`oid`/`montage.png` layout).
+
+**This Git repository** is intended for **code** (runners, prompts, scorers): **`api_settings/`**, **`prompts/`**, **`evaluate/`**, **`run/`**, and small local copies of manifests if you keep them for development. Avoid re-hosting the full PNG tree on GitHub when the Hub dataset is the canonical source.
+
+You can rerun models and scoring **without** downloading FITS again once montages are available locally. Montage paths come from the **`prompts`** package (default dirname **`stamps_llm_updated`**) unless you set **`ZTF_STAMPS_LLM_DIR`**.
 
 ## Setup
 
@@ -36,7 +44,7 @@ The batch scripts under **`run/`** prepend **`api_settings/`**, **`evaluate/`**,
 
 If **`viz/`** is missing from your tree, those runners fall back to **`run._runmeta`** instead of **`viz._runmeta`** for the runmeta sidecar.
 
-## Zero-shot evaluation (structured JSON, Parts A–C)
+## Evaluation (structured JSON, Parts A–C)
 
 **Backends** (env vars in **`.env`** / environment):
 
@@ -65,7 +73,3 @@ python -m evaluate.evaluate --predictions predictions_run1.jsonl --manifest data
 - **Part C gold:** `target_class` (SN, AGN, VS, asteroid, bogus).
 
 **Second-rollout ablation:** `python run/run_second_rollout_benchmark.py …`, then **`python -m evaluate.evaluate_second_rollout_ablation …`** — see **`data_second_roll_out_ablation/METRICS_SPEC.md`** and **`data_second_roll_out_ablation/README.md`**.
-
-## Reports and figures (in-repo)
-
-**`results_comparison/report/`** holds narrative markdown and **`charts/`** PNGs. Figures are checked in for reading and reuse in papers.
