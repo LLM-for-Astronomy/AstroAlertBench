@@ -1,5 +1,0 @@
-"leading_interpretation_and_support": "Variable Star. The high ndethist confirms the object is real and persistent. The presence of the source in the Template rules out a supernova. The isdiffpos='f' and the residual in the difference image indicate brightness variability. The classtar score > 0.5 supports a stellar classification over an AGN or galaxy."
-"alternative_analysis": "AGN is a secondary possibility because the PS1 neighbor has a low sgscore1 (0.155), suggesting it might be a galaxy. If the candidate is associated with this galaxy, it could be an AGN. However, the stellar classtar score and lack of visible host structure in the cutouts make a foreground variable star more likely."
-LLM's Classification: VS
-Correct Class: AGN
-Your Grading: 

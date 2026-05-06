@@ -1,5 +1,0 @@
-"leading_interpretation_and_support": "Leading interpretation: supernova. A new point-like positive-flux source coincident (within 0.4\") with a PS1 galaxy that has not been detected here before, despite 2800 prior coverages, is the classic signature of a SN near/on its host. FWHM ~1.14 px and classtar 0.94 are consistent with a point source, compatible with a SN PSF detection."
-"alternative_analysis": "Alternative: AGN nuclear variability, since the transient sits on a galaxy (sgscore1=0, distpsnr1~0.4\"). However, no prior detections at this well-covered position (ndethist=1/ncovhist=2800) argue against long-term AGN-like variability being easily recovered; a single first-detection flare on a host is more typical of a SN. An asteroid is unlikely given the near-perfect coincidence with a PS1 galaxy."
-LLM's Classification: SN
-Correct Class: SN
-Your Grading: 

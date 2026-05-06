@@ -1,5 +1,0 @@
-"leading_interpretation_and_support": "Variable Star. The high classtar (0.983) and sharpness indicate a stellar object. The high ncovhist (1489) confirms the telescope has repeatedly observed this sky position, yet ndethist is only 1. This implies the object is faint or variable and was only detected above threshold in this specific epoch. The Science vs Template comparison shows the source is present in both but significantly brighter in Science, consistent with a variable star (e.g., RR Lyrae, Cepheid) or a flare."
-"alternative_analysis": "Asteroid. The low ndethist (1) is a common signature for moving objects that are not linked across epochs. However, the Science and Template images show the source at the same geometric center in both frames, with no visible streak or offset relative to the background stars. A moving asteroid would typically show a positional shift between Science and Template or a streak in the difference image if the motion was significant during the exposure. The lack of motion evidence makes the asteroid hypothesis less likely than a variable star."
-LLM's Classification: VS
-Correct Class: asteroid
-Your Grading: 

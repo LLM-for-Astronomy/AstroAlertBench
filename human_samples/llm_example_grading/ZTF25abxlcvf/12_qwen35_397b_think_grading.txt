@@ -1,5 +1,0 @@
-"leading_interpretation_and_support": "AGN. The source is persistent (present in Template) and variable (positive residual in Difference), ruling out Supernova. It is stationary (aligned in Science/Template), ruling out Asteroid. The PS1 match classifies the host as a galaxy (sgscore1=0), while the ZTF morphology is point-like (classtar=0.94), which is characteristic of an AGN nucleus dominating the ZTF resolution."
-"alternative_analysis": "Variable Star is the main alternative if the PS1 galaxy classification is a misidentification or if the source is a foreground star aligned with a background galaxy. However, the close match (0.39 arcsec) and galaxy score make AGN more likely. Bogus is unlikely due to the clean residual and presence in the Template."
-LLM's Classification: AGN
-Correct Class: SN
-Your Grading: 

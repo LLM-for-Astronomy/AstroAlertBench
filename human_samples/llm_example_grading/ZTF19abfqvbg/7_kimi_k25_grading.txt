@@ -1,5 +1,0 @@
-"leading_interpretation_and_support": "AGN. The combination of a galaxy-like host (low sgscore1), multi-year variability (deltajd~3 years), and repeated detections (ndethist=17) is characteristic of active galactic nucleus variability. The negative subtraction indicates the AGN has faded from its historical reference brightness."
-"alternative_analysis": "A slowly fading supernova could produce a negative subtraction, but the long timespan (>3 years) and high number of detections are atypical for a single SN event and better match recurrent AGN activity. A bogus artifact is unlikely given the coherent point-source morphology and association with a cataloged galaxy."
-LLM's Classification: AGN
-Correct Class: AGN
-Your Grading: 

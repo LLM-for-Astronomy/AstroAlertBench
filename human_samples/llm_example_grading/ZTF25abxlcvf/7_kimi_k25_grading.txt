@@ -1,5 +1,0 @@
-"leading_interpretation_and_support": "Supernova. The evidence supports a point-like transient explosion on a pre-existing galaxy. The high survey coverage with only one detection indicates the object recently appeared, consistent with a supernova. The lack of motion between Science and Template images and the close physical association with a galaxy host (distpsnr1=0.39\") favor a stationary astrophysical transient over a moving solar system object. The point-like morphology (classtar=0.942) matches unresolved supernova emission."
-"alternative_analysis": "Asteroid (solar system): While ndethist=1 is consistent with an asteroid, the lack of detectable motion or offset between the Science and Template images, combined with the extremely close proximity to a galaxy host (0.39\"), makes a chance alignment unlikely. Bogus: The difference image appears noisy, but the coherent point-source detections in Science and Template at the galaxy location, combined with the specific metadata values, support a real astrophysical origin over a subtraction artifact."
-LLM's Classification: SN
-Correct Class: SN
-Your Grading: 

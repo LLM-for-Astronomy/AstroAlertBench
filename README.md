@@ -1,6 +1,15 @@
 # LLM for astronomy — ZTF / ALeRCE stamp benchmark
 
-Scripts to build a **stamp_classifier** benchmark from [ALeRCE](https://science.alerce.online/) (ZTF): 500 objects per class (SN, AGN, VS, asteroid, bogus), metadata, FITS stamps, and LLM-oriented PNG montages.
+Vision–language benchmark on **ZTF** alerts brokered by [ALeRCE](https://science.alerce.online/): tabular metadata plus a **single RGB stamp montage** per object (science, reference/template, difference). API reference: [api.alerce.online](https://api.alerce.online/ztf/v1).
+
+**What a `git clone` includes (tracked in this repo):**
+
+- **`data/manifest_benchmark_final.csv`** — **1 500** rows (300 per class: SN, AGN, VS, asteroid, bogus), columns needed for Part A / Part C scoring.
+- **`stamps_llm_updated/<class>/<oid>/montage.png`** — montages aligned with that manifest (thousands of PNGs).
+- **`results_comparison/report/`** — Markdown reports and **`charts/`** PNGs referenced from those reports.
+- **`data_second_roll_out_ablation/`** — metadata, priors, and **`METRICS_SPEC.md`** for the second-pass ablation.
+
+You can rerun models and scoring **without** downloading FITS again. Montage paths come from the **`prompts`** package (default dirname **`stamps_llm_updated`**) unless you set **`ZTF_STAMPS_LLM_DIR`**.
 
 ## Setup
 
@@ -8,74 +17,55 @@ Scripts to build a **stamp_classifier** benchmark from [ALeRCE](https://science.
 pip install -r requirements.txt
 ```
 
-## Download data (FITS + manifest)
+Copy **`.env.example`** → **`.env`** (the real `.env` is not committed) and add API keys for the backends you use.
 
-Refetches ranked pools and fills **500 stamps per class** (skips failed stamp URLs and takes the next-highest-probability object).
+Work **from the repository root** so relative paths like `data/...` match the scripts.
 
-```bash
-python download_alerce_benchmark.py --rebuild
-```
+The benchmark manifest already includes broker fields the scorer expects (e.g. **`fid`**, **`isdiffpos`**, **`fid_band`**). For a custom CSV, match that schema; **`data/manifest_enriched.csv`** is a tracked example of the enriched column layout.
 
-Outputs: `data/manifest.csv`, `data/summary.json`, `data/replacement_skips.log`, and cutouts under `stamps_original/<class>/<oid>/` (raw FITS: science, template, difference).
+## Source layout (main Python)
 
-## Build PNG montages for LLMs
+| Directory | Role |
+|-----------|------|
+| **`api_settings/`** | `api_tinker.py`, `api_openai.py`, `api_anthropic.py`, `api_google.py` |
+| **`prompts/`** | `prompts.py` (default task text + schema), `prompts_*.py` variants (same API surface) |
+| **`evaluate/`** | `evaluate.py` (metrics / JSONL scoring), `evaluate_second_rollout_ablation.py` |
+| **`run/`** | `run_tinker_benchmark.py`, `retry_failed.py`, `run_second_rollout_benchmark.py`, `_runmeta.py` (wall-clock sidecar) |
 
-```bash
-python build_stamps_llm_montages.py
-```
+The batch scripts under **`run/`** prepend **`api_settings/`**, **`evaluate/`**, **`prompts/`**, and the repo root to `sys.path` so existing **`import api_tinker`**, **`from evaluate import …`**, **`import prompts`**, and **`importlib.import_module("prompts_agn_instruction")`**-style `--prompts` values keep working. You can invoke them as **`python run/run_tinker_benchmark.py …`** or **`python -m run.run_tinker_benchmark …`** from the root.
 
-Configure the script (or copy outputs) so montages live under **`stamps_llm_updated/<class>/<oid>/montage.png`** (Science \| Template \| Image) from FITS in `stamps_original/`. **`stamps_llm/`** is an older tree kept only for comparison or legacy reruns. Original FITS are unchanged.
+If **`viz/`** is missing from your tree, those runners fall back to **`run._runmeta`** instead of **`viz._runmeta`** for the runmeta sidecar.
 
-**API / batch runners** (`api_*.py`, `run_tinker_benchmark.py`, viz helpers) resolve montages via `prompts.STAMPS_LLM_DIRNAME`, default **`stamps_llm_updated`**. To point at the legacy tree for one session, set `ZTF_STAMPS_LLM_DIR=stamps_llm`.
+## Zero-shot evaluation (structured JSON, Parts A–C)
 
-## Zero-shot evaluation (Tinker API)
+**Backends** (env vars in **`.env`** / environment):
 
-Requires `TINKER_API_KEY` from the [Tinker console](https://tinker-console.thinkingmachines.ai/) and optional extra packages (`tinker`, `tinker-cookbook`, `transformers`, `torch`, `python-dotenv` — see `requirements.txt`). Put the key in **`.env`** as `TINKER_API_KEY=...` (file is gitignored); `api_tinker.py` loads it automatically.
+| Used by | Env / notes |
+|---------|-------------|
+| `api_settings/api_tinker.py` | `TINKER_API_KEY` — [Tinker console](https://tinker-console.thinkingmachines.ai/) |
+| `api_settings/api_openai.py` | `OPENAI_API_KEY` |
+| `api_settings/api_anthropic.py` | `ANTHROPIC_API_KEY` (install `anthropic` if needed) |
+| `api_settings/api_google.py` | `GOOGLE_API_KEY` |
 
-Pipeline matches AstroAlertBench-style **inputs → prompt → structured JSON (Parts A–C)**; prompts live in `prompts.py` and are used by `api_tinker.py`. Alternate module: `prompts_agn_instruction` (same full metadata as `prompts.py` plus extra system text on using PS1 colors and `sgscore1`/`distpsnr1` for **AGN vs variable_star** in Part B/C).
+**Prompt modules:** default is the package **`prompts`** (implemented in **`prompts/prompts.py`**). Alternatives are the same filenames as before, e.g. **`prompts_agn_instruction`**, **`prompts_second_roll_out_ablation`**, **`prompts_expert_example_ablation`**, **`prompts_token_limit_instruction`** (passed to **`--prompts`** on the run scripts).
 
-```bash
-set TINKER_API_KEY=your_key
-python run_tinker_benchmark.py --manifest data/manifest_enriched.csv --limit 20 --out results/run1.jsonl
-python evaluate.py --predictions results/run1.jsonl --manifest data/manifest_enriched.csv
-```
-
-- **Images:** one **montage PNG** per object is sent with the user text. On the PNG the panels are labeled **Science \| Template \| Image**; **Image** is the difference (DIA) panel, not a second science frame.
-- **Metadata:** prompts use **raw ZTF-style candidate fields** (e.g. `fid`, `isdiffpos`) plus a short field reference in the system message (see [ZTF Avro schema](https://zwickytransientfacility.github.io/ztf-avro-alert/schema.html)). Part A still asks for decoded `filter_band` (g/r/i) and `subtraction_sign` (positive/negative); evaluation gold uses `fid_band` and `isdiffpos` from the CSV. **Required columns:** `fid` and `isdiffpos` must be present — use **`manifest_enriched.csv`** after `python enrich_manifest_alerce.py` (`query_detections` + `get_avro` per object; requires `fastavro`). If they are missing, `run_tinker_benchmark.py` exits with an error at startup.
-
-## Repository layout
-
-| Path | Description |
-|------|-------------|
-| `download_alerce_benchmark.py` | ALeRCE API download + replacement logic |
-| `build_stamps_llm_montages.py` | FITS → labeled PNG montages |
-| `prompts.py` | System + user prompts (Parts A–C, JSON schema); **`STAMPS_LLM_DIRNAME`** / `ZTF_STAMPS_LLM_DIR` for montage root (default `stamps_llm_updated`) |
-| `prompts_agn_instruction.py` | Same as `prompts.py` user metadata + extended system guidance for AGN vs variable star |
-| `api_tinker.py` | Tinker VLM sampling (Qwen3-VL + montage) |
-| `run_tinker_benchmark.py` | Batch JSONL runner |
-| `evaluate.py` | Parse JSON outputs; accuracy vs manifest |
-| `enrich_manifest_alerce.py` | Fetch `magpsf`, `sgscore*`, `fid_band`, etc. from ALeRCE AVRO/detections |
-| `data/` | Manifest and summary (tracked) |
-| `stamps_original/`, `stamps_llm/` | Large binaries — **not** tracked (FITS + optional legacy montages); regenerate or copy locally |
-| `stamps_llm_updated/` | Default PNG montages for VLMs — **can be tracked** in git if you want the repo self-contained |
-
-## Documentation website (sidebar, Gymnasium-style)
-
-A VitePress site with a left-hand nav lives under **`website/`**. From that directory: `npm install`, then `npm run dev` (local) or `npm run build` (static output in `website/.vitepress/dist/` for GitHub Pages or any static host). See `website/README.md`.
-
-## GitHub
-
-Repository: [github.com/Cruuusade/LLM_FOR_ASTRONOMY](https://github.com/Cruuusade/LLM_FOR_ASTRONOMY)
-
-**First-time push** (after creating the empty repo on GitHub):
+Example (Tinker batch + scorer):
 
 ```bash
-cd /path/to/ZTF_Adjusted_Dataset
-git remote add origin https://github.com/Cruuusade/LLM_FOR_ASTRONOMY.git   # skip if already added
-git branch -M main
-git push -u origin main
+# Windows PowerShell; use export on Unix.
+$env:TINKER_API_KEY="your_key"
+python run/run_tinker_benchmark.py --manifest data/manifest_benchmark_final.csv --out predictions_run1.jsonl --model moonshotai/Kimi-K2.5 --concurrency 32 --prompts prompts
+python -m evaluate.evaluate --predictions predictions_run1.jsonl --manifest data/manifest_benchmark_final.csv
 ```
 
-If `git push` asks for credentials, use a [Personal Access Token](https://github.com/settings/tokens) (classic: enable `repo` scope) as the password, or install [GitHub CLI](https://cli.github.com/) and run `gh auth login`.
+`--model` overrides **`TINKER_MODEL`** in `.env`; `--concurrency` parallelizes API calls (start at **32** for Tinker unless your rate limits are tight); **`--prompts`** names the module under **`prompts/`** (default **`prompts`**; try **`prompts_agn_instruction`** for the AGN vs VS guidance variant). Other backends add **`--backend`** and matching keys — see the header examples in **`run/run_tinker_benchmark.py`**.
 
-Raw FITS under `stamps_original/` (and optional legacy `stamps_llm/`) are **not** tracked. PNG montages in **`stamps_llm_updated/`** may be committed so clones get the same VLM inputs without rebuilding from FITS.
+- **Images:** one montage PNG per row; layout under **`stamps_llm_updated`** (or **`ZTF_STAMPS_LLM_DIR`**).
+- **Part A gold:** manifest vs [ZTF Avro alert schema](https://zwickytransientfacility.github.io/ztf-avro-alert/schema.html) semantics; **`fid`**, **`isdiffpos`**, and related fields must match what the runner expects.
+- **Part C gold:** `target_class` (SN, AGN, VS, asteroid, bogus).
+
+**Second-rollout ablation:** `python run/run_second_rollout_benchmark.py …`, then **`python -m evaluate.evaluate_second_rollout_ablation …`** — see **`data_second_roll_out_ablation/METRICS_SPEC.md`** and **`data_second_roll_out_ablation/README.md`**.
+
+## Reports and figures (in-repo)
+
+**`results_comparison/report/`** holds narrative markdown and **`charts/`** PNGs. Figures are checked in for reading and reuse in papers.

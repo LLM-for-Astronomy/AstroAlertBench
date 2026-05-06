@@ -2,7 +2,7 @@
 
 Paired design: for each model, the same **n = 35** alerts are scored on **first pass** (full-benchmark JSONL) and **second pass** (re-prompt with prior JSON embedded; no gold label revealed).
 
-Low-confidence pool (per model): rows where **mean of the three Part B self-scores** is **strictly &lt; 4**, and Part C parses to a valid 5-class prediction (same rule as `evaluate.py` Part B↔C linkage). Gold class = manifest `target_class`.
+Low-confidence pool (per model): rows where **mean of the three Part B self-scores** is **strictly &lt; 4**, and Part C parses to a valid 5-class prediction (same rule as `evaluate.scoring` Part B↔C linkage). Gold class = manifest `target_class`.
 
 Stratified n = 35: proportional to the **class counts inside that model’s low-confidence pool** (Hamilton largest-remainder rounding to exactly 35). Within each class, random sample without replacement (`--random-seed`, default 42).
 
@@ -18,7 +18,7 @@ Stratified n = 35: proportional to the **class counts inside that model’s low-
 | **Net accuracy delta (ΔA)** | \(\text{mean}(\mathbf{1}[\text{correct}_2]) - \text{mean}(\mathbf{1}[\text{correct}_1])\) on the **same 35 rows**. | Signed; can be negative if damage dominates. |
 | **Contingency counts** | `n_cc`, `n_cw`, `n_wc`, `n_ww` | Full 2×2 for appendix tables. |
 
-5-class correctness: `evaluate.stages_to_final_class` on normalized Part C stages vs manifest `target_class` (SN / VS / AGN / bogus / asteroid).
+5-class correctness: `evaluate.scoring.stages_to_final_class` on normalized Part C stages vs manifest `target_class` (SN / VS / AGN / bogus / asteroid).
 
 ---
 
@@ -48,9 +48,9 @@ Stratified n = 35: proportional to the **class counts inside that model’s low-
 
 ## 4. Outputs produced by tooling
 
-- `viz/build_second_rollout_ablation.py` — builds `metadata/*.csv`, `priors/<slug>/*.json`, and `ablation_summary.json` (pool stats + chosen OIDs).
-- `run_second_rollout_benchmark.py` — runs second pass; writes JSONL with `ablation_prior_file`, `first_pass_*` echoes for evaluation.
-- `evaluate_second_rollout.py` — reads first snapshot from each JSONL row + second model output; writes `results/second_rollout_<slug>.metrics.json` and optional markdown snippet.
+- Maintainer checkouts may include scripts that rebuild `metadata/*.csv`, `priors/<slug>/*.json`, and `ablation_summary.json` (pool stats + chosen OIDs).
+- **`python -m run.run_second_rollout_benchmark`** — runs second pass; writes JSONL with `ablation_prior_file`, `first_pass_*` echoes for evaluation.
+- **`python -m evaluate.second_rollout_ablation`** — reads first snapshot from each JSONL row + second model output; writes metrics JSON (e.g. `second_rollout_<slug>.metrics.json`) and optional markdown snippet.
 
 ---
 

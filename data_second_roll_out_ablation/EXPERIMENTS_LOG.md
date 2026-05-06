@@ -1,6 +1,6 @@
 # Log — second-rollout **five** experiments (model conditions)
 
-**What this is:** The low-confidence ablation is **five independent second-pass sweeps**—one per **closed** model. Each run draws **n = 35** gold-labelled alerts from **that** model’s own first-pass benchmark pool where **mean Part B self-score (3 dimensions) &lt; 4** and Part C parses to a 5-class label, with **stratified** class counts following Hamilton–largest-remainder quotas (`random_seed = 42` in the build that produced the manifests). The second pass uses the **same** `prompts.py` system rubric plus **second-trial** instructions; the user prompt embeds the model’s **verbatim first-pass JSON** (gold **not** revealed). Prompt module: `prompts_second_roll_out_ablation.py`. Evaluation and metrics: `evaluate_second_rollout.py`; definitions: `data_second_roll_out_ablation/METRICS_SPEC.md`.
+**What this is:** The low-confidence ablation is **five independent second-pass sweeps**—one per **closed** model. Each run draws **n = 35** gold-labelled alerts from **that** model’s own first-pass benchmark pool where **mean Part B self-score (3 dimensions) &lt; 4** and Part C parses to a 5-class label, with **stratified** class counts following Hamilton–largest-remainder quotas (`random_seed = 42` in the build that produced the manifests). The second pass uses the **same** **`prompts`** package system rubric plus **second-trial** instructions; the user prompt embeds the model’s **verbatim first-pass JSON** (gold **not** revealed). Prompt module: **`prompts.second_roll_out_ablation`**. Evaluation: **`python -m evaluate.second_rollout_ablation`**; definitions: `data_second_roll_out_ablation/METRICS_SPEC.md`.
 
 **Source of per-model OIDs, quotas, and first-pass `jsonl` paths:** `data_second_roll_out_ablation/ablation_summary.json`.  
 **Per-model n=35 row manifests (CSV):** `data_second_roll_out_ablation/metadata/<slug>_n35.csv` (see table).
@@ -31,8 +31,8 @@
 ## Repro checklist (per slug)
 
 1. Build / confirm manifests and priors if your pipeline uses them (`metadata/`, `priors/` as applicable).
-2. Run the second pass with `--prompts prompts_second_roll_out_ablation` (or equivalent) and point at the n=35 manifest row list for that model.
-3. `evaluate_second_rollout.py` (or your wrapper) on the new JSONL → `*.metrics.json`.
+2. Run the second pass with default `--prompts prompts.second_roll_out_ablation` (or equivalent) and point at the n=35 manifest row list for that model.
+3. **`python -m evaluate.second_rollout_ablation`** (or your wrapper) on the new JSONL → `*.metrics.json`.
 4. Regenerate figures: `python -m viz._make_charts_second_rollout_apr25` from repository root.
 
 ---

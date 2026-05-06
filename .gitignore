@@ -30,12 +30,18 @@ results/
 # Results (regenerate with evaluate.py & skill log-experiment)
 runs/
 visualization/
+runs_comparison/
+viz/
 
 # Files from other projects for reference
 
 
 # Temporary files
 temporary_files/
+gitignore/
 
-# Local Node deps for docs site
-website/node_modules/
+# Website
+website/
+
+# Human
+human_samples/
