@@ -1,4 +1,4 @@
-﻿"""
+"""
 Tinker API runner for ZTF/ALeRCE benchmark (vision-language, zero-shot).
 
 Pipeline (cf. AstroAlertBench Figure 2):
