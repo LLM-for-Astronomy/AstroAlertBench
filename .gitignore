@@ -31,7 +31,7 @@ runs/
 
 # Results (regenerate with evaluate.py & skill log-experiment)
 visualization/
-results_comparison/
+# results_comparison/
 viz/
 
 # Files from other projects for reference

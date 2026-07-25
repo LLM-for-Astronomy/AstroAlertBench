@@ -1,0 +1,116 @@
+{
+  "n_runs": 13,
+  "accuracy_fits": {
+    "MSRS (paper Fig 5)": {
+      "slope": -31.25629559578747,
+      "slope_se": 10.005503716101607,
+      "intercept": 178.80154705910206,
+      "pearson_r": -0.685641767919437,
+      "pearson_p": 0.00968223242209526,
+      "spearman_rho": -0.6373626373626374,
+      "spearman_p": 0.0191181137774633
+    },
+    "ECE (exact)": {
+      "slope": -80.18202612020168,
+      "slope_se": 16.226935623695912,
+      "intercept": 76.8376003520803,
+      "pearson_r": -0.8303066468601482,
+      "pearson_p": 0.00044168376232278547,
+      "spearman_rho": -0.9120879120879121,
+      "spearman_p": 1.3975552674444554e-05
+    },
+    "Brier": {
+      "slope": -97.55227009315095,
+      "slope_se": 19.765756982062964,
+      "intercept": 85.35479452833258,
+      "pearson_r": -0.8299997022779408,
+      "pearson_p": 0.00044581701692872615,
+      "spearman_rho": -0.8791208791208791,
+      "spearman_p": 7.54456235935913e-05
+    },
+    "Brier skill score": {
+      "slope": 15.158517088431138,
+      "slope_se": 3.6789730579481197,
+      "intercept": 55.13798844259307,
+      "pearson_r": 0.7789861922792769,
+      "pearson_p": 0.0016997978778183639,
+      "spearman_rho": 0.9120879120879121,
+      "spearman_p": 1.3975552674444554e-05
+    },
+    "AUROC": {
+      "slope": 89.32971100421727,
+      "slope_se": 88.67092816384177,
+      "intercept": -10.89670978505368,
+      "pearson_r": 0.2906392985912857,
+      "pearson_p": 0.33537540709324554,
+      "spearman_rho": 0.13186813186813187,
+      "spearman_p": 0.6676075762175147
+    },
+    "resolution": {
+      "slope": 919.9099511730682,
+      "slope_se": 602.2455240631967,
+      "intercept": 32.972130770550685,
+      "pearson_r": 0.4183167767259694,
+      "pearson_p": 0.15487402687577576,
+      "spearman_rho": 0.43956043956043955,
+      "spearman_p": 0.13286024415692976
+    },
+    "BSS after isotonic CV": {
+      "slope": 199.35688110505245,
+      "slope_se": 151.6975347835156,
+      "intercept": 34.232901276793726,
+      "pearson_r": 0.36837385424979063,
+      "pearson_p": 0.21553227040017753,
+      "spearman_rho": 0.34065934065934067,
+      "spearman_p": 0.2547064607541251
+    }
+  },
+  "ranking_agreement": {
+    "spearman_rho": 0.967032967032967,
+    "spearman_p": 7.064113887175154e-08,
+    "kendall_tau": 0.8974358974358972,
+    "kendall_p": 5.508252036029814e-07
+  },
+  "order_pearson": [
+    "Claude Opus 4.7 nothink",
+    "GPT-5.4 no-think",
+    "GPT-5.4 high-think",
+    "Gemini 2.5 Flash no-think",
+    "Qwen3.5-4B nothink",
+    "Qwen3.5-35B-A3B nothink",
+    "Qwen3.5-35B-A3B think",
+    "Qwen3.5-397B-A17B nothink",
+    "Kimi K2.5 think",
+    "Claude Opus 4.7 think",
+    "Gemini 2.5 Pro high-think",
+    "Qwen3.5-4B think",
+    "Qwen3.5-397B-A17B think"
+  ],
+  "order_auroc": [
+    "Claude Opus 4.7 nothink",
+    "GPT-5.4 no-think",
+    "Gemini 2.5 Flash no-think",
+    "GPT-5.4 high-think",
+    "Qwen3.5-4B nothink",
+    "Qwen3.5-397B-A17B nothink",
+    "Qwen3.5-35B-A3B nothink",
+    "Kimi K2.5 think",
+    "Qwen3.5-35B-A3B think",
+    "Claude Opus 4.7 think",
+    "Gemini 2.5 Pro high-think",
+    "Qwen3.5-4B think",
+    "Qwen3.5-397B-A17B think"
+  ],
+  "max_rank_shift": 2,
+  "cluster_preserved": true,
+  "n_auroc_significant": 6,
+  "auroc_not_significant": [
+    "Claude Opus 4.7 think",
+    "Kimi K2.5 think",
+    "Qwen3.5-397B-A17B think",
+    "Gemini 2.5 Pro high-think",
+    "Qwen3.5-397B-A17B nothink",
+    "Qwen3.5-35B-A3B think",
+    "Qwen3.5-4B think"
+  ]
+}
