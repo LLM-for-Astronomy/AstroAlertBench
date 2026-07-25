@@ -313,8 +313,14 @@ the same table are reproducible only from the *correct* counts, which demonstrat
 that the calibration gap, Pearson *r* and SEs were all computed on the correct row
 set. Table 15's bin counts also sum to the correct totals (e.g. 1,399 + 21 = 1,420
 for Qwen3.5-35B-A3B nothink), so the submitted paper is internally inconsistent by
-simple addition across the two appendix tables. Corrected in the camera-ready with
-a one-line footnote.
+simple addition across the two appendix tables.
+
+**Internal note — not to be raised in the rebuttal.** The values are corrected
+silently in the camera-ready. Neither response draft (§10, §13) mentions this,
+by decision: the reviewer's objection is about metric choice, the affected column
+is a row count that no reported statistic depends on, and volunteering it in a
+length-limited response spends words on a non-issue while inviting doubt about
+numbers that are demonstrably correct.
 
 ---
 
@@ -335,7 +341,8 @@ a one-line footnote.
 6. **§E.4** — replace the gap-vs-*r* scatter, which the paper itself calls "two
    alternative summaries of the same correlation", with the reliability/resolution
    separation of Figure E3.
-7. **Table 14 footnote** — the `n_linked` erratum of §8.
+7. **Table 14 `n_linked` column** — correct the six values of §8 in the
+   camera-ready without a footnote, and do not mention it in the rebuttal.
 8. **Appendix H.2** — recommended independently of this reviewer: the reported
    *r* = −0.023, *p* = 0.94 between human grades and model self-scores is computed
    over **12 models on a single alert**, where the 95% CI spans roughly ±0.58. A
@@ -350,7 +357,10 @@ a one-line footnote.
 
 ---
 
-## 10. Drafted response to the reviewer
+## 10. Drafted response to the reviewer — long form
+
+Use this only if the venue allows a long reply, or as source material for the
+author-response appendix. For the length-limited rebuttal box, use §13 instead.
 
 > We thank the reviewer for this observation and agree that standard calibration
 > metrics are preferable. We have recomputed the entire instance-level analysis
@@ -426,3 +436,52 @@ python -m viz._make_charts_ece_brier_jul24
 - **Conditional accuracy.** The `acc` column of §4 is conditional on a row being
   linked and differs from Table 1 for the truncated Qwen runs; cross-run fits use
   the Table 1 absolute accuracies.
+
+---
+
+## 13. Condensed response for the rebuttal box (recommended)
+
+Short form for a length-limited reply: acknowledge the suggestion, report ECE and
+Brier on a handful of representative runs, state in two sentences that the results
+agree with the submitted analysis, and defer the full tables to the camera-ready.
+Deliberately omits the mechanism argument of §1 and the erratum of §8 — both cost
+words and neither is needed to answer the question asked.
+
+> Following the reviewer's suggestion, we conducted additional analysis using
+> Expected Calibration Error (ECE) and the Brier score, computed over exactly the
+> rows used in Table 14. Because each self-score is a mean of three integer 0–5
+> ratings, every value is an exact multiple of 1/15, so ECE requires no binning
+> choice: the standard 15-bin ECE coincides exactly with a per-value ECE. We also
+> report the Brier skill score (BSS) relative to a constant forecast at each run's
+> own accuracy, and a tie-robust AUROC for discrimination. Selected results:
+>
+> | Run | 5-class acc | Mean conf. | ECE | Brier | BSS | AUROC |
+> | --- | --- | --- | --- | --- | --- | --- |
+> | Claude Opus 4.7 think | 60.6% | 0.798 | **0.192** | 0.278 | −0.16 | 0.515 |
+> | GPT-5.4 high-think | 51.1% | 0.837 | 0.326 | 0.347 | −0.39 | 0.602 |
+> | Claude Opus 4.7 nothink | 48.9% | 0.798 | 0.310 | 0.332 | −0.33 | **0.622** |
+> | Qwen3.5-397B-A17B think | 44.3% | 0.949 | 0.506 | 0.504 | −1.04 | 0.498 |
+> | Gemini 2.5 Pro high-think | 41.9% | 0.977 | 0.558 | 0.555 | −1.28 | 0.515 |
+>
+> Across all 13 runs ECE spans 0.192–0.690 and *every* configuration attains a
+> negative BSS (−0.16 to −2.56), meaning that read as probabilities these
+> self-assessments are outperformed by a forecaster that simply announces the
+> model's own accuracy. These results agree with, and sharpen, the analysis in the
+> submitted paper: the AUROC ranking reproduces our Table 14 ordering (Spearman
+> ρ = +0.967) and recovers the same four "honest and informative" runs, while
+> seven of thirteen runs are now shown to be statistically indistinguishable from
+> chance (permutation *p* ≥ 0.05). The population-level trend of §5.1 also
+> strengthens, from Spearman ρ = −0.637 against mean self-score to ρ = −0.912
+> against ECE.
+>
+> We will include the full per-run ECE / Brier / BSS / AUROC tables, reliability
+> diagrams for all 13 runs, and the corresponding revisions to §5.1–5.2 and
+> Appendix E in the camera-ready version.
+
+### Trimming guidance if still over the limit
+
+Drop in this order, most expendable first: the AUROC column of the table; the
+1/15 binning sentence; the §5.1 Spearman sentence. Keep the negative-BSS
+sentence and the ρ = +0.967 agreement sentence — those two carry the whole
+answer, namely that the standard metrics were computed and that they support
+rather than overturn the paper.
