@@ -211,7 +211,7 @@ Accuracy and calibration travel together almost perfectly under the elicited-pro
 
 ![NLL and sharpness](charts/classprob_aug02/12_nll_sharpness.png)
 
-The prior rebuttal computed ECE on \(p = \text{self_mean}/5\) over the full 1,500-alert benchmark. Those numbers are not paired (different \(n\), different prompts), but the *ordering and magnitudes* are informative:
+The prior rebuttal computed ECE on \(p = \text{self_mean}/5\) over the full 1,500-alert benchmark. Those numbers are not OID-paired (different \(n\), different prompts), but the *ordering and magnitudes* are informative as a first bridge. Sections 11–12 below harden this with the **same 300 OIDs** under both protocols:
 
 | Run | ECE (Part B \(c/5\), n≈1500) | ECE (`P_correct`, n=300) | Δ |
 | --- | --- | --- | --- |
@@ -224,16 +224,122 @@ The prior rebuttal computed ECE on \(p = \text{self_mean}/5\) over the full 1,50
 | Gemini Pro | 0.558 | **0.517** | −0.041 |
 | Qwen nothink | 0.600 | **0.545** | −0.055 |
 
-Every point lies **below** the diagonal: asking for a true class probability improves measured calibration relative to remapping a reasoning rubric. The largest gains are on Opus nothink and both GPT-5.4 variants (~0.11 ECE points). Gemini Pro remains badly calibrated either way — the problem is not only the metric mapping.
+Every point lies **below** the diagonal in this unmatched comparison: asking for a true class probability improves measured calibration relative to remapping a reasoning rubric. The largest gains are on Opus nothink and both GPT-5.4 variants (~0.11 ECE points). Gemini Pro remains badly calibrated either way — the problem is not only the metric mapping.
 
-Two further contrasts with the Part B analysis:
+Two further contrasts with the Part B analysis (still unmatched \(n\)):
 
 - **BSS.** Under Part B remapping, every run had BSS ∈ [−0.16, −2.56]. Here Opus is near zero and GPT high is only −0.12. The probability elicitation makes the dial *usable as a forecast* for the frontier models.
 - **Discrimination significance.** All eight AUROCs clear \(p < 0.05\). The Part B protocol left most thinking-enabled runs at chance. The reviewer's requested experiment does not overturn the honesty claim; it makes the discrimination evidence *stronger* while exposing residual calibration gaps that ECE/Brier now measure on the right target.
 
 ---
 
-## 11. Per-family interpretation
+## 11. OID-paired comparison: Part B (0–5) vs `P_correct` (0–1) on the same 300 alerts
+
+Section 10 compared protocols across different sample sizes. Here we restrict each model's *full-benchmark* Part B self-scores to the classprob manifest OIDs and score both dials with the same ECE / Brier / BSS / AUROC suite. The two passes are still separate inferences (so \(Y\) can flip on an OID), but the **alert set is identical**.
+
+![C13 paired bars](charts/classprob_aug02/13_partb_vs_pcorrect_paired_bars.png)
+
+### 11.1 Side-by-side protocol metrics (identical OIDs)
+
+Confidence under Part B is \(c/5\) (rubric mean); under classprob it is elicited `P_correct`. Each column pair uses that protocol's own correctness labels.
+
+| Run | \(n_\mathrm{PB}\) | \(n_\mathrm{P}\) | Acc PB / P | mean conf PB / P | ECE PB / P | BSS PB / P | AUROC PB / P |
+| --- | ---: | ---: | --- | --- | --- | --- | --- |
+| Opus think | 300 | 300 | 0.627 / 0.583 | 0.795 / 0.700 | **0.169 / 0.150** | −0.113 / **−0.017** | 0.547 / **0.616** |
+| Opus nothink | 300 | 300 | 0.507 / 0.510 | 0.798 / 0.698 | 0.292 / **0.201** | −0.283 / **−0.004** | 0.629 / **0.715** |
+| GPT-5.4 high | 300 | 291 | 0.520 / 0.543 | 0.838 / 0.740 | 0.318 / **0.215** | −0.368 / **−0.120** | 0.607 / 0.607 |
+| GPT-5.4 none | 300 | 299 | 0.443 / 0.478 | 0.856 / 0.777 | 0.413 / **0.306** | −0.650 / **−0.282** | 0.617 / **0.661** |
+| Gemini Pro | 300 | 284 | 0.407 / 0.401 | 0.977 / 0.918 | 0.571 / **0.517** | −1.35 / −1.04 | 0.521 / **0.666** |
+| Gemini Flash | 300 | 297 | 0.370 / 0.384 | 0.875 / 0.849 | 0.508 / **0.466** | −1.06 / −0.84 | 0.630 / **0.671** |
+| Qwen think | 296 | 300 | 0.429 / 0.423 | 0.949 / 0.868 | 0.520 / **0.452** | −1.10 / −0.79 | 0.512 / **0.599** |
+| Qwen nothink | 260 | 300 | 0.373 / 0.340 | 0.959 / 0.885 | 0.586 / **0.545** | −1.46 / −1.29 | 0.535 / **0.598** |
+
+Three facts jump out before any ranking test:
+
+1. **ECE improves under `P_correct` for every configuration** (\(\Delta\mathrm{ECE} \in [-0.107,-0.019]\)). The Section 10 bridge was not a sample-size artifact.
+2. **Mean confidence drops** (Part B is systematically higher: 55–90% of shared OIDs have \(c/5 > P_\mathrm{correct}\)). Eliciting a probability softens the ceiling without erasing overconfidence on Gemini/Qwen.
+3. **AUROC rises or holds** in seven of eight runs; GPT high is flat (0.607). Discrimination was suppressed by the discrete rubric more than by the models themselves.
+
+### 11.2 Cross-run ranking agreement: models behave similarly under both dials
+
+![C14 ECE scatter](charts/classprob_aug02/14_ece_scatter_partb_vs_pcorrect.png)
+
+![C15 AUROC scatter](charts/classprob_aug02/15_auroc_scatter_partb_vs_pcorrect.png)
+
+| Metric | Spearman \(\rho\) (Part B \(n{=}300\) vs `P_correct`) | \(p\) | Kendall \(\tau\) |
+| --- | ---: | ---: | ---: |
+| ECE | **+0.976** | \(3\times10^{-5}\) | +0.929 |
+| BSS | **+0.952** | \(2.6\times10^{-4}\) | — |
+| AUROC | +0.667 | 0.071 | +0.500 |
+
+**Calibration rankings are essentially protocol-invariant.** The same models that looked worst under remapped Part B self-scores (Gemini Pro, Qwen) remain worst under elicited `P_correct`; Opus think remains best. That is the quantitative backbone for the claim that the two metrics are *measuring the same phenomenon* on these alerts — not that Part B was secretly a class probability, but that relative honesty across systems is robust to how confidence is asked.
+
+Discrimination rankings agree more loosely (\(\rho \approx 0.67\), marginal). That is expected: Part B AUROCs on the \(n{=}300\) slice are still compressed by 3–6 distinct score values (several thinking runs sit near chance), while `P_correct` spreads the dial (9–45 distinct values). Protocol change moves absolute AUROC more than it reshuffles who ranks whom on ECE.
+
+---
+
+## 12. Within-OID dial agreement and what elicitation buys
+
+### 12.1 Do the two dials rank the *same alerts* the same way?
+
+![C16 within-OID correlation](charts/classprob_aug02/16_within_oid_conf_correlation.png)
+
+![C18 per-alert scatter](charts/classprob_aug02/18_per_alert_conf_scatter.png)
+
+| Run | \(n_\mathrm{shared}\) | Spearman \(\rho(c/5,\,P)\) | Kendall \(\tau\) | mean \(\lvert c/5-P\rvert\) | frac \(c/5 > P\) | outcome agreement |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Gemini Flash | 297 | **+0.702** | +0.590 | 0.055 | 0.55 | 0.879 |
+| Opus nothink | 300 | **+0.631** | +0.523 | 0.114 | 0.84 | 0.943 |
+| Opus think | 300 | **+0.602** | +0.493 | 0.112 | 0.81 | 0.877 |
+| GPT-5.4 none | 299 | **+0.600** | +0.488 | 0.094 | 0.77 | 0.819 |
+| GPT-5.4 high | 291 | **+0.566** | +0.448 | 0.115 | 0.77 | 0.808 |
+| Qwen nothink | 260 | +0.369 | +0.327 | 0.078 | 0.90 | 0.773 |
+| Qwen think | 296 | +0.123 | +0.109 | 0.087 | 0.87 | 0.686 |
+| Gemini Pro | 284 | +0.033 | +0.029 | 0.076 | 0.79 | 0.877 |
+
+**Frontier Claude/GPT/Flash:** moderate-to-strong within-OID rank agreement (\(\rho \approx 0.57\)–\(0.70\)). Alerts the model marked as hard under the reasoning rubric tend to get lower `P_correct` on the second pass — the dials are not independent noise.
+
+**Gemini Pro / Qwen think:** near-zero within-OID correlation. C18 shows why: Part B mass is pinned at \(\approx 0.95\)–\(1.0\) (3–4 distinct values), so there is almost no ranking signal left to correlate with `P_correct`. The *population* ECE ranking still matches (§11.2) because both protocols read the same systemic overconfidence; the *per-alert* story does not, because Part B's ceiling erased alert-level nuance.
+
+Outcome agreement (same correct/incorrect bit across passes) is high for Opus/Gemini/GPT (~0.81–0.94) and weaker for Qwen think (0.69) — a reminder that the two JSONLs are separate rollouts, not a joint draw.
+
+### 12.2 \(\Delta\)ECE / \(\Delta\)AUROC from switching protocols on the same alerts
+
+![C17 deltas](charts/classprob_aug02/17_delta_ece_auroc.png)
+
+| Run | \(\Delta\)ECE (\(P\) − PB) | \(\Delta\)AUROC | \(\Delta\)BSS |
+| --- | ---: | ---: | ---: |
+| GPT-5.4 none | **−0.107** | +0.044 | +0.368 |
+| GPT-5.4 high | **−0.103** | −0.001 | +0.247 |
+| Opus nothink | −0.090 | +0.086 | +0.279 |
+| Qwen think | −0.068 | +0.087 | +0.315 |
+| Gemini Pro | −0.054 | **+0.145** | +0.306 |
+| Gemini Flash | −0.042 | +0.042 | +0.215 |
+| Qwen nothink | −0.042 | +0.063 | +0.173 |
+| Opus think | −0.019 | +0.069 | +0.097 |
+
+Elicitation is a **calibration and forecast-skill upgrade** everywhere (all \(\Delta\)ECE negative, all \(\Delta\)BSS positive). The largest AUROC jump is Gemini Pro (+0.145): once the model is allowed a continuous probability instead of a 5-point rationale grade, a latent ranking signal appears that Part B had flattened. Opus think improves least in ECE because it was already the best-calibrated under Part B — there is less ceiling to escape.
+
+### 12.3 Thinking paradox under *both* protocols (same OIDs)
+
+| Family contrast | Acc PB / P | ECE PB / P | AUROC PB / P |
+| --- | --- | --- | --- |
+| Opus think vs nothink | 0.627>0.507 / 0.583>0.510 | 0.169<0.292 / 0.150<0.201 | 0.547<0.629 / 0.616<0.715 |
+| GPT high vs none | 0.520>0.443 / 0.543>0.478 | 0.318<0.413 / 0.215<0.306 | 0.607≈0.617 / 0.607<0.661 |
+| Qwen think vs nothink | 0.429>0.373 / 0.423>0.340 | 0.520<0.586 / 0.452<0.545 | 0.512≈0.535 / 0.599≈0.598 |
+
+On the identical OID set, **thinking still buys accuracy and calibration while costing or failing to improve discrimination** for Opus (and calibration for GPT). That is stronger than the unmatched Section 10 claim: the honesty pattern is not an artifact of comparing a 1,500-alert Part B table to a 300-alert classprob table. Qwen's think mode helps accuracy/ECE under both protocols but never produces a sharp dial (AUROC ≈ 0.60 either way under `P_correct`).
+
+### 12.4 How this strengthens the paper's viewpoint
+
+1. **Protocol concordance, not metric cherry-picking.** Cross-run ECE ranks under Part B \(c/5\) and under `P_correct` agree at \(\rho = 0.976\) on the same alerts. A reviewer who distrusts remapped rubric scores still faces the same relative honesty ordering under the elicitation they asked for.
+2. **Part B was a coarse but directionally valid honesty probe for frontier models.** Within-OID \(\rho \approx 0.6\) for Opus/GPT/Flash means the reasoning self-score was not orthogonal to class confidence — it was a quantized, upward-biased cousin of the same dial.
+3. **Where Part B fails as a dial, population ECE still diagnoses the disease.** Gemini Pro / Qwen think show near-zero within-OID correlation *because* Part B collapsed to the ceiling; both protocols still flag them as the worst-calibrated systems.
+4. **Elicitation upgrades absolute metrics without rewriting the story.** Lower ECE, higher BSS, higher AUROC — and the think/nothink honesty trade-off survives. The camera-ready message can be: *we measured honesty two ways on the same alerts; the ranking and the thinking paradox agree.*
+
+---
+
+## 13. Per-family interpretation
 
 **Claude Opus 4.7.** Best overall package. Think mode wins accuracy and ECE; nothink wins AUROC / resolution / selective mid-tail. Mean \(P \approx 0.70\) is the most modest in the cohort and sits closest to accuracy. Zero overconfidence events at \(P \ge 0.9\) in think mode. This is the calibration profile a broker would want.
 
@@ -245,30 +351,32 @@ Two further contrasts with the Part B analysis:
 
 ---
 
-## 12. What this means for the paper / rebuttal
+## 14. What this means for the paper / rebuttal
 
 1. **The reviewer's requested experiment is done.** We elicit `P_correct` against binary correctness \(Y\), report ECE / Brier / AUROC (and a fuller suite), and document the prompt schema.
 2. **Central honesty claims hold under the correct target.** Thinking still trades discrimination for accuracy on Opus/GPT; population-level accuracy tracks ECE tightly (ρ ≈ −0.98); discrimination is orthogonal to accuracy.
-3. **Standard metrics now favor the paper more than the bespoke ones did.** All AUROCs are significant; frontier BSS approaches zero; ECE drops relative to the Part B remapping for every shared configuration.
-4. **Residual gaps remain real and model-dependent.** Gemini Pro and Qwen are still badly calibrated as probability forecasters. That is a finding, not a metric artifact.
-5. **Suggested camera-ready placement.** New appendix subsection under calibration (prompt schema + Table of headline metrics + reliability-diagram grid); one paragraph in §5.2 noting that the honesty patterns replicate under elicited class probabilities; Figure C11 as the bridge to the earlier Part B analysis.
+3. **Standard metrics now favor the paper more than the bespoke ones did.** All AUROCs are significant; frontier BSS approaches zero; ECE drops relative to the Part B remapping for every shared configuration — and this holds OID-paired on the same 300 alerts (§11).
+4. **The two confidence protocols agree on who is honest.** Cross-run ECE ranks under Part B \(c/5\) vs `P_correct` correlate at Spearman \(\rho = 0.976\) on identical OIDs; within-OID dial correlation is \(\rho \approx 0.6\) for Opus/GPT/Flash. Gemini Pro / Qwen think disagree per-alert only because Part B hit the ceiling — population ECE still flags them under both.
+5. **Residual gaps remain real and model-dependent.** Gemini Pro and Qwen are still badly calibrated as probability forecasters. That is a finding, not a metric artifact.
+6. **Suggested camera-ready placement.** New appendix subsection under calibration (prompt schema + Table of headline metrics + reliability-diagram grid + OID-paired Part B vs `P_correct` table/figure); one paragraph in §5.2 noting that honesty rankings and the thinking paradox replicate under elicited class probabilities; Figures C11 / C13–C14 as the bridge to the earlier Part B analysis.
 
 ### Drafted one-paragraph addition for the rebuttal box
 
-> Following the request for a standalone class-probability experiment, we re-prompted eight configurations on a balanced n = 300 subset with an explicit `P_correct ∈ [0,1]` after the classification decision (no Part B self-scores). ECE ranges from 0.150 (Opus 4.7 think) to 0.545 (Qwen3.5-397B nothink); Brier skill is near zero for both Opus modes and negative elsewhere; all eight AUROCs exceed chance (permutation \(p \le 0.003\)). Relative to remapping Part B rubric scores, ECE improves for every shared model. The think/nothink discrimination gap on Opus persists (AUROC 0.616 vs 0.715). Full tables, reliability diagrams, and selective-prediction curves will appear in the camera-ready appendix.
+> Following the request for a standalone class-probability experiment, we re-prompted eight configurations on a balanced n = 300 subset with an explicit `P_correct ∈ [0,1]` after the classification decision (no Part B self-scores). ECE ranges from 0.150 (Opus 4.7 think) to 0.545 (Qwen3.5-397B nothink); Brier skill is near zero for both Opus modes and negative elsewhere; all eight AUROCs exceed chance (permutation \(p \le 0.003\)). Restricting each model's full-benchmark Part B self-scores to the same 300 OIDs, ECE improves under `P_correct` for every configuration, and cross-run ECE rankings agree at Spearman \(\rho = 0.976\). The Opus think/nothink discrimination gap persists under both protocols (AUROC 0.547 vs 0.629 under Part B; 0.616 vs 0.715 under `P_correct`). Full tables, reliability diagrams, and selective-prediction curves will appear in the camera-ready appendix.
 
 ---
 
-## 13. Methods notes
+## 15. Methods notes
 
 - **Linked rows.** A row contributes if Part C stages parse to a 5-class label *and* `P_correct` is in \([0,1]\) (percentages in \((1,100]\) are accepted as \(P/100\)). Transport errors (GPT high: 9; Gemini Pro: 16; GPT none: 1) and three incomplete Gemini Flash parses are the only attrition.
+- **OID-paired Part B slice.** Part B metrics in §§11–12 come from each configuration's full-benchmark `run.jsonl`, restricted to the classprob manifest OIDs, with \(p = \mathrm{mean}(\texttt{self\_score\_*})/5\). Qwen nothink has only 260 linked Part B rows on this slice (parse attrition in the original run). The two protocols are separate inference passes, so \(Y\) can differ on a shared OID; within-OID confidence correlations use the intersection.
 - **ECE variants.** Exact (one bin per distinct \(P\)), equal-width 15, and equal-mass ACE. For ceiling-bunched runs the three coincide; for Opus/GPT, ACE is slightly lower than exact ECE because mass-balanced bins shrink the high-\(P\) gap's weight.
-- **AUROC.** Midrank / Mann–Whitney implementation with 5,000-draw permutation tests.
-- **Limitations.** n = 300 is 1/5 of the full benchmark; Gemini think/nothink also changes the backbone; no temperature sweep; no held-out recalibration in this report (can be added — cross-validated isotonic is already implemented in `evaluate_calibration.py`).
+- **AUROC.** Midrank / Mann–Whitney implementation with 5,000-draw permutation tests (classprob suite); paired ranking tests use SciPy Spearman/Kendall on the eight-run vectors.
+- **Limitations.** n = 300 is 1/5 of the full benchmark; Gemini think/nothink also changes the backbone; no temperature sweep; no held-out recalibration in this report (can be added — cross-validated isotonic is already implemented in `evaluate_calibration.py`); paired analysis cannot attribute within-OID \(Y\) flips to protocol vs rollout noise.
 
 ---
 
-## 14. Artifacts
+## 16. Artifacts
 
 | Path | Contents |
 | --- | --- |
@@ -277,11 +385,14 @@ Two further contrasts with the Part B analysis:
 | `evaluate/evaluate_class_probability.py` | metric suite |
 | `results/classprob_*_n300.jsonl` | raw runs |
 | `results_comparison/report/data/classprob_calibration_aug02.json` | per-run dump |
-| `results_comparison/report/charts/classprob_aug02/` | figures C1–C12 |
+| `results_comparison/report/data/classprob_vs_partb_n300.json` | OID-paired Part B vs `P_correct` metrics |
+| `results_comparison/report/charts/classprob_aug02/` | figures C1–C18 |
 | `viz/_eval_all_classprob_aug02.py` | batch eval |
-| `viz/_make_charts_classprob_aug02.py` | chart generator |
+| `viz/_make_charts_classprob_aug02.py` | chart generator (C1–C12) |
+| `viz/_compare_partb_vs_classprob_n300.py` | paired Part B vs classprob analysis + C13–C18 |
 
 ```powershell
 python -m viz._eval_all_classprob_aug02
 python -m viz._make_charts_classprob_aug02
+python -m viz._compare_partb_vs_classprob_n300
 ```
