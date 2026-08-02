@@ -29,6 +29,12 @@ Example (Anthropic Claude Opus 4.7, adaptive thinking):
 Example (Anthropic Claude Opus 4.7, thinking disabled):
   python run_tinker_benchmark.py --backend anthropic --manifest data/manifest_benchmark_final.csv --model claude-opus-4-7 --reasoning-effort none --out results/benchmark_opus47_nothink.jsonl --concurrency 8
 
+Example (Moonshot Kimi K2.5, thinking enabled — native Kimi API):
+  python run_tinker_benchmark.py --backend kimi --manifest data/manifest_benchmark_final.csv --model kimi-k2.5 --reasoning-effort high --out results/benchmark_kimi_k25_think.jsonl --concurrency 8
+
+Example (DashScope Qwen3.5-397B-A17B, thinking disabled — native Qwen API):
+  python run_tinker_benchmark.py --backend qwen --manifest data/manifest_benchmark_final.csv --model qwen3.5-397b-a17b --reasoning-effort none --out results/benchmark_qwen35_397b_nothink.jsonl --concurrency 8
+
 Example (Tinker, Qwen3.5 with thinking disabled — use *DisableThinkingRenderer):
   python run_tinker_benchmark.py --manifest data/manifest_benchmark_final.csv --model Qwen/Qwen3.5-4B --thinking disabled --out results/benchmark_qwen35_4b_nothink.jsonl --concurrency 32
 
@@ -105,19 +111,21 @@ def main() -> None:
     )
     ap.add_argument(
         "--backend", type=str, default="tinker",
-        choices=["tinker", "openai", "google", "anthropic"],
+        choices=["tinker", "openai", "google", "anthropic", "kimi", "qwen"],
         help=(
             "API backend (default: tinker). "
             "'openai' calls OpenAI Responses API via api_openai.py. "
             "'google' calls Gemini generate_content via api_google.py. "
-            "'anthropic' calls Claude Messages API via api_anthropic.py."
+            "'anthropic' calls Claude Messages API via api_anthropic.py. "
+            "'kimi' calls Moonshot Chat Completions via api_kimi.py. "
+            "'qwen' calls DashScope Chat Completions via api_qwen.py."
         ),
     )
     ap.add_argument(
         "--reasoning-effort", type=str, default=None,
         choices=["none", "minimal", "low", "medium", "high", "xhigh"],
         help=(
-            "OpenAI / Google / Anthropic backends. "
+            "OpenAI / Google / Anthropic / Kimi / Qwen backends. "
             "OpenAI: GPT-5.x reasoning_effort ('none' disables, 'xhigh' ceiling). "
             "Google: on Gemini 2.5 maps effort -> integer thinking_budget "
             "(none=0, minimal=128, low=1024, medium=8192, high=-1/dynamic); "
@@ -129,7 +137,11 @@ def main() -> None:
             "{minimal, low, medium, high} enable adaptive thinking "
             "(thinking.type=adaptive + output_config.effort=<level>); "
             "'high' is the recommended adaptive thinking setting. "
-            "'xhigh' is rejected (Anthropic enum tops out at 'high')."
+            "'xhigh' is rejected (Anthropic enum tops out at 'high'). "
+            "Kimi (api_kimi): 'none' -> thinking.type=disabled; "
+            "any other effort -> thinking.type=enabled on kimi-k2.5/k2.6. "
+            "Qwen (api_qwen): 'none' -> enable_thinking=False; "
+            "other efforts enable thinking with optional thinking_budget."
         ),
     )
     ap.add_argument(
@@ -156,6 +168,14 @@ def main() -> None:
         import api_anthropic
         backend_module = api_anthropic
         default_model = api_anthropic.DEFAULT_MODEL
+    elif args.backend == "kimi":
+        import api_kimi
+        backend_module = api_kimi
+        default_model = api_kimi.DEFAULT_MODEL
+    elif args.backend == "qwen":
+        import api_qwen
+        backend_module = api_qwen
+        default_model = api_qwen.DEFAULT_MODEL
     else:
         backend_module = api_tinker
         default_model = api_tinker.DEFAULT_MODEL
@@ -192,13 +212,13 @@ def main() -> None:
     total = len(df)
 
     extra_kwargs: dict = {}
-    _EFFORT_BACKENDS = ("openai", "google", "anthropic")
+    _EFFORT_BACKENDS = ("openai", "google", "anthropic", "kimi", "qwen")
     if args.backend in _EFFORT_BACKENDS and args.reasoning_effort is not None:
         extra_kwargs["reasoning_effort"] = args.reasoning_effort
     if args.reasoning_effort is not None and args.backend not in _EFFORT_BACKENDS:
         print(
             "Warning: --reasoning-effort is only used with --backend "
-            "openai/google/anthropic; ignoring.",
+            "openai/google/anthropic/kimi/qwen; ignoring.",
             file=sys.stderr,
         )
     if args.backend == "tinker":
@@ -215,7 +235,7 @@ def main() -> None:
     elif args.thinking != "enabled":
         print(
             "Warning: --thinking only affects --backend tinker; use --reasoning-effort "
-            "with --backend openai. Ignoring.",
+            "with --backend openai/google/anthropic/kimi/qwen. Ignoring.",
             file=sys.stderr,
         )
 

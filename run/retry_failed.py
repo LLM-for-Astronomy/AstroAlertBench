@@ -119,15 +119,19 @@ def main() -> None:
                     help="Manifest CSV matching the original run "
                          "(e.g. data/manifest_benchmark_final.csv)")
     ap.add_argument("--backend",
-                    choices=["tinker", "openai", "google", "anthropic"],
+                    choices=["tinker", "openai", "google", "anthropic", "kimi", "qwen"],
                     default="openai")
     ap.add_argument("--model", type=str, required=True)
     ap.add_argument("--reasoning-effort", type=str, default=None,
                     choices=["none", "minimal", "low", "medium", "high", "xhigh"],
-                    help="Forwarded to OpenAI / Google / Anthropic backends "
-                         "(see api_*.py for per-model validity).")
+                    help="Forwarded to OpenAI / Google / Anthropic / Kimi / Qwen "
+                         "backends (see api_*.py for per-model validity).")
     ap.add_argument("--thinking", choices=["enabled", "disabled"], default="enabled",
                     help="Tinker backend only.")
+    ap.add_argument(
+        "--prompts", type=str, default="prompts",
+        help="Prompt module name under prompts/ (same as run_tinker_benchmark.py).",
+    )
     ap.add_argument("--concurrency", type=int, default=8)
     ap.add_argument(
         "--only", choices=["failed", "missing", "both"], default="both",
@@ -205,11 +209,25 @@ def main() -> None:
     elif args.backend == "anthropic":
         import api_anthropic
         backend_module = api_anthropic
+    elif args.backend == "kimi":
+        import api_kimi
+        backend_module = api_kimi
+    elif args.backend == "qwen":
+        import api_qwen
+        backend_module = api_qwen
     else:
         backend_module = api_tinker
 
+    if args.prompts != "prompts":
+        import importlib
+        prompt_mod = importlib.import_module(args.prompts)
+        backend_module.SYSTEM_PROMPT = prompt_mod.SYSTEM_PROMPT
+        backend_module.build_user_prompt = prompt_mod.build_user_prompt
+        backend_module.manifest_row_to_metadata = prompt_mod.manifest_row_to_metadata
+        print(f"Using prompt module: {args.prompts}")
+
     extra_kwargs: dict = {}
-    if args.backend in ("openai", "google", "anthropic") and args.reasoning_effort is not None:
+    if args.backend in ("openai", "google", "anthropic", "kimi", "qwen") and args.reasoning_effort is not None:
         extra_kwargs["reasoning_effort"] = args.reasoning_effort
     if args.backend == "tinker":
         extra_kwargs["thinking"] = args.thinking == "enabled"

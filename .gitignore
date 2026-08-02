@@ -21,6 +21,7 @@ stamps_llm/
 
 # Intermediate enrichment shards (regenerate with run_enrich_parallel.py)
 data/enriched_parts*/
+data_class_probability_calibration/
 
 # Backup manifests
 data/*_backup_*.csv

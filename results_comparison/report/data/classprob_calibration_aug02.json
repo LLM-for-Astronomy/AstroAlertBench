@@ -1,0 +1,1882 @@
+[
+  {
+    "note": "This standalone experiment evaluates pure predictive class confidence against actual binary correctness Y in {0,1}, cleanly separating classification calibration from Part B rationale quality self-scores.",
+    "diagnostics": {
+      "n_rows": 300,
+      "n_transport_error": 0,
+      "n_unparseable_or_incomplete_part_c": 0,
+      "n_missing_p_correct": 0,
+      "n_missing_gold": 0,
+      "n_linked": 300,
+      "per_class_n": {
+        "AGN": 60,
+        "SN": 60,
+        "VS": 60,
+        "asteroid": 60,
+        "bogus": 60
+      }
+    },
+    "n_linked": 300,
+    "accuracy": 0.5833333333333334,
+    "mean_p_correct": 0.7001333333333334,
+    "sd_p_correct": 0.13001665273668497,
+    "n_distinct_p": 19,
+    "p_min": 0.4,
+    "p_max": 0.92,
+    "p_median": 0.7,
+    "frac_p_ge_0_9": 0.07333333333333333,
+    "frac_p_le_0_3": 0.0,
+    "signed_ece": 0.11680000000000001,
+    "ece_exact": 0.14973333333333333,
+    "ece_ew15": 0.13080000000000008,
+    "ece_ew10": 0.11840000000000009,
+    "ece_em10": 0.11840000000000002,
+    "ace_em10": 0.11840000000000002,
+    "mce_exact": 0.36,
+    "brier": 0.2471013333333333,
+    "reliability": 0.03554171759514617,
+    "resolution": 0.03149593981736839,
+    "uncertainty": 0.24305555555555555,
+    "brier_skill": -0.0166454857142857,
+    "nll": 0.691896903862621,
+    "auroc": 0.6157485714285714,
+    "somers_d": 0.23149714285714285,
+    "kendall_tau_b": 0.169495297486199,
+    "spearman_rho": 0.19877980569866058,
+    "pearson_r": 0.2066225552411151,
+    "auroc_perm_p": 0.0005998800239952009,
+    "overconfidence_rate_p90": 0.0,
+    "overconfidence_n_p90": 0,
+    "underconfidence_rate_p30": 0.0,
+    "underconfidence_n_p30": 0,
+    "selective": [
+      {
+        "threshold": 0.5,
+        "n": 291,
+        "coverage": 0.97,
+        "accuracy": 0.5945017182130584
+      },
+      {
+        "threshold": 0.7,
+        "n": 180,
+        "coverage": 0.6,
+        "accuracy": 0.6444444444444445
+      },
+      {
+        "threshold": 0.8,
+        "n": 86,
+        "coverage": 0.2866666666666667,
+        "accuracy": 0.686046511627907
+      },
+      {
+        "threshold": 0.9,
+        "n": 22,
+        "coverage": 0.07333333333333333,
+        "accuracy": 1.0
+      }
+    ],
+    "risk_coverage": [
+      {
+        "coverage": 0.2,
+        "n": 60,
+        "accuracy": 0.8333333333333334,
+        "risk": 0.16666666666666663
+      },
+      {
+        "coverage": 0.4,
+        "n": 120,
+        "accuracy": 0.6333333333333333,
+        "risk": 0.3666666666666667
+      },
+      {
+        "coverage": 0.6,
+        "n": 180,
+        "accuracy": 0.6444444444444445,
+        "risk": 0.3555555555555555
+      },
+      {
+        "coverage": 0.8,
+        "n": 240,
+        "accuracy": 0.6166666666666667,
+        "risk": 0.3833333333333333
+      },
+      {
+        "coverage": 1.0,
+        "n": 300,
+        "accuracy": 0.5833333333333334,
+        "risk": 0.41666666666666663
+      }
+    ],
+    "bins": [
+      {
+        "conf": 0.4,
+        "acc": 0.0,
+        "n": 2,
+        "gap": 0.4
+      },
+      {
+        "conf": 0.45,
+        "acc": 0.2857142857142857,
+        "n": 7,
+        "gap": 0.1642857142857143
+      },
+      {
+        "conf": 0.5,
+        "acc": 0.4642857142857143,
+        "n": 28,
+        "gap": 0.0357142857142857
+      },
+      {
+        "conf": 0.55,
+        "acc": 0.5,
+        "n": 18,
+        "gap": 0.050000000000000044
+      },
+      {
+        "conf": 0.6,
+        "acc": 0.5306122448979592,
+        "n": 49,
+        "gap": 0.06938775510204076
+      },
+      {
+        "conf": 0.62,
+        "acc": 0.7,
+        "n": 10,
+        "gap": 0.07999999999999996
+      },
+      {
+        "conf": 0.65,
+        "acc": 0.4,
+        "n": 5,
+        "gap": 0.25
+      },
+      {
+        "conf": 0.66,
+        "acc": 0.0,
+        "n": 1,
+        "gap": 0.66
+      },
+      {
+        "conf": 0.7,
+        "acc": 0.6216216216216216,
+        "n": 37,
+        "gap": 0.07837837837837835
+      },
+      {
+        "conf": 0.72,
+        "acc": 0.5,
+        "n": 8,
+        "gap": 0.21999999999999997
+      },
+      {
+        "conf": 0.75,
+        "acc": 0.9166666666666666,
+        "n": 12,
+        "gap": 0.16666666666666663
+      },
+      {
+        "conf": 0.78,
+        "acc": 0.5135135135135135,
+        "n": 37,
+        "gap": 0.26648648648648654
+      },
+      {
+        "conf": 0.8,
+        "acc": 0.5,
+        "n": 8,
+        "gap": 0.30000000000000004
+      },
+      {
+        "conf": 0.82,
+        "acc": 0.5,
+        "n": 34,
+        "gap": 0.31999999999999995
+      },
+      {
+        "conf": 0.85,
+        "acc": 0.8333333333333334,
+        "n": 6,
+        "gap": 0.016666666666666607
+      },
+      {
+        "conf": 0.86,
+        "acc": 0.5,
+        "n": 8,
+        "gap": 0.36
+      },
+      {
+        "conf": 0.88,
+        "acc": 0.875,
+        "n": 8,
+        "gap": 0.0050000000000000044
+      },
+      {
+        "conf": 0.9,
+        "acc": 1.0,
+        "n": 19,
+        "gap": 0.09999999999999998
+      },
+      {
+        "conf": 0.92,
+        "acc": 1.0,
+        "n": 3,
+        "gap": 0.07999999999999996
+      }
+    ],
+    "label": "Claude Opus 4.7 think",
+    "family": "Claude",
+    "marker": "o",
+    "path": "results/classprob_opus47_think_n300.jsonl"
+  },
+  {
+    "note": "This standalone experiment evaluates pure predictive class confidence against actual binary correctness Y in {0,1}, cleanly separating classification calibration from Part B rationale quality self-scores.",
+    "diagnostics": {
+      "n_rows": 300,
+      "n_transport_error": 0,
+      "n_unparseable_or_incomplete_part_c": 0,
+      "n_missing_p_correct": 0,
+      "n_missing_gold": 0,
+      "n_linked": 300,
+      "per_class_n": {
+        "AGN": 60,
+        "SN": 60,
+        "VS": 60,
+        "asteroid": 60,
+        "bogus": 60
+      }
+    },
+    "n_linked": 300,
+    "accuracy": 0.51,
+    "mean_p_correct": 0.6982666666666667,
+    "sd_p_correct": 0.1311474784070615,
+    "n_distinct_p": 21,
+    "p_min": 0.35,
+    "p_max": 0.92,
+    "p_median": 0.7,
+    "frac_p_ge_0_9": 0.06666666666666667,
+    "frac_p_le_0_3": 0.0,
+    "signed_ece": 0.1882666666666667,
+    "ece_exact": 0.20146666666666666,
+    "ece_ew15": 0.19280000000000005,
+    "ece_ew10": 0.18933333333333335,
+    "ece_em10": 0.18933333333333335,
+    "ace_em10": 0.18933333333333335,
+    "mce_exact": 0.45,
+    "brier": 0.2509853333333333,
+    "reliability": 0.05825593570602283,
+    "resolution": 0.0571706023726895,
+    "uncertainty": 0.2499,
+    "brier_skill": -0.004343070561557694,
+    "nll": 0.7016543254448274,
+    "auroc": 0.7151527277577697,
+    "somers_d": 0.43030545551553945,
+    "kendall_tau_b": 0.3196187030712929,
+    "spearman_rho": 0.37481881119431687,
+    "pearson_r": 0.3934326856711706,
+    "auroc_perm_p": 0.0001999600079984003,
+    "overconfidence_rate_p90": 0.0033333333333333335,
+    "overconfidence_n_p90": 1,
+    "underconfidence_rate_p30": 0.0,
+    "underconfidence_n_p30": 0,
+    "selective": [
+      {
+        "threshold": 0.5,
+        "n": 286,
+        "coverage": 0.9533333333333334,
+        "accuracy": 0.534965034965035
+      },
+      {
+        "threshold": 0.7,
+        "n": 189,
+        "coverage": 0.63,
+        "accuracy": 0.6349206349206349
+      },
+      {
+        "threshold": 0.8,
+        "n": 84,
+        "coverage": 0.28,
+        "accuracy": 0.6904761904761905
+      },
+      {
+        "threshold": 0.9,
+        "n": 20,
+        "coverage": 0.06666666666666667,
+        "accuracy": 0.95
+      }
+    ],
+    "risk_coverage": [
+      {
+        "coverage": 0.2,
+        "n": 60,
+        "accuracy": 0.7833333333333333,
+        "risk": 0.21666666666666667
+      },
+      {
+        "coverage": 0.4,
+        "n": 120,
+        "accuracy": 0.6416666666666667,
+        "risk": 0.3583333333333333
+      },
+      {
+        "coverage": 0.6,
+        "n": 180,
+        "accuracy": 0.6277777777777778,
+        "risk": 0.37222222222222223
+      },
+      {
+        "coverage": 0.8,
+        "n": 240,
+        "accuracy": 0.6,
+        "risk": 0.4
+      },
+      {
+        "coverage": 1.0,
+        "n": 300,
+        "accuracy": 0.51,
+        "risk": 0.49
+      }
+    ],
+    "bins": [
+      {
+        "conf": 0.35,
+        "acc": 0.0,
+        "n": 2,
+        "gap": 0.35
+      },
+      {
+        "conf": 0.4,
+        "acc": 0.0,
+        "n": 6,
+        "gap": 0.4
+      },
+      {
+        "conf": 0.45,
+        "acc": 0.0,
+        "n": 6,
+        "gap": 0.45
+      },
+      {
+        "conf": 0.5,
+        "acc": 0.05263157894736842,
+        "n": 19,
+        "gap": 0.4473684210526316
+      },
+      {
+        "conf": 0.55,
+        "acc": 0.20833333333333334,
+        "n": 24,
+        "gap": 0.3416666666666667
+      },
+      {
+        "conf": 0.6,
+        "acc": 0.5,
+        "n": 42,
+        "gap": 0.09999999999999998
+      },
+      {
+        "conf": 0.62,
+        "acc": 0.5714285714285714,
+        "n": 7,
+        "gap": 0.0485714285714286
+      },
+      {
+        "conf": 0.65,
+        "acc": 0.0,
+        "n": 2,
+        "gap": 0.65
+      },
+      {
+        "conf": 0.66,
+        "acc": 1.0,
+        "n": 1,
+        "gap": 0.33999999999999997
+      },
+      {
+        "conf": 0.68,
+        "acc": 0.5,
+        "n": 2,
+        "gap": 0.18000000000000005
+      },
+      {
+        "conf": 0.7,
+        "acc": 0.6111111111111112,
+        "n": 54,
+        "gap": 0.0888888888888888
+      },
+      {
+        "conf": 0.72,
+        "acc": 0.8333333333333334,
+        "n": 6,
+        "gap": 0.1133333333333334
+      },
+      {
+        "conf": 0.75,
+        "acc": 0.6153846153846154,
+        "n": 13,
+        "gap": 0.13461538461538458
+      },
+      {
+        "conf": 0.78,
+        "acc": 0.5,
+        "n": 32,
+        "gap": 0.28
+      },
+      {
+        "conf": 0.8,
+        "acc": 0.5454545454545454,
+        "n": 11,
+        "gap": 0.25454545454545463
+      },
+      {
+        "conf": 0.82,
+        "acc": 0.5517241379310345,
+        "n": 29,
+        "gap": 0.2682758620689655
+      },
+      {
+        "conf": 0.85,
+        "acc": 0.7777777777777778,
+        "n": 9,
+        "gap": 0.07222222222222219
+      },
+      {
+        "conf": 0.86,
+        "acc": 0.5555555555555556,
+        "n": 9,
+        "gap": 0.3044444444444444
+      },
+      {
+        "conf": 0.88,
+        "acc": 0.8333333333333334,
+        "n": 6,
+        "gap": 0.046666666666666634
+      },
+      {
+        "conf": 0.9,
+        "acc": 0.9444444444444444,
+        "n": 18,
+        "gap": 0.0444444444444444
+      },
+      {
+        "conf": 0.92,
+        "acc": 1.0,
+        "n": 2,
+        "gap": 0.07999999999999996
+      }
+    ],
+    "label": "Claude Opus 4.7 nothink",
+    "family": "Claude",
+    "marker": "s",
+    "path": "results/classprob_opus47_nothink_n300.jsonl"
+  },
+  {
+    "note": "This standalone experiment evaluates pure predictive class confidence against actual binary correctness Y in {0,1}, cleanly separating classification calibration from Part B rationale quality self-scores.",
+    "diagnostics": {
+      "n_rows": 300,
+      "n_transport_error": 9,
+      "n_unparseable_or_incomplete_part_c": 0,
+      "n_missing_p_correct": 0,
+      "n_missing_gold": 0,
+      "n_linked": 291,
+      "per_class_n": {
+        "AGN": 60,
+        "SN": 60,
+        "VS": 60,
+        "asteroid": 58,
+        "bogus": 53
+      }
+    },
+    "n_linked": 291,
+    "accuracy": 0.5429553264604811,
+    "mean_p_correct": 0.7404123711340207,
+    "sd_p_correct": 0.12572205956084398,
+    "n_distinct_p": 45,
+    "p_min": 0.44,
+    "p_max": 0.98,
+    "p_median": 0.72,
+    "frac_p_ge_0_9": 0.16151202749140894,
+    "frac_p_le_0_3": 0.0,
+    "signed_ece": 0.19745704467353964,
+    "ece_exact": 0.2153951890034364,
+    "ece_ew15": 0.1974570446735395,
+    "ece_ew10": 0.19745704467353947,
+    "ece_em10": 0.19759450171821305,
+    "ace_em10": 0.19759450171821305,
+    "mce_exact": 0.53,
+    "brier": 0.2779828178694158,
+    "reliability": 0.07752123065748545,
+    "resolution": 0.04769325271674317,
+    "uncertainty": 0.2481548399286735,
+    "brier_skill": -0.12019905777100992,
+    "nll": 0.7750276742332375,
+    "auroc": 0.6065480156086419,
+    "somers_d": 0.21309603121728382,
+    "kendall_tau_b": 0.1527192402541954,
+    "spearman_rho": 0.18399907890739609,
+    "pearson_r": 0.199237520597816,
+    "auroc_perm_p": 0.001799640071985603,
+    "overconfidence_rate_p90": 0.03436426116838488,
+    "overconfidence_n_p90": 10,
+    "underconfidence_rate_p30": 0.0,
+    "underconfidence_n_p30": 0,
+    "selective": [
+      {
+        "threshold": 0.5,
+        "n": 288,
+        "coverage": 0.9896907216494846,
+        "accuracy": 0.5486111111111112
+      },
+      {
+        "threshold": 0.7,
+        "n": 159,
+        "coverage": 0.5463917525773195,
+        "accuracy": 0.5974842767295597
+      },
+      {
+        "threshold": 0.8,
+        "n": 102,
+        "coverage": 0.35051546391752575,
+        "accuracy": 0.6372549019607843
+      },
+      {
+        "threshold": 0.9,
+        "n": 47,
+        "coverage": 0.16151202749140894,
+        "accuracy": 0.7872340425531915
+      }
+    ],
+    "risk_coverage": [
+      {
+        "coverage": 0.2,
+        "n": 58,
+        "accuracy": 0.7241379310344828,
+        "risk": 0.27586206896551724
+      },
+      {
+        "coverage": 0.4,
+        "n": 116,
+        "accuracy": 0.6206896551724138,
+        "risk": 0.3793103448275862
+      },
+      {
+        "coverage": 0.6,
+        "n": 175,
+        "accuracy": 0.6114285714285714,
+        "risk": 0.38857142857142857
+      },
+      {
+        "coverage": 0.8,
+        "n": 233,
+        "accuracy": 0.5622317596566524,
+        "risk": 0.4377682403433476
+      },
+      {
+        "coverage": 1.0,
+        "n": 291,
+        "accuracy": 0.5429553264604811,
+        "risk": 0.45704467353951894
+      }
+    ],
+    "bins": [
+      {
+        "conf": 0.44,
+        "acc": 0.0,
+        "n": 1,
+        "gap": 0.44
+      },
+      {
+        "conf": 0.48,
+        "acc": 0.0,
+        "n": 2,
+        "gap": 0.48
+      },
+      {
+        "conf": 0.52,
+        "acc": 0.0,
+        "n": 1,
+        "gap": 0.52
+      },
+      {
+        "conf": 0.56,
+        "acc": 0.0,
+        "n": 3,
+        "gap": 0.56
+      },
+      {
+        "conf": 0.57,
+        "acc": 0.5,
+        "n": 4,
+        "gap": 0.06999999999999995
+      },
+      {
+        "conf": 0.58,
+        "acc": 0.631578947368421,
+        "n": 19,
+        "gap": 0.05157894736842106
+      },
+      {
+        "conf": 0.59,
+        "acc": 0.6,
+        "n": 5,
+        "gap": 0.010000000000000009
+      },
+      {
+        "conf": 0.6,
+        "acc": 0.3333333333333333,
+        "n": 3,
+        "gap": 0.26666666666666666
+      },
+      {
+        "conf": 0.61,
+        "acc": 0.4444444444444444,
+        "n": 9,
+        "gap": 0.16555555555555557
+      },
+      {
+        "conf": 0.62,
+        "acc": 0.45,
+        "n": 20,
+        "gap": 0.16999999999999998
+      },
+      {
+        "conf": 0.63,
+        "acc": 0.2,
+        "n": 10,
+        "gap": 0.43
+      },
+      {
+        "conf": 0.64,
+        "acc": 0.42857142857142855,
+        "n": 14,
+        "gap": 0.21142857142857147
+      },
+      {
+        "conf": 0.65,
+        "acc": 0.0,
+        "n": 1,
+        "gap": 0.65
+      },
+      {
+        "conf": 0.66,
+        "acc": 0.5555555555555556,
+        "n": 9,
+        "gap": 0.10444444444444445
+      },
+      {
+        "conf": 0.67,
+        "acc": 0.5454545454545454,
+        "n": 11,
+        "gap": 0.12454545454545463
+      },
+      {
+        "conf": 0.68,
+        "acc": 0.6470588235294118,
+        "n": 17,
+        "gap": 0.03294117647058825
+      },
+      {
+        "conf": 0.69,
+        "acc": 0.6666666666666666,
+        "n": 3,
+        "gap": 0.023333333333333317
+      },
+      {
+        "conf": 0.7,
+        "acc": 1.0,
+        "n": 1,
+        "gap": 0.30000000000000004
+      },
+      {
+        "conf": 0.71,
+        "acc": 0.6,
+        "n": 5,
+        "gap": 0.10999999999999999
+      },
+      {
+        "conf": 0.72,
+        "acc": 0.7272727272727273,
+        "n": 11,
+        "gap": 0.0072727272727273196
+      },
+      {
+        "conf": 0.73,
+        "acc": 0.2,
+        "n": 5,
+        "gap": 0.53
+      },
+      {
+        "conf": 0.74,
+        "acc": 0.4444444444444444,
+        "n": 9,
+        "gap": 0.29555555555555557
+      },
+      {
+        "conf": 0.76,
+        "acc": 0.5,
+        "n": 8,
+        "gap": 0.26
+      },
+      {
+        "conf": 0.77,
+        "acc": 0.375,
+        "n": 8,
+        "gap": 0.395
+      },
+      {
+        "conf": 0.78,
+        "acc": 0.4,
+        "n": 5,
+        "gap": 0.38
+      },
+      {
+        "conf": 0.79,
+        "acc": 0.8,
+        "n": 5,
+        "gap": 0.010000000000000009
+      },
+      {
+        "conf": 0.8,
+        "acc": 1.0,
+        "n": 1,
+        "gap": 0.19999999999999996
+      },
+      {
+        "conf": 0.81,
+        "acc": 0.6,
+        "n": 5,
+        "gap": 0.21000000000000008
+      },
+      {
+        "conf": 0.82,
+        "acc": 0.5555555555555556,
+        "n": 9,
+        "gap": 0.26444444444444437
+      },
+      {
+        "conf": 0.83,
+        "acc": 0.6666666666666666,
+        "n": 9,
+        "gap": 0.16333333333333333
+      },
+      {
+        "conf": 0.84,
+        "acc": 0.3333333333333333,
+        "n": 12,
+        "gap": 0.5066666666666666
+      },
+      {
+        "conf": 0.85,
+        "acc": 0.5,
+        "n": 2,
+        "gap": 0.35
+      },
+      {
+        "conf": 0.86,
+        "acc": 0.5,
+        "n": 6,
+        "gap": 0.36
+      },
+      {
+        "conf": 0.87,
+        "acc": 0.0,
+        "n": 3,
+        "gap": 0.87
+      },
+      {
+        "conf": 0.88,
+        "acc": 0.4,
+        "n": 5,
+        "gap": 0.48
+      },
+      {
+        "conf": 0.89,
+        "acc": 1.0,
+        "n": 3,
+        "gap": 0.10999999999999999
+      },
+      {
+        "conf": 0.9,
+        "acc": 0.4,
+        "n": 5,
+        "gap": 0.5
+      },
+      {
+        "conf": 0.91,
+        "acc": 0.75,
+        "n": 4,
+        "gap": 0.16000000000000003
+      },
+      {
+        "conf": 0.92,
+        "acc": 0.3333333333333333,
+        "n": 3,
+        "gap": 0.5866666666666667
+      },
+      {
+        "conf": 0.93,
+        "acc": 0.75,
+        "n": 4,
+        "gap": 0.18000000000000005
+      },
+      {
+        "conf": 0.94,
+        "acc": 0.7777777777777778,
+        "n": 9,
+        "gap": 0.16222222222222216
+      },
+      {
+        "conf": 0.95,
+        "acc": 1.0,
+        "n": 9,
+        "gap": 0.050000000000000044
+      },
+      {
+        "conf": 0.96,
+        "acc": 0.8571428571428571,
+        "n": 7,
+        "gap": 0.10285714285714287
+      },
+      {
+        "conf": 0.97,
+        "acc": 1.0,
+        "n": 5,
+        "gap": 0.030000000000000027
+      },
+      {
+        "conf": 0.98,
+        "acc": 1.0,
+        "n": 1,
+        "gap": 0.020000000000000018
+      }
+    ],
+    "label": "GPT-5.4 high-think",
+    "family": "GPT",
+    "marker": "o",
+    "path": "results/classprob_gpt54_high_n300.jsonl"
+  },
+  {
+    "note": "This standalone experiment evaluates pure predictive class confidence against actual binary correctness Y in {0,1}, cleanly separating classification calibration from Part B rationale quality self-scores.",
+    "diagnostics": {
+      "n_rows": 300,
+      "n_transport_error": 1,
+      "n_unparseable_or_incomplete_part_c": 0,
+      "n_missing_p_correct": 0,
+      "n_missing_gold": 0,
+      "n_linked": 299,
+      "per_class_n": {
+        "AGN": 59,
+        "SN": 60,
+        "VS": 60,
+        "asteroid": 60,
+        "bogus": 60
+      }
+    },
+    "n_linked": 299,
+    "accuracy": 0.4782608695652174,
+    "mean_p_correct": 0.7772240802675585,
+    "sd_p_correct": 0.11262272927672505,
+    "n_distinct_p": 28,
+    "p_min": 0.52,
+    "p_max": 0.96,
+    "p_median": 0.77,
+    "frac_p_ge_0_9": 0.22408026755852842,
+    "frac_p_le_0_3": 0.0,
+    "signed_ece": 0.2989632107023411,
+    "ece_exact": 0.30618729096989966,
+    "ece_ew15": 0.3031772575250836,
+    "ece_ew10": 0.29896321070234116,
+    "ece_em10": 0.29896321070234116,
+    "ace_em10": 0.29896321070234116,
+    "mce_exact": 0.6699999999999999,
+    "brier": 0.3199294314381271,
+    "reliability": 0.12508430072343116,
+    "resolution": 0.054682279493243585,
+    "uncertainty": 0.2495274102079395,
+    "brier_skill": -0.2821414335664336,
+    "nll": 0.8716194536159193,
+    "auroc": 0.6606822664514972,
+    "somers_d": 0.3213645329029944,
+    "kendall_tau_b": 0.23558163611487376,
+    "spearman_rho": 0.2791891925445795,
+    "pearson_r": 0.2814833455637122,
+    "auroc_perm_p": 0.0001999600079984003,
+    "overconfidence_rate_p90": 0.04013377926421405,
+    "overconfidence_n_p90": 12,
+    "underconfidence_rate_p30": 0.0,
+    "underconfidence_n_p30": 0,
+    "selective": [
+      {
+        "threshold": 0.5,
+        "n": 299,
+        "coverage": 1.0,
+        "accuracy": 0.4782608695652174
+      },
+      {
+        "threshold": 0.7,
+        "n": 222,
+        "coverage": 0.7424749163879598,
+        "accuracy": 0.5045045045045045
+      },
+      {
+        "threshold": 0.8,
+        "n": 139,
+        "coverage": 0.46488294314381273,
+        "accuracy": 0.5899280575539568
+      },
+      {
+        "threshold": 0.9,
+        "n": 67,
+        "coverage": 0.22408026755852842,
+        "accuracy": 0.8208955223880597
+      }
+    ],
+    "risk_coverage": [
+      {
+        "coverage": 0.2,
+        "n": 60,
+        "accuracy": 0.8166666666666667,
+        "risk": 0.18333333333333335
+      },
+      {
+        "coverage": 0.4,
+        "n": 120,
+        "accuracy": 0.6166666666666667,
+        "risk": 0.3833333333333333
+      },
+      {
+        "coverage": 0.6,
+        "n": 179,
+        "accuracy": 0.547486033519553,
+        "risk": 0.45251396648044695
+      },
+      {
+        "coverage": 0.8,
+        "n": 239,
+        "accuracy": 0.5104602510460251,
+        "risk": 0.4895397489539749
+      },
+      {
+        "coverage": 1.0,
+        "n": 299,
+        "accuracy": 0.4782608695652174,
+        "risk": 0.5217391304347826
+      }
+    ],
+    "bins": [
+      {
+        "conf": 0.52,
+        "acc": 0.0,
+        "n": 1,
+        "gap": 0.52
+      },
+      {
+        "conf": 0.56,
+        "acc": 0.5,
+        "n": 2,
+        "gap": 0.06000000000000005
+      },
+      {
+        "conf": 0.58,
+        "acc": 0.2,
+        "n": 15,
+        "gap": 0.37999999999999995
+      },
+      {
+        "conf": 0.61,
+        "acc": 0.0,
+        "n": 1,
+        "gap": 0.61
+      },
+      {
+        "conf": 0.62,
+        "acc": 0.3333333333333333,
+        "n": 18,
+        "gap": 0.2866666666666667
+      },
+      {
+        "conf": 0.63,
+        "acc": 0.5,
+        "n": 8,
+        "gap": 0.13
+      },
+      {
+        "conf": 0.67,
+        "acc": 0.375,
+        "n": 8,
+        "gap": 0.29500000000000004
+      },
+      {
+        "conf": 0.68,
+        "acc": 0.5833333333333334,
+        "n": 24,
+        "gap": 0.09666666666666668
+      },
+      {
+        "conf": 0.7,
+        "acc": 0.0,
+        "n": 1,
+        "gap": 0.7
+      },
+      {
+        "conf": 0.72,
+        "acc": 0.3888888888888889,
+        "n": 54,
+        "gap": 0.3311111111111111
+      },
+      {
+        "conf": 0.74,
+        "acc": 0.42857142857142855,
+        "n": 7,
+        "gap": 0.31142857142857144
+      },
+      {
+        "conf": 0.76,
+        "acc": 0.25,
+        "n": 8,
+        "gap": 0.51
+      },
+      {
+        "conf": 0.77,
+        "acc": 0.25,
+        "n": 4,
+        "gap": 0.52
+      },
+      {
+        "conf": 0.78,
+        "acc": 0.42857142857142855,
+        "n": 7,
+        "gap": 0.3514285714285715
+      },
+      {
+        "conf": 0.79,
+        "acc": 0.0,
+        "n": 2,
+        "gap": 0.79
+      },
+      {
+        "conf": 0.8,
+        "acc": 0.7142857142857143,
+        "n": 7,
+        "gap": 0.08571428571428574
+      },
+      {
+        "conf": 0.82,
+        "acc": 0.22727272727272727,
+        "n": 22,
+        "gap": 0.5927272727272727
+      },
+      {
+        "conf": 0.83,
+        "acc": 0.5,
+        "n": 2,
+        "gap": 0.32999999999999996
+      },
+      {
+        "conf": 0.84,
+        "acc": 0.4166666666666667,
+        "n": 24,
+        "gap": 0.4233333333333333
+      },
+      {
+        "conf": 0.87,
+        "acc": 0.2,
+        "n": 5,
+        "gap": 0.6699999999999999
+      },
+      {
+        "conf": 0.88,
+        "acc": 0.4166666666666667,
+        "n": 12,
+        "gap": 0.4633333333333333
+      },
+      {
+        "conf": 0.9,
+        "acc": 0.8,
+        "n": 10,
+        "gap": 0.09999999999999998
+      },
+      {
+        "conf": 0.91,
+        "acc": 0.4444444444444444,
+        "n": 9,
+        "gap": 0.4655555555555556
+      },
+      {
+        "conf": 0.92,
+        "acc": 0.7142857142857143,
+        "n": 7,
+        "gap": 0.20571428571428574
+      },
+      {
+        "conf": 0.93,
+        "acc": 0.8181818181818182,
+        "n": 11,
+        "gap": 0.11181818181818182
+      },
+      {
+        "conf": 0.94,
+        "acc": 1.0,
+        "n": 16,
+        "gap": 0.06000000000000005
+      },
+      {
+        "conf": 0.95,
+        "acc": 0.9090909090909091,
+        "n": 11,
+        "gap": 0.040909090909090895
+      },
+      {
+        "conf": 0.96,
+        "acc": 1.0,
+        "n": 3,
+        "gap": 0.040000000000000036
+      }
+    ],
+    "label": "GPT-5.4 no-think",
+    "family": "GPT",
+    "marker": "s",
+    "path": "results/classprob_gpt54_none_n300.jsonl"
+  },
+  {
+    "note": "This standalone experiment evaluates pure predictive class confidence against actual binary correctness Y in {0,1}, cleanly separating classification calibration from Part B rationale quality self-scores.",
+    "diagnostics": {
+      "n_rows": 300,
+      "n_transport_error": 16,
+      "n_unparseable_or_incomplete_part_c": 0,
+      "n_missing_p_correct": 0,
+      "n_missing_gold": 0,
+      "n_linked": 284,
+      "per_class_n": {
+        "AGN": 60,
+        "SN": 60,
+        "VS": 60,
+        "asteroid": 60,
+        "bogus": 44
+      }
+    },
+    "n_linked": 284,
+    "accuracy": 0.4014084507042254,
+    "mean_p_correct": 0.9184859154929578,
+    "sd_p_correct": 0.10571060140633456,
+    "n_distinct_p": 12,
+    "p_min": 0.4,
+    "p_max": 0.99,
+    "p_median": 0.95,
+    "frac_p_ge_0_9": 0.8274647887323944,
+    "frac_p_le_0_3": 0.0,
+    "signed_ece": 0.5170774647887324,
+    "ece_exact": 0.5170774647887324,
+    "ece_ew15": 0.5170774647887324,
+    "ece_ew10": 0.5170774647887324,
+    "ece_em10": 0.5170774647887324,
+    "ace_em10": 0.5170774647887324,
+    "mce_exact": 0.8,
+    "brier": 0.4901742957746479,
+    "reliability": 0.2752286661766676,
+    "resolution": 0.025334076809478523,
+    "uncertainty": 0.24027970640745885,
+    "brier_skill": -1.0400153766769864,
+    "nll": 1.7509042112367372,
+    "auroc": 0.6661764705882353,
+    "somers_d": 0.3323529411764705,
+    "kendall_tau_b": 0.25497273133259485,
+    "spearman_rho": 0.28796471894920367,
+    "pearson_r": 0.2765509716797596,
+    "auroc_perm_p": 0.0001999600079984003,
+    "overconfidence_rate_p90": 0.44366197183098594,
+    "overconfidence_n_p90": 126,
+    "underconfidence_rate_p30": 0.0,
+    "underconfidence_n_p30": 0,
+    "selective": [
+      {
+        "threshold": 0.5,
+        "n": 283,
+        "coverage": 0.9964788732394366,
+        "accuracy": 0.4028268551236749
+      },
+      {
+        "threshold": 0.7,
+        "n": 268,
+        "coverage": 0.9436619718309859,
+        "accuracy": 0.417910447761194
+      },
+      {
+        "threshold": 0.8,
+        "n": 252,
+        "coverage": 0.8873239436619719,
+        "accuracy": 0.44047619047619047
+      },
+      {
+        "threshold": 0.9,
+        "n": 235,
+        "coverage": 0.8274647887323944,
+        "accuracy": 0.46382978723404256
+      }
+    ],
+    "risk_coverage": [
+      {
+        "coverage": 0.2,
+        "n": 57,
+        "accuracy": 0.6140350877192983,
+        "risk": 0.38596491228070173
+      },
+      {
+        "coverage": 0.4,
+        "n": 114,
+        "accuracy": 0.5526315789473685,
+        "risk": 0.4473684210526315
+      },
+      {
+        "coverage": 0.6,
+        "n": 170,
+        "accuracy": 0.4764705882352941,
+        "risk": 0.5235294117647059
+      },
+      {
+        "coverage": 0.8,
+        "n": 227,
+        "accuracy": 0.4669603524229075,
+        "risk": 0.5330396475770924
+      },
+      {
+        "coverage": 1.0,
+        "n": 284,
+        "accuracy": 0.4014084507042254,
+        "risk": 0.5985915492957746
+      }
+    ],
+    "bins": [
+      {
+        "conf": 0.4,
+        "acc": 0.0,
+        "n": 1,
+        "gap": 0.4
+      },
+      {
+        "conf": 0.55,
+        "acc": 0.0,
+        "n": 2,
+        "gap": 0.55
+      },
+      {
+        "conf": 0.6,
+        "acc": 0.2,
+        "n": 10,
+        "gap": 0.39999999999999997
+      },
+      {
+        "conf": 0.65,
+        "acc": 0.0,
+        "n": 3,
+        "gap": 0.65
+      },
+      {
+        "conf": 0.7,
+        "acc": 0.1111111111111111,
+        "n": 9,
+        "gap": 0.5888888888888888
+      },
+      {
+        "conf": 0.75,
+        "acc": 0.0,
+        "n": 7,
+        "gap": 0.75
+      },
+      {
+        "conf": 0.8,
+        "acc": 0.0,
+        "n": 5,
+        "gap": 0.8
+      },
+      {
+        "conf": 0.85,
+        "acc": 0.16666666666666666,
+        "n": 12,
+        "gap": 0.6833333333333333
+      },
+      {
+        "conf": 0.9,
+        "acc": 0.3333333333333333,
+        "n": 39,
+        "gap": 0.5666666666666667
+      },
+      {
+        "conf": 0.95,
+        "acc": 0.4507042253521127,
+        "n": 71,
+        "gap": 0.49929577464788727
+      },
+      {
+        "conf": 0.98,
+        "acc": 0.4461538461538462,
+        "n": 65,
+        "gap": 0.5338461538461539
+      },
+      {
+        "conf": 0.99,
+        "acc": 0.5833333333333334,
+        "n": 60,
+        "gap": 0.4066666666666666
+      }
+    ],
+    "label": "Gemini 2.5 Pro high-think",
+    "family": "Gemini",
+    "marker": "o",
+    "path": "results/classprob_gemini25_pro_high_n300.jsonl"
+  },
+  {
+    "note": "This standalone experiment evaluates pure predictive class confidence against actual binary correctness Y in {0,1}, cleanly separating classification calibration from Part B rationale quality self-scores.",
+    "diagnostics": {
+      "n_rows": 300,
+      "n_transport_error": 0,
+      "n_unparseable_or_incomplete_part_c": 3,
+      "n_missing_p_correct": 0,
+      "n_missing_gold": 0,
+      "n_linked": 297,
+      "per_class_n": {
+        "AGN": 60,
+        "SN": 60,
+        "VS": 60,
+        "asteroid": 59,
+        "bogus": 58
+      }
+    },
+    "n_linked": 297,
+    "accuracy": 0.3838383838383838,
+    "mean_p_correct": 0.8492592592592593,
+    "sd_p_correct": 0.09252897714560347,
+    "n_distinct_p": 9,
+    "p_min": 0.6,
+    "p_max": 0.98,
+    "p_median": 0.85,
+    "frac_p_ge_0_9": 0.45791245791245794,
+    "frac_p_le_0_3": 0.0,
+    "signed_ece": 0.46542087542087546,
+    "ece_exact": 0.46555555555555556,
+    "ece_ew15": 0.4654208754208753,
+    "ece_ew10": 0.4654208754208753,
+    "ece_em10": 0.4655555555555555,
+    "ace_em10": 0.4655555555555555,
+    "mce_exact": 0.597457627118644,
+    "brier": 0.4359693602693603,
+    "reliability": 0.22957767955877822,
+    "resolution": 0.030114798220139342,
+    "uncertainty": 0.23650647893072133,
+    "brier_skill": -0.8433717428817948,
+    "nll": 1.2485211292469416,
+    "auroc": 0.6712204007285975,
+    "somers_d": 0.3424408014571949,
+    "kendall_tau_b": 0.26341891499862036,
+    "spearman_rho": 0.2954820694758073,
+    "pearson_r": 0.2858959026509657,
+    "auroc_perm_p": 0.0001999600079984003,
+    "overconfidence_rate_p90": 0.23232323232323232,
+    "overconfidence_n_p90": 69,
+    "underconfidence_rate_p30": 0.0,
+    "underconfidence_n_p30": 0,
+    "selective": [
+      {
+        "threshold": 0.5,
+        "n": 297,
+        "coverage": 1.0,
+        "accuracy": 0.3838383838383838
+      },
+      {
+        "threshold": 0.7,
+        "n": 286,
+        "coverage": 0.9629629629629629,
+        "accuracy": 0.3916083916083916
+      },
+      {
+        "threshold": 0.8,
+        "n": 209,
+        "coverage": 0.7037037037037037,
+        "accuracy": 0.47368421052631576
+      },
+      {
+        "threshold": 0.9,
+        "n": 136,
+        "coverage": 0.45791245791245794,
+        "accuracy": 0.49264705882352944
+      }
+    ],
+    "risk_coverage": [
+      {
+        "coverage": 0.2,
+        "n": 59,
+        "accuracy": 0.7627118644067796,
+        "risk": 0.23728813559322037
+      },
+      {
+        "coverage": 0.4,
+        "n": 119,
+        "accuracy": 0.5630252100840336,
+        "risk": 0.4369747899159664
+      },
+      {
+        "coverage": 0.6,
+        "n": 178,
+        "accuracy": 0.449438202247191,
+        "risk": 0.550561797752809
+      },
+      {
+        "coverage": 0.8,
+        "n": 238,
+        "accuracy": 0.4327731092436975,
+        "risk": 0.5672268907563025
+      },
+      {
+        "coverage": 1.0,
+        "n": 297,
+        "accuracy": 0.3838383838383838,
+        "risk": 0.6161616161616161
+      }
+    ],
+    "bins": [
+      {
+        "conf": 0.6,
+        "acc": 0.5,
+        "n": 2,
+        "gap": 0.09999999999999998
+      },
+      {
+        "conf": 0.65,
+        "acc": 0.1111111111111111,
+        "n": 9,
+        "gap": 0.538888888888889
+      },
+      {
+        "conf": 0.7,
+        "acc": 0.2222222222222222,
+        "n": 18,
+        "gap": 0.47777777777777775
+      },
+      {
+        "conf": 0.75,
+        "acc": 0.15254237288135594,
+        "n": 59,
+        "gap": 0.597457627118644
+      },
+      {
+        "conf": 0.8,
+        "acc": 0.5384615384615384,
+        "n": 13,
+        "gap": 0.2615384615384616
+      },
+      {
+        "conf": 0.85,
+        "acc": 0.4166666666666667,
+        "n": 60,
+        "gap": 0.4333333333333333
+      },
+      {
+        "conf": 0.9,
+        "acc": 0.30434782608695654,
+        "n": 46,
+        "gap": 0.5956521739130435
+      },
+      {
+        "conf": 0.95,
+        "acc": 0.5842696629213483,
+        "n": 89,
+        "gap": 0.36573033707865166
+      },
+      {
+        "conf": 0.98,
+        "acc": 1.0,
+        "n": 1,
+        "gap": 0.020000000000000018
+      }
+    ],
+    "label": "Gemini 2.5 Flash no-think",
+    "family": "Gemini",
+    "marker": "s",
+    "path": "results/classprob_gemini25_flash_none_n300.jsonl"
+  },
+  {
+    "note": "This standalone experiment evaluates pure predictive class confidence against actual binary correctness Y in {0,1}, cleanly separating classification calibration from Part B rationale quality self-scores.",
+    "diagnostics": {
+      "n_rows": 300,
+      "n_transport_error": 0,
+      "n_unparseable_or_incomplete_part_c": 0,
+      "n_missing_p_correct": 0,
+      "n_missing_gold": 0,
+      "n_linked": 300,
+      "per_class_n": {
+        "AGN": 60,
+        "SN": 60,
+        "VS": 60,
+        "asteroid": 60,
+        "bogus": 60
+      }
+    },
+    "n_linked": 300,
+    "accuracy": 0.42333333333333334,
+    "mean_p_correct": 0.8678333333333335,
+    "sd_p_correct": 0.06802251414291668,
+    "n_distinct_p": 13,
+    "p_min": 0.55,
+    "p_max": 0.95,
+    "p_median": 0.85,
+    "frac_p_ge_0_9": 0.43666666666666665,
+    "frac_p_le_0_3": 0.0,
+    "signed_ece": 0.4445000000000001,
+    "ece_exact": 0.45183333333333336,
+    "ece_ew15": 0.4503666666666666,
+    "ece_ew10": 0.44649999999999995,
+    "ece_em10": 0.44449999999999995,
+    "ace_em10": 0.44449999999999995,
+    "mce_exact": 0.675,
+    "brier": 0.4365463333333334,
+    "reliability": 0.21704496559859401,
+    "resolution": 0.024620854487482927,
+    "uncertainty": 0.2441222222222222,
+    "brier_skill": -0.7882285740294028,
+    "nll": 1.2495750037436415,
+    "auroc": 0.5989713713531474,
+    "somers_d": 0.19794274270629475,
+    "kendall_tau_b": 0.1557660080634706,
+    "spearman_rho": 0.17467214255304328,
+    "pearson_r": 0.14555746091732868,
+    "auroc_perm_p": 0.003199360127974405,
+    "overconfidence_rate_p90": 0.21,
+    "overconfidence_n_p90": 63,
+    "underconfidence_rate_p30": 0.0,
+    "underconfidence_n_p30": 0,
+    "selective": [
+      {
+        "threshold": 0.5,
+        "n": 300,
+        "coverage": 1.0,
+        "accuracy": 0.42333333333333334
+      },
+      {
+        "threshold": 0.7,
+        "n": 296,
+        "coverage": 0.9866666666666667,
+        "accuracy": 0.42567567567567566
+      },
+      {
+        "threshold": 0.8,
+        "n": 260,
+        "coverage": 0.8666666666666667,
+        "accuracy": 0.4269230769230769
+      },
+      {
+        "threshold": 0.9,
+        "n": 131,
+        "coverage": 0.43666666666666665,
+        "accuracy": 0.5190839694656488
+      }
+    ],
+    "risk_coverage": [
+      {
+        "coverage": 0.2,
+        "n": 60,
+        "accuracy": 0.6666666666666666,
+        "risk": 0.33333333333333337
+      },
+      {
+        "coverage": 0.4,
+        "n": 120,
+        "accuracy": 0.5333333333333333,
+        "risk": 0.4666666666666667
+      },
+      {
+        "coverage": 0.6,
+        "n": 180,
+        "accuracy": 0.4777777777777778,
+        "risk": 0.5222222222222221
+      },
+      {
+        "coverage": 0.8,
+        "n": 240,
+        "accuracy": 0.4375,
+        "risk": 0.5625
+      },
+      {
+        "coverage": 1.0,
+        "n": 300,
+        "accuracy": 0.42333333333333334,
+        "risk": 0.5766666666666667
+      }
+    ],
+    "bins": [
+      {
+        "conf": 0.55,
+        "acc": 0.0,
+        "n": 1,
+        "gap": 0.55
+      },
+      {
+        "conf": 0.6,
+        "acc": 0.0,
+        "n": 1,
+        "gap": 0.6
+      },
+      {
+        "conf": 0.65,
+        "acc": 0.5,
+        "n": 2,
+        "gap": 0.15000000000000002
+      },
+      {
+        "conf": 0.7,
+        "acc": 1.0,
+        "n": 2,
+        "gap": 0.30000000000000004
+      },
+      {
+        "conf": 0.72,
+        "acc": 1.0,
+        "n": 1,
+        "gap": 0.28
+      },
+      {
+        "conf": 0.75,
+        "acc": 0.34375,
+        "n": 32,
+        "gap": 0.40625
+      },
+      {
+        "conf": 0.78,
+        "acc": 1.0,
+        "n": 1,
+        "gap": 0.21999999999999997
+      },
+      {
+        "conf": 0.8,
+        "acc": 0.125,
+        "n": 8,
+        "gap": 0.675
+      },
+      {
+        "conf": 0.85,
+        "acc": 0.3577981651376147,
+        "n": 109,
+        "gap": 0.4922018348623853
+      },
+      {
+        "conf": 0.88,
+        "acc": 0.25,
+        "n": 12,
+        "gap": 0.63
+      },
+      {
+        "conf": 0.9,
+        "acc": 0.48717948717948717,
+        "n": 39,
+        "gap": 0.41282051282051285
+      },
+      {
+        "conf": 0.92,
+        "acc": 0.32432432432432434,
+        "n": 37,
+        "gap": 0.5956756756756757
+      },
+      {
+        "conf": 0.95,
+        "acc": 0.6727272727272727,
+        "n": 55,
+        "gap": 0.2772727272727272
+      }
+    ],
+    "label": "Qwen3.5-397B-A17B think",
+    "family": "Qwen",
+    "marker": "o",
+    "path": "results/classprob_qwen35_397b_think_n300.jsonl"
+  },
+  {
+    "note": "This standalone experiment evaluates pure predictive class confidence against actual binary correctness Y in {0,1}, cleanly separating classification calibration from Part B rationale quality self-scores.",
+    "diagnostics": {
+      "n_rows": 300,
+      "n_transport_error": 0,
+      "n_unparseable_or_incomplete_part_c": 0,
+      "n_missing_p_correct": 0,
+      "n_missing_gold": 0,
+      "n_linked": 300,
+      "per_class_n": {
+        "AGN": 60,
+        "SN": 60,
+        "VS": 60,
+        "asteroid": 60,
+        "bogus": 60
+      }
+    },
+    "n_linked": 300,
+    "accuracy": 0.34,
+    "mean_p_correct": 0.8845333333333334,
+    "sd_p_correct": 0.06071576045350208,
+    "n_distinct_p": 13,
+    "p_min": 0.65,
+    "p_max": 0.98,
+    "p_median": 0.88,
+    "frac_p_ge_0_9": 0.48333333333333334,
+    "frac_p_le_0_3": 0.0,
+    "signed_ece": 0.5445333333333333,
+    "ece_exact": 0.5445333333333334,
+    "ece_ew15": 0.5445333333333332,
+    "ece_ew10": 0.5445333333333333,
+    "ece_em10": 0.5445333333333333,
+    "ace_em10": 0.5445333333333333,
+    "mce_exact": 0.75,
+    "brier": 0.5138733333333334,
+    "reliability": 0.30073980019980023,
+    "resolution": 0.011266466866466868,
+    "uncertainty": 0.2244,
+    "brier_skill": -1.289988116458705,
+    "nll": 1.5185402784696067,
+    "auroc": 0.5983115468409586,
+    "somers_d": 0.1966230936819171,
+    "kendall_tau_b": 0.14921047850299418,
+    "spearman_rho": 0.16687469663998394,
+    "pearson_r": 0.18662460901071157,
+    "auroc_perm_p": 0.0033993201359728054,
+    "overconfidence_rate_p90": 0.29333333333333333,
+    "overconfidence_n_p90": 88,
+    "underconfidence_rate_p30": 0.0,
+    "underconfidence_n_p30": 0,
+    "selective": [
+      {
+        "threshold": 0.5,
+        "n": 300,
+        "coverage": 1.0,
+        "accuracy": 0.34
+      },
+      {
+        "threshold": 0.7,
+        "n": 297,
+        "coverage": 0.99,
+        "accuracy": 0.3434343434343434
+      },
+      {
+        "threshold": 0.8,
+        "n": 274,
+        "coverage": 0.9133333333333333,
+        "accuracy": 0.36496350364963503
+      },
+      {
+        "threshold": 0.9,
+        "n": 145,
+        "coverage": 0.48333333333333334,
+        "accuracy": 0.3931034482758621
+      }
+    ],
+    "risk_coverage": [
+      {
+        "coverage": 0.2,
+        "n": 60,
+        "accuracy": 0.43333333333333335,
+        "risk": 0.5666666666666667
+      },
+      {
+        "coverage": 0.4,
+        "n": 120,
+        "accuracy": 0.39166666666666666,
+        "risk": 0.6083333333333334
+      },
+      {
+        "coverage": 0.6,
+        "n": 180,
+        "accuracy": 0.38333333333333336,
+        "risk": 0.6166666666666667
+      },
+      {
+        "coverage": 0.8,
+        "n": 240,
+        "accuracy": 0.36666666666666664,
+        "risk": 0.6333333333333333
+      },
+      {
+        "coverage": 1.0,
+        "n": 300,
+        "accuracy": 0.34,
+        "risk": 0.6599999999999999
+      }
+    ],
+    "bins": [
+      {
+        "conf": 0.65,
+        "acc": 0.0,
+        "n": 3,
+        "gap": 0.65
+      },
+      {
+        "conf": 0.72,
+        "acc": 0.0,
+        "n": 2,
+        "gap": 0.72
+      },
+      {
+        "conf": 0.75,
+        "acc": 0.0,
+        "n": 10,
+        "gap": 0.75
+      },
+      {
+        "conf": 0.78,
+        "acc": 0.18181818181818182,
+        "n": 11,
+        "gap": 0.5981818181818181
+      },
+      {
+        "conf": 0.82,
+        "acc": 0.5,
+        "n": 2,
+        "gap": 0.31999999999999995
+      },
+      {
+        "conf": 0.85,
+        "acc": 0.2980769230769231,
+        "n": 104,
+        "gap": 0.551923076923077
+      },
+      {
+        "conf": 0.87,
+        "acc": 0.5,
+        "n": 10,
+        "gap": 0.37
+      },
+      {
+        "conf": 0.88,
+        "acc": 0.46153846153846156,
+        "n": 13,
+        "gap": 0.41846153846153844
+      },
+      {
+        "conf": 0.92,
+        "acc": 0.36904761904761907,
+        "n": 84,
+        "gap": 0.550952380952381
+      },
+      {
+        "conf": 0.94,
+        "acc": 0.375,
+        "n": 8,
+        "gap": 0.565
+      },
+      {
+        "conf": 0.95,
+        "acc": 0.3939393939393939,
+        "n": 33,
+        "gap": 0.556060606060606
+      },
+      {
+        "conf": 0.96,
+        "acc": 0.5,
+        "n": 2,
+        "gap": 0.45999999999999996
+      },
+      {
+        "conf": 0.98,
+        "acc": 0.5,
+        "n": 18,
+        "gap": 0.48
+      }
+    ],
+    "label": "Qwen3.5-397B-A17B nothink",
+    "family": "Qwen",
+    "marker": "s",
+    "path": "results/classprob_qwen35_397b_nothink_n300.jsonl"
+  }
+]
